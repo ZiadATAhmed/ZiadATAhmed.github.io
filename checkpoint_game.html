@@ -127,11 +127,20 @@ button:focus-visible,select:focus-visible{outline:3px solid #FFD84D;outline-offs
 .intro h2,.report h2{font-size:clamp(22px,4vw,34px);text-transform:uppercase;margin-bottom:10px}
 .intro p,.report p{line-height:1.55;margin:8px 0}
 .intro ul{line-height:1.5}
+.fld{display:block;font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:#4A3711;margin:12px 0 0}
+.fld input,.fld select{display:block;width:100%;margin-top:6px;font-family:inherit;font-size:16px;padding:10px;border-radius:8px;border:2px solid var(--ink);background:#fff;font-weight:400;text-transform:none;letter-spacing:0;color:var(--ink)}
 .badge{display:inline-block;background:#FFD84D;border:2px solid var(--ink);border-radius:6px;padding:3px 10px;font-family:'IBM Plex Mono';font-size:12px;font-weight:600;margin-bottom:10px}
 .report .big{font-family:'Archivo Black';font-size:48px}
 .report table{width:100%;border-collapse:collapse;font-size:14px;margin:12px 0}
 .report td,.report th{text-align:left;padding:6px 4px;border-bottom:1px solid var(--line)}
 .report .miss{color:var(--stamp-red);font-weight:700}
+.catbar{margin:10px 0}
+.catbar .lab{display:flex;justify-content:space-between;font-weight:800;font-size:14px;margin-bottom:4px}
+.catbar .track{height:18px;background:#e6ded0;border-radius:9px;overflow:hidden;border:1px solid var(--line)}
+.catbar .fill{height:100%;border-radius:9px;transition:width .6s}
+.catbar small{color:var(--muted);font-weight:600}
+.submit-status{margin-top:10px;font-weight:700;padding:10px;border-radius:8px}
+.submit-status.ok{background:#DFF1E3;color:#1c5a2f}.submit-status.warn{background:#FFF3C4;color:#7a5c00}
 .credit{color:#bbb;font-size:11px;text-align:center;margin-top:30px;line-height:1.5}
 .credit a{color:#FFD84D}
 .tabs{display:flex;gap:6px;margin-bottom:12px}
@@ -165,7 +174,20 @@ button:focus-visible,select:focus-visible{outline:3px solid #FFD84D;outline-offs
   <div class="hud"><div class="box">Clock<b id="mClock">6:00 PM</b></div><div class="box">Vehicle<b><span id="mRound">1</span>/<span id="mTotal">10</span></b></div><div class="box">Score<b id="mScore">0</b></div><div class="box">Streak<b id="mStreak">0</b></div><div class="box red">Mistakes<b id="mStrikes">0</b></div><div class="queue" id="queue"></div></div>
 </div>
 
-<section class="screen active" id="sIntro">
+<section class="screen active" id="sSignin">
+  <div class="intro">
+    <span class="badge">CHECKPOINT DUTY ROSTER</span>
+    <h2>Sign in for your shift</h2>
+    <p>Enter your name and class so your officer report reaches your teacher.</p>
+    <label class="fld">Your name<input id="inName" type="text" placeholder="First and last name" autocomplete="name"></label>
+    <label class="fld">Teacher<select id="inTeacher"><option value="">Choose your teacher</option><option>Mr. Z</option><option>Mrs. Valenzuela</option><option>Mrs. Quinn</option></select></label>
+    <label class="fld">Class period<select id="inPeriod"><option value="">Choose your period</option><option>Period 1</option><option>Period 2</option><option>Period 3</option><option>Period 4</option><option>Period 5</option><option>Period 6</option></select></label>
+    <p id="signErr" style="color:#ff6b5e;font-weight:700;display:none">Please fill in all three before continuing.</p>
+    <div class="row" style="justify-content:flex-start"><button class="btn" onclick="goIntro()">Continue ▸</button></div>
+  </div>
+</section>
+
+<section class="screen" id="sIntro">
   <div class="intro">
     <span class="badge">OFFICER TRAINING MEMO</span>
     <h2>You run the booth tonight.</h2>
@@ -251,6 +273,8 @@ button:focus-visible,select:focus-visible{outline:3px solid #FFD84D;outline-offs
     <div class="big" id="rScore"></div>
     <p id="rGrade"></p>
     <table id="rTable"></table>
+    <div id="rCats"></div>
+    <div id="submitBox" style="margin-top:16px"></div>
     <p id="rStats"></p><p><b>Remember:</b> observations are what you counted (quantitative) or noticed (qualitative). Inferences are the story you build from them. A good inference, like figuring out a home region from a road and some mud, can be strong enough to act on. A hunch about a driver's mood is not.</p>
     <div class="row" style="justify-content:flex-start"><button class="btn" onclick="location.reload()">Run another shift</button></div>
   </div>
@@ -434,6 +458,55 @@ function uniquePair(region,field,table){
     if(!REGIONS.some(x=>x!==region&&x[field].includes(a)&&x[field].includes(b)))pairs.push([a,b]);}
   return pairs.length?rnd(pairs):[mine[0],mine[1]];
 }
+
+/* ====== SUBMIT TO GOOGLE SHEET ======
+   Mr. Z: paste your Apps Script Web App URL between the quotes below.
+   Leave it as "" to disable online submit and use the download button only. */
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwD-gR9nyTTQWgyq46cu-TBfPfoYRsQfoxXR-r67a6mYcb1lZ-YI7vsjL53QiZlclDKIA/exec";
+
+function buildPayload(){
+  const acc=k=>cat[k][1]?Math.round(cat[k][0]/cat[k][1]*100):0;
+  const secs=Math.round((Date.now()-startTime)/1000);
+  const mm=Math.floor(secs/60), ss=secs%60;
+  return {
+    activity:'Wildlife Crossing Checkpoint',
+    submittedAt:new Date().toLocaleString(),
+    studentName:student.name,
+    teacher:student.teacher,
+    period:student.period,
+    vehicles:N,
+    score:score,
+    maxScore:ROUNDS.reduce((s,R)=>s+R.clues.filter(c=>c[2]).length+4+3+(R.approve?0:2),0),
+    streakBonus:bonus,
+    wrongStamps:strikes,
+    sortCorrect:cat.sort[0], sortTotal:cat.sort[1], sortPct:acc('sort'),
+    inferCorrect:cat.infer[0], inferTotal:cat.infer[1], inferPct:acc('infer'),
+    rulesCorrect:cat.rules[0], rulesTotal:cat.rules[1], rulesPct:acc('rules'),
+    timeSpent:`${mm}m ${ss}s`,
+    timeSeconds:secs
+  };
+}
+
+function submitResults(){
+  const p=buildPayload();
+  const box=$('submitBox');
+  box.innerHTML='<div class="submit-status warn">Sending your report to your teacher…</div>';
+  const done=(txt,cls)=>{box.innerHTML=`<div class="submit-status ${cls}">${txt}</div><div class="row" style="justify-content:flex-start"><button class="btn ghost" onclick="downloadResults()">Download my report (backup)</button></div>`;};
+  if(!SCRIPT_URL){ done('Offline mode. Download your report and turn it in.','warn'); return; }
+  fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(p)})
+    .then(()=>done('Report sent to '+p.teacher+'. You can also download a copy below.','ok'))
+    .catch(()=>done('Could not reach the server. Please download your report and turn it in.','warn'));
+}
+
+function downloadResults(){
+  const p=buildPayload();
+  const rows=Object.entries(p).map(([k,v])=>`"${k}","${String(v).replace(/"/g,'""')}"`).join('\n');
+  const blob=new Blob([rows],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=`checkpoint_${p.studentName.replace(/\W+/g,'_')}_${p.period.replace(/\W+/g,'')}.csv`;
+  document.body.appendChild(a);a.click();a.remove();
+}
+
 /* ---------- map ---------- */
 function mapHTML(big,on){
   const borders=Object.entries(BORDERS).flatMap(([n,ps])=>ps.map(p=>`<polygon class="${on&&!on.includes(n)?'off':''}" points="${p.map(q=>q.join(',')).join(' ')}" fill="rgba(255,255,255,.05)" stroke="#fff" stroke-width=".35" stroke-dasharray="1.2 .8" stroke-linejoin="round"/>`)).join('');
@@ -461,10 +534,19 @@ function renderAtlas(){
 function buildAtlas(){renderAtlas();}
 /* ---------- game ---------- */
 let N=10,ROUNDS=[],r=0,score=0,bonus=0,tagged={},log=[],checked=false,shown=1,streak=0,strikes=0;
+let student={name:'',teacher:'',period:''}, startTime=0;
+// per-category running tallies: [correct, total]
+let cat={sort:[0,0],infer:[0,0],rules:[0,0]};
+function goIntro(){
+  const nm=document.getElementById('inName').value.trim(), tc=document.getElementById('inTeacher').value, pd=document.getElementById('inPeriod').value;
+  if(!nm||!tc||!pd){document.getElementById('signErr').style.display='block';return;}
+  student={name:nm,teacher:tc,period:pd};
+  document.getElementById('sSignin').classList.remove('active');document.getElementById('sIntro').classList.add('active');
+}
 const $=id=>document.getElementById(id);
 const chip=k=>`<span class="chip"><img src="${ICON[k]}" alt="">${A[k][0]}</span>`;
 function pickN(b){N=+b.dataset.n;document.querySelectorAll('[data-n]').forEach(x=>x.classList.remove('on'));b.classList.add('on');}
-function startGame(){ROUNDS=Array.from({length:N},(_,i)=>makeRound(i,N));$('mTotal').textContent=N;$('sIntro').classList.remove('active');$('sRound').classList.add('active');buildAtlas();render();}
+function startGame(){startTime=Date.now();cat={sort:[0,0],infer:[0,0],rules:[0,0]};ROUNDS=Array.from({length:N},(_,i)=>makeRound(i,N));$('mTotal').textContent=N;$('sIntro').classList.remove('active');$('sRound').classList.add('active');buildAtlas();render();}
 
 function render(){
   const R=ROUNDS[r];tagged={};checked=false;
@@ -510,7 +592,7 @@ function checkTags(){
     el.querySelector(`.tag[data-t=${c[2]}]`).classList.add('answer');
     $('why'+i).innerHTML=(ok?'<b>Correct.</b> ':'<b>Not quite.</b> ')+c[3];
   });
-  score+=got;$('mScore').textContent=score;log.push({tags:got,total:tot,origin:0,decision:0,name:R.name+' '+A[R.driver][0]});
+  score+=got;$('mScore').textContent=score;cat.sort[0]+=got;cat.sort[1]+=tot;log.push({tags:got,total:tot,origin:0,decision:0,name:R.name+' '+A[R.driver][0]});
   $('btnCheck').disabled=true;$('origin').disabled=false;$('dest').disabled=false;
   $('decideHint').textContent='Pick the home region and the likely destination, then compare everything to the permit and the border notice. If you deny, pick the rule that was broken.';
   $('btnOk').disabled=false;$('btnNo').disabled=false;
@@ -522,10 +604,12 @@ function decide(ok){
   const picked=[...document.querySelectorAll('.reason.on')].map(b=>b.dataset.r);
   const v=$('verdict');v.textContent=ok?'Approved':'Denied';v.style.color=ok?'var(--stamp-green)':'var(--stamp-red)';v.className='show';
   let pts=0,msg='',L=log[log.length-1];
-  if($('origin').value===R.region[0]){L.origin+=2;pts+=2;msg+=`<b>From:</b> right, ${R.region[0]}. `;} else msg+=`<b>From:</b> it was ${R.region[0]}. Only it matches both signs on the ${R.region[1]} road. `;
-  if($('dest').value===R.dest[0]){L.origin+=2;pts+=2;msg+=`<b>To:</b> right, ${R.dest[0]}. `;} else msg+=`<b>To:</b> most likely ${R.dest[0]}. It is the only place that uses both items. `;
-  if(ok===R.approve){pts+=3;L.decision=3;msg+='<br><b>Correct stamp.</b> ';
-    if(!R.approve){ if(picked.length===1&&picked[0]===R.reason){pts+=2;L.decision=5;msg+='Right reason, too. ';} else msg+=`The actual rule broken: <b>${REASONS.find(x=>x[0]===R.reason)[1]}</b>. `; }
+  cat.infer[1]+=2;
+  if($('origin').value===R.region[0]){L.origin+=2;pts+=2;cat.infer[0]++;msg+=`<b>From:</b> right, ${R.region[0]}. `;} else msg+=`<b>From:</b> it was ${R.region[0]}. Only it matches both signs on the ${R.region[1]} road. `;
+  if($('dest').value===R.dest[0]){L.origin+=2;pts+=2;cat.infer[0]++;msg+=`<b>To:</b> right, ${R.dest[0]}. `;} else msg+=`<b>To:</b> most likely ${R.dest[0]}. It is the only place that uses both items. `;
+  cat.rules[1]+= R.approve?1:2;
+  if(ok===R.approve){pts+=3;L.decision=3;cat.rules[0]++;msg+='<br><b>Correct stamp.</b> ';
+    if(!R.approve){ if(picked.length===1&&picked[0]===R.reason){pts+=2;L.decision=5;cat.rules[0]++;msg+='Right reason, too. ';} else msg+=`The actual rule broken: <b>${REASONS.find(x=>x[0]===R.reason)[1]}</b>. `; }
     else if(picked.length) msg+='No reason was needed for an approval. ';
   } else msg+='<br><b>Wrong stamp.</b> ';
   if(ok===R.approve){streak++;}else{streak=0;strikes++;}$('mStreak').textContent=streak;$('mStrikes').textContent=strikes;
@@ -541,6 +625,10 @@ function nextRound(){
   $('sRound').classList.remove('active');$('sReport').classList.add('active');
   const max=ROUNDS.reduce((s,R)=>s+R.clues.filter(c=>c[2]).length+4+3+(R.approve?0:2),0);
   $('rScore').textContent=`${score} / ${max}`+(bonus?` (+${bonus} streak bonus)`:'');$('rStats').textContent=`Wrong stamps: ${strikes}. Best streak bonuses count toward your score.`;const pct=Math.min(1,(score-bonus)/max);
+  const catInfo=[['sort','Sorting clues','quantitative / qualitative / inference'],['infer','Map inference','where they came from and where to'],['rules','Rule checking','approve / deny and the reason']];
+  const acc=k=>cat[k][1]?Math.round(cat[k][0]/cat[k][1]*100):0;
+  $('rCats').innerHTML='<h3 style="margin-top:6px">How you did in each skill</h3>'+catInfo.map(([k,t,dsc])=>{const a=acc(k);const col=a>=80?'#2F7A45':a>=60?'#C48A14':'#B8372F';return `<div class="catbar"><div class="lab"><span>${t}</span><span style="color:${col}">${a}% <small>(${cat[k][0]}/${cat[k][1]})</small></span></div><div class="track"><div class="fill" style="width:${a}%;background:${col}"></div></div><small>${dsc}</small></div>`;}).join('')+'<p style="font-size:13px;color:var(--muted);margin-top:6px">The lowest bar is the skill to practice next.</p>';
+  submitResults();
   $('rGrade').textContent=pct>=.9?'Outstanding officer. You kept observation and inference apart and only acted on evidence.':pct>=.7?'Solid shift. Look back at any lines marked red and ask: did I see it, or did I reason it?':'Rough night. The key habit: an inference can point you somewhere, but only evidence that breaks a rule can deny a driver.';
   $('rTable').innerHTML='<tr><th>Driver</th><th>Clues sorted</th><th>From / To</th><th>Decision</th></tr>'+log.map((l,i)=>`<tr><td>${i+1}. ${l.name}</td><td class="${l.tags<l.total?'miss':''}">${l.tags}/${l.total}</td><td class="${l.origin?'':'miss'}">${l.origin?'+'+l.origin:'missed'}</td><td class="${l.decision?'':'miss'}">${l.decision?'+'+l.decision:'missed'}</td></tr>`).join('');
   window.scrollTo(0,0);
