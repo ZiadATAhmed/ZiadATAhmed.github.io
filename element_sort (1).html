@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Element Sort | Mr. Z's Science</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Element Sort. Mr. Z, 7th grade science.
+   Results post to the linked Google Sheet on Turn in.
+   ============================================================ */
+
+:root{
+  --ink:#101520;
+  --slab:#1A2130;
+  --slab2:#222B3D;
+  --line:#303B52;
+  --paper:#E9EDF6;
+  --dim:#8C97AE;
+  --cyan:#46E3C8;
+  --alkali:#FF7A45;
+  --alkaline:#FFC24B;
+  --transition:#E05A8C;
+  --nonmetal:#5BD98A;
+  --halogen:#7C9CFF;
+  --noble:#B57BFF;
+  --wrong:#FF5C6C;
+  --r:14px;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:
+    radial-gradient(900px 500px at 12% -10%, #1D2740 0%, transparent 60%),
+    radial-gradient(700px 500px at 95% 0%, #241E38 0%, transparent 55%),
+    var(--ink);
+  color:var(--paper);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  font-size:17px;
+  line-height:1.6;
+  min-height:100vh;
+  padding-bottom:120px;
+}
+h1,h2,h3{font-family:"Space Grotesk",system-ui,sans-serif;line-height:1.15;margin:0}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+
+/* ---------- header ---------- */
+.topbar{
+  position:sticky;top:0;z-index:40;
+  background:rgba(16,21,32,.88);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);
+}
+.topbar-in{
+  max-width:960px;margin:0 auto;padding:12px 20px;
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-family:"Space Grotesk",sans-serif;letter-spacing:.2px}
+.brand-tile{
+  width:34px;height:34px;border-radius:7px;background:var(--cyan);color:#0B1018;
+  display:grid;place-items:center;font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:17px;
+  box-shadow:0 0 0 1px rgba(255,255,255,.15) inset;
+}
+.steps{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
+.step{
+  width:30px;height:30px;border-radius:6px;border:1px solid var(--line);
+  background:var(--slab);color:var(--dim);
+  font-family:"IBM Plex Mono",monospace;font-size:12px;
+  display:grid;place-items:center;transition:.25s;
+}
+.step.done{border-color:var(--cyan);color:var(--cyan)}
+.step.now{background:var(--cyan);border-color:var(--cyan);color:#0B1018;font-weight:600}
+.clock{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--dim)}
+
+/* ---------- shell ---------- */
+.wrap{max-width:960px;margin:0 auto;padding:28px 20px 0}
+.card{
+  background:var(--slab);border:1px solid var(--line);border-radius:var(--r);
+  padding:28px;margin-bottom:20px;
+}
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--cyan);margin-bottom:10px;
+}
+h1{font-size:clamp(28px,5vw,42px);margin-bottom:12px}
+h2{font-size:clamp(22px,3.6vw,30px);margin-bottom:14px}
+h3{font-size:19px;margin-bottom:8px}
+p{margin:0 0 14px}
+.lead{font-size:19px;color:#D3DAEA}
+.dim{color:var(--dim)}
+.small{font-size:14px}
+ul{margin:0 0 14px;padding-left:20px}
+li{margin-bottom:7px}
+.stage{animation:rise .35s ease}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+/* ---------- buttons ---------- */
+button{font-family:inherit;font-size:16px;cursor:pointer}
+.btn{
+  background:var(--cyan);color:#0B1018;border:0;border-radius:10px;
+  padding:13px 26px;font-weight:600;transition:.18s;
+}
+.btn:hover{filter:brightness(1.08)}
+.btn:disabled{background:var(--slab2);color:var(--dim);cursor:not-allowed;filter:none}
+.btn-ghost{
+  background:transparent;color:var(--paper);border:1px solid var(--line);
+  border-radius:10px;padding:12px 22px;
+}
+.btn-ghost:hover{border-color:var(--cyan);color:var(--cyan)}
+:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+
+.actionbar{
+  position:fixed;left:0;right:0;bottom:0;z-index:50;
+  background:rgba(16,21,32,.94);backdrop-filter:blur(10px);
+  border-top:1px solid var(--line);
+}
+.actionbar-in{
+  max-width:960px;margin:0 auto;padding:14px 20px;
+  display:flex;align-items:center;gap:14px;
+}
+.hint{font-size:14px;color:var(--dim);margin-right:auto}
+
+/* ---------- inputs ---------- */
+label{display:block;font-size:14px;color:var(--dim);margin-bottom:6px}
+input[type=text],select,textarea{
+  width:100%;background:var(--ink);color:var(--paper);
+  border:1px solid var(--line);border-radius:10px;
+  padding:12px 14px;font-family:inherit;font-size:16px;
+}
+textarea{min-height:88px;resize:vertical;line-height:1.5}
+input:focus,select:focus,textarea:focus{border-color:var(--cyan);outline:none}
+.field{margin-bottom:16px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+/* ---------- element tile ---------- */
+.tile{
+  position:relative;background:var(--slab2);border:1px solid var(--line);
+  border-radius:10px;padding:10px 8px 8px;text-align:center;
+  transition:transform .16s,box-shadow .16s,border-color .16s;
+}
+.tile .num{
+  position:absolute;top:6px;left:8px;
+  font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--dim);
+}
+.tile .sym{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:26px;line-height:1.1;margin-top:8px}
+.tile .nm{font-size:11px;color:var(--dim);letter-spacing:.02em}
+.tile .mass{font-family:"IBM Plex Mono",monospace;font-size:10px;color:var(--dim)}
+
+/* ---------- decoder (signature) ---------- */
+.decoder{display:grid;grid-template-columns:230px 1fr;gap:26px;align-items:start}
+@media(max-width:660px){.decoder{grid-template-columns:1fr}}
+.bigtile{
+  position:relative;aspect-ratio:1/1;border-radius:16px;
+  background:linear-gradient(160deg,#2A3348,#1D2436);
+  border:1px solid var(--line);
+  display:grid;grid-template-rows:auto 1fr auto auto;
+  padding:16px;
+}
+.hot{
+  border:1px dashed transparent;border-radius:8px;cursor:pointer;
+  transition:.2s;padding:2px 6px;
+}
+.hot:hover{border-color:var(--cyan);background:rgba(70,227,200,.08)}
+.hot.on{border-color:var(--cyan);background:rgba(70,227,200,.16);border-style:solid}
+.hot.seen::after{content:"✓";font-size:11px;color:var(--cyan);margin-left:5px;vertical-align:top}
+.h-num{font-family:"IBM Plex Mono",monospace;font-size:20px;color:var(--cyan);justify-self:start}
+.h-sym{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:64px;text-align:center;align-self:center}
+.h-nm{text-align:center;font-size:17px}
+.h-mass{font-family:"IBM Plex Mono",monospace;font-size:15px;color:var(--dim);text-align:center}
+.readout{
+  background:var(--ink);border:1px solid var(--line);border-radius:12px;
+  padding:20px;min-height:190px;
+}
+.readout h3{color:var(--cyan)}
+
+/* ---------- mini periodic table ---------- */
+.ptable{
+  display:grid;grid-template-columns:repeat(18,1fr);gap:3px;
+  overflow-x:auto;padding-bottom:6px;
+}
+.cell{
+  aspect-ratio:1/1;border-radius:4px;background:var(--slab2);
+  border:1px solid transparent;
+  display:grid;place-items:center;
+  font-family:"IBM Plex Mono",monospace;font-size:clamp(7px,1.1vw,12px);
+  cursor:pointer;transition:.12s;color:var(--paper);
+}
+.cell.empty{background:transparent;cursor:default;border-color:transparent}
+.cell:not(.empty):hover{border-color:var(--cyan)}
+.cell.lit{background:rgba(70,227,200,.22)}
+.cell.pick{background:var(--cyan);color:#0B1018;font-weight:600}
+.gridlabels{display:grid;grid-template-columns:repeat(18,1fr);gap:3px;margin-bottom:4px}
+.gridlabels span{text-align:center;font-family:"IBM Plex Mono",monospace;font-size:9px;color:var(--dim)}
+
+/* ---------- family cards ---------- */
+.fam-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.fam{
+  background:var(--ink);border:1px solid var(--line);border-left:4px solid var(--c);
+  border-radius:10px;padding:16px;cursor:pointer;transition:.2s;
+}
+.fam:hover{border-color:var(--c);transform:translateY(-2px)}
+.fam.open{border-color:var(--c)}
+.fam h3{color:var(--c);font-size:17px}
+.fam .where{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--dim);margin-bottom:8px}
+.fam .body{display:none;font-size:15px;margin-top:10px;border-top:1px solid var(--line);padding-top:10px}
+.fam.open .body{display:block}
+.fam .tap{font-size:13px;color:var(--dim)}
+.fam.open .tap{display:none}
+.wordroot{
+  font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--c);
+  background:rgba(255,255,255,.04);border-radius:6px;padding:6px 9px;display:inline-block;margin-bottom:8px;
+}
+
+/* ---------- sort ---------- */
+.bench{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:10px;
+  min-height:110px;margin-bottom:22px;
+}
+.bench .tile{cursor:pointer}
+.bench .tile:hover{border-color:var(--cyan);transform:translateY(-3px)}
+.bench .tile.sel{border-color:var(--cyan);box-shadow:0 0 0 2px var(--cyan);transform:translateY(-3px)}
+.bins{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.bin{
+  background:var(--ink);border:2px dashed var(--line);border-radius:12px;
+  padding:12px;min-height:130px;transition:.16s;
+}
+.bin.live{border-color:var(--c);border-style:solid;cursor:pointer}
+.bin.live:hover{background:rgba(255,255,255,.03)}
+.bin.bad{animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.bin h4{margin:0 0 3px;font-family:"Space Grotesk",sans-serif;font-size:15px;color:var(--c)}
+.bin .binsub{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--dim);margin-bottom:9px}
+.bin .drops{display:flex;flex-wrap:wrap;gap:6px}
+.chip{
+  background:var(--c);color:#0B1018;border-radius:6px;padding:4px 9px;
+  font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:14px;
+  animation:pop .22s ease;
+}
+@keyframes pop{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
+
+/* ---------- checks ---------- */
+.q{background:var(--ink);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:14px}
+.q .qt{font-weight:600;margin-bottom:12px}
+.opts{display:grid;gap:8px}
+.opt{
+  text-align:left;background:var(--slab2);color:var(--paper);
+  border:1px solid var(--line);border-radius:9px;padding:11px 14px;transition:.15s;
+}
+.opt:hover:not(:disabled){border-color:var(--cyan)}
+.opt:disabled{cursor:default}
+.opt.right{border-color:var(--cyan);background:rgba(70,227,200,.16)}
+.opt.wrong{border-color:var(--wrong);background:rgba(255,92,108,.14)}
+.fb{margin-top:11px;font-size:15px;padding-left:12px;border-left:2px solid var(--cyan);color:#CFD7E8}
+.fb.no{border-color:var(--wrong)}
+
+/* ---------- match game ---------- */
+.match{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:600px){.match{grid-template-columns:1fr}}
+.mcol{display:grid;gap:8px;align-content:start}
+.mitem{
+  text-align:left;background:var(--slab2);color:var(--paper);border:1px solid var(--line);
+  border-radius:9px;padding:11px 13px;font-size:15px;transition:.15s;
+}
+.mitem:hover:not(:disabled){border-color:var(--cyan)}
+.mitem.sel{border-color:var(--cyan);box-shadow:0 0 0 2px var(--cyan)}
+.mitem.done{opacity:.4;border-color:var(--cyan);cursor:default}
+.mitem.miss{border-color:var(--wrong);animation:shake .3s}
+
+/* ---------- misc ---------- */
+.tag{
+  display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:11px;
+  letter-spacing:.08em;text-transform:uppercase;
+  border:1px solid var(--line);border-radius:20px;padding:3px 11px;color:var(--dim);margin-bottom:14px;
+}
+.note{background:rgba(70,227,200,.07);border:1px solid rgba(70,227,200,.3);border-radius:10px;padding:14px 16px;font-size:15px;margin-bottom:16px}
+.hw{background:var(--ink);border:1px solid var(--line);border-radius:12px;padding:22px;margin-bottom:16px}
+.hw ol{padding-left:22px;margin:0}
+.hw li{margin-bottom:11px}
+.scorebox{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.stat{background:var(--ink);border:1px solid var(--line);border-radius:10px;padding:14px 18px;flex:1;min-width:120px}
+.stat .n{font-family:"IBM Plex Mono",monospace;font-size:28px;color:var(--cyan)}
+.stat .l{font-size:13px;color:var(--dim)}
+.status{font-size:15px;padding:12px 14px;border-radius:10px;margin-top:14px;display:none}
+.status.ok{display:block;background:rgba(70,227,200,.12);border:1px solid rgba(70,227,200,.4)}
+.status.err{display:block;background:rgba(255,92,108,.12);border:1px solid rgba(255,92,108,.4)}
+@media print{
+  .topbar,.actionbar,.noprint{display:none!important}
+  body{background:#fff;color:#000;padding:0}
+  .card,.hw{border-color:#999;background:#fff;color:#000}
+  .hw h2,.hw h3{color:#000}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.catwrap{margin-top:8px;text-align:left}
+.catbar{margin:8px 0}
+.catbar .lab{display:flex;justify-content:space-between;font-weight:700;font-size:14px;margin-bottom:3px}
+.catbar .track{height:16px;background:#e9e9ee;border-radius:8px;overflow:hidden}
+.catbar .fill{height:100%;border-radius:8px;transition:width .6s}
+.catbar small{color:#6E6657}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-in">
+    <div class="brand"><span class="brand-tile">Z</span> Element Sort</div>
+    <div class="steps" id="steps"></div>
+    <div class="clock" id="clock">00:00</div>
+  </div>
+</div>
+
+<div class="wrap"><div id="stage"></div></div>
+
+<div class="actionbar">
+  <div class="actionbar-in">
+    <span class="hint" id="hint">Type your name to begin.</span>
+    <button class="btn-ghost" id="back" style="display:none">Back</button>
+    <button class="btn" id="next" disabled>Start</button>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   Apps Script Web App URL is already set below.
+   Only change this if you redeploy the script.
+   ============================================================ */
+const SCRIPT_URL = "";
+
+/* ---------------- data ---------------- */
+const FAMILIES = {
+  alkali:{name:"Alkali metals", where:"Group 1 (first column)", color:"var(--alkali)",
+    root:"al-qali (Arabic) = \"the ashes\"",
+    why:"Old chemists burned plants, soaked the ashes in water, and got a slippery liquid called an alkali. These metals do the same thing: drop one in water and the water turns alkaline.",
+    like:"Soft enough to cut with a butter knife. So reactive they are stored under oil so air cannot touch them.",
+    meet:"Sodium is half of table salt. Potassium is why bananas are on the poster in the nurse's office."},
+  alkaline:{name:"Alkaline earth metals", where:"Group 2 (second column)", color:"var(--alkaline)",
+    root:"alkaline + earth = \"a solid that will not melt or dissolve\"",
+    why:"They also make water alkaline, but old chemists could not melt them in their furnaces, so they filed them under earths.",
+    like:"Harder and less wild than Group 1, but still reactive. Many burn with bright colors.",
+    meet:"Calcium is in your bones and in chalk. Magnesium is the blinding white flame in fireworks."},
+  transition:{name:"Transition metals", where:"Groups 3 to 12 (the wide middle block)", color:"var(--transition)",
+    root:"transition = \"crossing over\"",
+    why:"They sit in the middle where the table crosses over from the reactive left side to the nonmetal right side.",
+    like:"Hard, shiny, high melting points, great at carrying electricity. Their compounds are usually colorful.",
+    meet:"Iron in a bridge. Copper in the wire behind your wall. Zinc in the coating that keeps nails from rusting."},
+  nonmetal:{name:"Nonmetals", where:"Upper right area", color:"var(--nonmetal)",
+    root:"non + metal = \"not a metal\"",
+    why:"Named by what they are missing. No shine, no bend, no good at carrying electricity.",
+    like:"Dull, brittle as a solid, many are gases at room temperature.",
+    meet:"Carbon, nitrogen, and oxygen. Almost everything alive is built mostly from these three plus hydrogen."},
+  halogen:{name:"Halogens", where:"Group 17 (second column from the right)", color:"var(--halogen)",
+    root:"hals (Greek) = \"salt\" + genes = \"maker\"",
+    why:"Literally salt makers. Hand a halogen to an alkali metal and you get a salt. Sodium plus chlorine gives you the salt on your fries.",
+    like:"The most reactive nonmetals. Colorful and dangerous on their own, harmless once bonded.",
+    meet:"Fluorine is in toothpaste. Chlorine keeps pools clean. Iodine is in table salt on purpose."},
+  noble:{name:"Noble gases", where:"Group 18 (last column)", color:"var(--noble)",
+    root:"noble = \"royal, above mixing with commoners\"",
+    why:"Chemists named them after nobility because they refuse to react with anything. They are already full and happy.",
+    like:"Invisible, odorless, almost never form compounds. Glow bright colors when electricity runs through them.",
+    meet:"Helium in balloons. Neon in the sign outside a taco shop. Argon inside double pane windows."}
+};
+
+const SORTSET = [
+  {n:3,s:"Li",e:"Lithium",m:"6.94",f:"alkali"},
+  {n:11,s:"Na",e:"Sodium",m:"22.99",f:"alkali"},
+  {n:19,s:"K",e:"Potassium",m:"39.10",f:"alkali"},
+  {n:4,s:"Be",e:"Beryllium",m:"9.01",f:"alkaline"},
+  {n:12,s:"Mg",e:"Magnesium",m:"24.31",f:"alkaline"},
+  {n:20,s:"Ca",e:"Calcium",m:"40.08",f:"alkaline"},
+  {n:26,s:"Fe",e:"Iron",m:"55.85",f:"transition"},
+  {n:29,s:"Cu",e:"Copper",m:"63.55",f:"transition"},
+  {n:30,s:"Zn",e:"Zinc",m:"65.38",f:"transition"},
+  {n:6,s:"C",e:"Carbon",m:"12.01",f:"nonmetal"},
+  {n:7,s:"N",e:"Nitrogen",m:"14.01",f:"nonmetal"},
+  {n:8,s:"O",e:"Oxygen",m:"16.00",f:"nonmetal"},
+  {n:9,s:"F",e:"Fluorine",m:"19.00",f:"halogen"},
+  {n:17,s:"Cl",e:"Chlorine",m:"35.45",f:"halogen"},
+  {n:53,s:"I",e:"Iodine",m:"126.90",f:"halogen"},
+  {n:2,s:"He",e:"Helium",m:"4.00",f:"noble"},
+  {n:10,s:"Ne",e:"Neon",m:"20.18",f:"noble"},
+  {n:18,s:"Ar",e:"Argon",m:"39.95",f:"noble"}
+];
+
+// period, group, symbol, name  (periods 1 to 4)
+const PT = [
+ [1,1,"H","Hydrogen"],[1,18,"He","Helium"],
+ [2,1,"Li","Lithium"],[2,2,"Be","Beryllium"],[2,13,"B","Boron"],[2,14,"C","Carbon"],[2,15,"N","Nitrogen"],[2,16,"O","Oxygen"],[2,17,"F","Fluorine"],[2,18,"Ne","Neon"],
+ [3,1,"Na","Sodium"],[3,2,"Mg","Magnesium"],[3,13,"Al","Aluminum"],[3,14,"Si","Silicon"],[3,15,"P","Phosphorus"],[3,16,"S","Sulfur"],[3,17,"Cl","Chlorine"],[3,18,"Ar","Argon"],
+ [4,1,"K","Potassium"],[4,2,"Ca","Calcium"],[4,3,"Sc","Scandium"],[4,4,"Ti","Titanium"],[4,5,"V","Vanadium"],[4,6,"Cr","Chromium"],[4,7,"Mn","Manganese"],[4,8,"Fe","Iron"],[4,9,"Co","Cobalt"],[4,10,"Ni","Nickel"],[4,11,"Cu","Copper"],[4,12,"Zn","Zinc"],[4,13,"Ga","Gallium"],[4,14,"Ge","Germanium"],[4,15,"As","Arsenic"],[4,16,"Se","Selenium"],[4,17,"Br","Bromine"],[4,18,"Kr","Krypton"]
+];
+
+const VOCAB = [
+  ["Element","A pure substance made of only one kind of atom. It cannot be broken into anything simpler."],
+  ["Atomic number","The number of protons in one atom. It is the element's ID number and no two elements share one."],
+  ["Chemical symbol","The one or two letter shorthand for an element. First letter capital, second letter lowercase."],
+  ["Atomic mass","How heavy one atom is on average, counting protons and neutrons together."],
+  ["Group","A column running top to bottom. Elements in the same column behave in similar ways."],
+  ["Period","A row running left to right. Atomic number climbs by one with every step to the right."],
+  ["Family","Another word for a group, used when the column has a nickname like halogens."],
+  ["Metalloid","An in between element along the staircase. Part metal, part nonmetal, which makes it useful in computer chips."]
+];
+
+/* ---------------- state ---------------- */
+const S = {
+  name:"", teacher:"", period:"", start:null, elapsed:0,
+  checks:{}, sort:{firstTry:0, misses:0, placed:0},
+  vocab:{misses:0, done:0},
+  exit:{q1:"",q2:"",q3:""},
+  decoderSeen:new Set(), tableClicks:0, famOpened:new Set(),
+  sent:false
+};
+const STAGES = ["signin","what","decode","grid","families","sort","vocab","exit"];
+let idx = 0;
+
+const $ = id => document.getElementById(id);
+const stage = $("stage"), nextBtn = $("next"), backBtn = $("back"), hint = $("hint");
+
+/* ---------------- clock ---------------- */
+setInterval(()=>{
+  if(!S.start || S.sent) return;
+  S.elapsed = Math.floor((Date.now()-S.start)/1000);
+  const m = String(Math.floor(S.elapsed/60)).padStart(2,"0");
+  const s = String(S.elapsed%60).padStart(2,"0");
+  $("clock").textContent = m+":"+s;
+},1000);
+
+function drawSteps(){
+  $("steps").innerHTML = STAGES.map((_,i)=>
+    `<div class="step ${i<idx?"done":""} ${i===idx?"now":""}">${String(i+1).padStart(2,"0")}</div>`
+  ).join("");
+}
+
+function gate(ok, msg){
+  nextBtn.disabled = !ok;
+  hint.textContent = msg || "";
+}
+
+function go(n){
+  idx = Math.max(0, Math.min(STAGES.length-1, n));
+  drawSteps();
+  backBtn.style.display = idx>0 && idx<STAGES.length-1 ? "" : "none";
+  nextBtn.textContent = idx===STAGES.length-1 ? "Turn in" : "Next";
+  window.scrollTo({top:0,behavior:"smooth"});
+  RENDER[STAGES[idx]]();
+}
+
+nextBtn.onclick = ()=>{
+  if(STAGES[idx]==="signin"){ S.start = Date.now(); }
+  if(idx===STAGES.length-1){ submit(); return; }
+  go(idx+1);
+};
+backBtn.onclick = ()=>go(idx-1);
+
+/* ---------------- reusable check questions ---------------- */
+function checkBlock(qs, key, onDone){
+  let answered = 0;
+  const html = qs.map((q,i)=>`
+    <div class="q">
+      <div class="qt">${q.q}</div>
+      <div class="opts">${q.a.map((a,j)=>
+        `<button class="opt" data-q="${i}" data-o="${j}">${a}</button>`).join("")}</div>
+      <div class="fb" id="fb-${key}-${i}" style="display:none"></div>
+    </div>`).join("");
+  const host = document.createElement("div");
+  host.innerHTML = html;
+  host.querySelectorAll(".opt").forEach(b=>{
+    b.onclick = ()=>{
+      const qi = +b.dataset.q, oi = +b.dataset.o, q = qs[qi];
+      const box = host.querySelectorAll(".q")[qi];
+      box.querySelectorAll(".opt").forEach(x=>x.disabled=true);
+      const right = oi===q.c;
+      b.classList.add(right?"right":"wrong");
+      if(!right) box.querySelectorAll(".opt")[q.c].classList.add("right");
+      const fb = $(`fb-${key}-${qi}`);
+      fb.style.display="block";
+      fb.className = "fb"+(right?"":" no");
+      fb.textContent = (right?"Yes. ":"Not quite. ")+q.why;
+      S.checks[key+"_"+(qi+1)] = right ? "correct" : "incorrect";
+      answered++;
+      if(answered===qs.length) onDone();
+    };
+  });
+  return host;
+}
+
+/* ---------------- stages ---------------- */
+const RENDER = {};
+
+RENDER.signin = ()=>{
+  stage.innerHTML = `
+  <div class="stage card">
+    <div class="eyebrow">7th grade science / Mr. Z / Room 11</div>
+    <h1>Every single thing you have ever touched is built from about 90 ingredients.</h1>
+    <p class="lead">This screen, your shoe, the air in your lungs, the water in your bottle. All of it. Chemists put those ingredients on one chart and spent 150 years arguing about the order.</p>
+    <p>Today you learn how to read that chart, then you sort elements into their families. Give yourself about 30 minutes. Nothing here is graded on being right the first time, so guess boldly.</p>
+    <div class="row2" style="margin-top:24px">
+      <div class="field"><label for="nm">Your full name</label><input type="text" id="nm" placeholder="First and last" autocomplete="off"></div>
+      <div class="field"><label for="tc">Teacher</label>
+        <select id="tc">
+          <option value="">Pick one</option>
+          <option>Mr. Z</option><option>Mrs. Valenzuela</option><option>Mrs. Quinn</option>
+        </select>
+      </div>
+      <div class="field"><label for="pd">Class period</label>
+        <select id="pd">
+          <option value="">Pick one</option>
+          <option>Period 1</option><option>Period 2</option><option>Period 3</option>
+          <option>Period 4</option><option>Period 5</option><option>Period 6</option>
+        </select>
+      </div>
+    </div>
+  </div>`;
+  const nm = $("nm"), pd = $("pd"), tc = $("tc");
+  const test = ()=>{
+    S.name = nm.value.trim(); S.period = pd.value; S.teacher = tc.value;
+    const ok = S.name.length>2 && S.period && S.teacher;
+    gate(ok, ok ? "" : "Enter your name, teacher, and period.");
+  };
+  nm.oninput = test; pd.onchange = test; tc.onchange = test;
+  nextBtn.textContent = "Start";
+  test();
+};
+
+RENDER.what = ()=>{
+  stage.innerHTML = `
+  <div class="stage card">
+    <div class="eyebrow">Step 01</div>
+    <h2>What an element actually is</h2>
+    <p>Cut a piece of aluminum foil in half. Then in half again. Keep going. Eventually you reach a piece so small that cutting it once more would leave you with something that is no longer aluminum. That last piece is an <strong>atom</strong>.</p>
+    <p>An <strong>element</strong> is a substance made of only one kind of atom. Aluminum foil is only aluminum atoms. A gold ring is only gold atoms. Water is not an element, because it is two kinds of atom stuck together.</p>
+    <div class="note">Inside every atom is a tiny center called the nucleus. Packed in there are <strong>protons</strong>. The number of protons is what decides which element you have. Change the proton count and you have changed the element itself. 6 protons is carbon, forever. 79 protons is gold, forever.</div>
+    <p class="dim small">Around 90 elements occur naturally on Earth. Scientists have built about 28 more in labs, and most of those fall apart in less than a second.</p>
+  </div>
+  <div class="stage card"><h3>Quick check</h3><div id="k1"></div></div>`;
+  $("k1").appendChild(checkBlock([
+    {q:"What makes one element different from another?",
+     a:["The color it is","How many protons its atoms have","How heavy the sample is","Where it was mined"],c:1,
+     why:"Proton count is the whole story. Same protons means same element, no matter what it looks like."},
+    {q:"Is water an element?",
+     a:["Yes, it is pure","No, it is two kinds of atom joined together","Only when it is frozen","Only when it is clean"],c:1,
+     why:"Water is hydrogen plus oxygen. An element is one kind of atom only."}
+  ],"basics",()=>gate(true,"")));
+  gate(false,"Answer both questions to continue.");
+};
+
+RENDER.decode = ()=>{
+  stage.innerHTML = `
+  <div class="stage card">
+    <div class="eyebrow">Step 02</div>
+    <h2>Crack open one square</h2>
+    <p>Every square on the periodic table carries four pieces of information in the same four places. Learn one square and you have learned all 118. Tap each part.</p>
+    <div class="decoder">
+      <div class="bigtile">
+        <div class="hot h-num" data-k="num">6</div>
+        <div class="hot h-sym" data-k="sym">C</div>
+        <div class="hot h-nm" data-k="nm">Carbon</div>
+        <div class="hot h-mass" data-k="mass">12.011</div>
+      </div>
+      <div class="readout" id="ro">
+        <h3>Tap a part of the square</h3>
+        <p class="dim">Start with the small number in the top left corner. That one matters most.</p>
+      </div>
+    </div>
+  </div>
+  <div class="stage card"><h3>Quick check</h3><div id="k2"></div></div>`;
+
+  const info = {
+    num:{t:"Atomic number: 6",
+      b:"The number of protons in one carbon atom. This is the element's ID number. No two elements have the same one, and the table is ordered by it, counting up from 1 as you read left to right, row by row."},
+    sym:{t:"Chemical symbol: C",
+      b:"Shorthand so chemists worldwide can write fast. One or two letters. The first is always capital, the second is always lowercase. Co means cobalt. CO means carbon and oxygen together. That one keystroke changes everything."},
+    nm:{t:"Element name: Carbon",
+      b:"The full name in plain language. Some come from Latin, which is why iron uses Fe from ferrum and sodium uses Na from natrium. Blame the ancient Romans for the mismatch."},
+    mass:{t:"Atomic mass: 12.011",
+      b:"How heavy one atom is on average. Protons and neutrons both add weight, so this number is always larger than the atomic number. It has a decimal because a real sample contains atoms with slightly different neutron counts."}
+  };
+  stage.querySelectorAll(".hot").forEach(h=>{
+    h.onclick = ()=>{
+      stage.querySelectorAll(".hot").forEach(x=>x.classList.remove("on"));
+      h.classList.add("on","seen");
+      S.decoderSeen.add(h.dataset.k);
+      const d = info[h.dataset.k];
+      $("ro").innerHTML = `<h3>${d.t}</h3><p>${d.b}</p>`;
+      if(S.decoderSeen.size===4) hint.textContent = "Now answer the check below.";
+    };
+  });
+  $("k2").appendChild(checkBlock([
+    {q:"An element square shows 11 in the corner. What does 11 tell you?",
+     a:["It weighs 11 grams","It has 11 protons","It is the 11th most common element","It has 11 letters in its name"],c:1,
+     why:"Corner number equals proton count equals atomic number."},
+    {q:"Why is the atomic mass always bigger than the atomic number?",
+     a:["Neutrons add weight too","Scientists round up","It counts the whole sample","Electrons are heavy"],c:0,
+     why:"Mass counts protons and neutrons. Atomic number counts protons only."},
+    {q:"Which is written correctly as a chemical symbol?",
+     a:["mG","MG","Mg","mg"],c:2,
+     why:"Capital first, lowercase second. Always."}
+  ],"tile",()=>{
+    if(S.decoderSeen.size===4) gate(true,"");
+    else gate(false,"Tap all four parts of the square first.");
+  }));
+  gate(false,"Tap all four parts, then answer the check.");
+};
+
+RENDER.grid = ()=>{
+  const labels = Array.from({length:18},(_,i)=>`<span>${i+1}</span>`).join("");
+  let cells = "";
+  for(let p=1;p<=4;p++){
+    for(let g=1;g<=18;g++){
+      const el = PT.find(x=>x[0]===p && x[1]===g);
+      cells += el
+        ? `<div class="cell" data-p="${p}" data-g="${g}" data-s="${el[2]}" data-n="${el[3]}">${el[2]}</div>`
+        : `<div class="cell empty"></div>`;
+    }
+  }
+  stage.innerHTML = `
+  <div class="stage card">
+    <div class="eyebrow">Step 03</div>
+    <h2>Rows and columns are not decoration</h2>
+    <p>The chart is a grid, and the grid position is a fact about the element. Tap any square below and watch what lights up.</p>
+    <div class="gridlabels">${labels}</div>
+    <div class="ptable" id="pt">${cells}</div>
+    <div class="readout" style="margin-top:18px" id="gro">
+      <h3>Tap any element</h3>
+      <p class="dim">This is only the first four rows. The full table has seven.</p>
+    </div>
+    <div style="margin-top:18px">
+      <p><strong>Period</strong> means a row, left to right. Walk along a row and the atomic number climbs by exactly one each step.</p>
+      <p><strong>Group</strong> means a column, top to bottom. This is the powerful one. Elements in the same column react in similar ways, because of how their outer electrons are arranged. That is why the columns get names, and why you can predict how an element behaves just by knowing its address.</p>
+    </div>
+  </div>
+  <div class="stage card"><h3>Quick check</h3><div id="k3"></div></div>`;
+
+  $("pt").querySelectorAll(".cell:not(.empty)").forEach(c=>{
+    c.onclick = ()=>{
+      const p = c.dataset.p, g = c.dataset.g;
+      $("pt").querySelectorAll(".cell").forEach(x=>x.classList.remove("lit","pick"));
+      $("pt").querySelectorAll(".cell:not(.empty)").forEach(x=>{
+        if(x.dataset.p===p || x.dataset.g===g) x.classList.add("lit");
+      });
+      c.classList.remove("lit"); c.classList.add("pick");
+      $("gro").innerHTML = `<h3>${c.dataset.n} (${c.dataset.s})</h3>
+        <p>Sitting in <strong>period ${p}</strong>, which is row ${p} going across, and <strong>group ${g}</strong>, which is column ${g} going down.</p>
+        <p class="dim small">Everything glowing in that column behaves like ${c.dataset.n} does.</p>`;
+      S.tableClicks++;
+      if(S.tableClicks>=3) hint.textContent = "Now answer the check below.";
+    };
+  });
+  $("k3").appendChild(checkBlock([
+    {q:"A group is a ...",
+     a:["Row going across","Column going down","Diagonal line","Corner of the table"],c:1,
+     why:"Groups are columns. Periods are rows. Group and column both start with a downward feel if that helps."},
+    {q:"Two elements sit in the same column. What can you predict?",
+     a:["They weigh the same","They were discovered together","They react in similar ways","They are the same color"],c:2,
+     why:"Same column means similar outer electrons, which means similar behavior. This is the whole point of the table."}
+  ],"grid",()=>{
+    if(S.tableClicks>=3) gate(true,"");
+    else gate(false,"Tap at least three squares first.");
+  }));
+  gate(false,"Tap at least three squares, then answer the check.");
+};
+
+RENDER.families = ()=>{
+  const cards = Object.entries(FAMILIES).map(([k,f])=>`
+    <div class="fam" data-k="${k}" style="--c:${f.color}">
+      <h3>${f.name}</h3>
+      <div class="where">${f.where}</div>
+      <div class="wordroot">${f.root}</div>
+      <div class="tap">Tap to open</div>
+      <div class="body">
+        <p><strong>Why that name:</strong> ${f.why}</p>
+        <p><strong>What they are like:</strong> ${f.like}</p>
+        <p><strong>Ones you know:</strong> ${f.meet}</p>
+      </div>
+    </div>`).join("");
+  stage.innerHTML = `
+  <div class="stage card">
+    <div class="eyebrow">Step 04</div>
+    <h2>Six families, six names that actually mean something</h2>
+    <p>Nobody sat down and invented these names to sound cool. Each one is a description of what the column does, usually in Greek, Latin, or Arabic. Open all six. You are about to sort elements into these exact bins, so read them like you will need them, because you will.</p>
+    <div class="fam-grid">${cards}</div>
+  </div>`;
+  stage.querySelectorAll(".fam").forEach(c=>{
+    c.onclick = ()=>{
+      c.classList.toggle("open");
+      S.famOpened.add(c.dataset.k);
+      const left = 6 - S.famOpened.size;
+      gate(left<=0, left<=0 ? "Ready to sort." : `${left} more to open.`);
+    };
+  });
+  gate(false,"6 more to open.");
+};
+
+RENDER.sort = ()=>{
+  const bins = Object.entries(FAMILIES).map(([k,f])=>`
+    <div class="bin live" data-f="${k}" style="--c:${f.color}">
+      <h4>${f.name}</h4>
+      <div class="binsub">${f.where}</div>
+      <div class="drops" id="drop-${k}"></div>
+    </div>`).join("");
+  const shuffled = [...SORTSET].sort(()=>Math.random()-0.5);
+  const tiles = shuffled.map(el=>`
+    <div class="tile" data-n="${el.n}" data-f="${el.f}">
+      <div class="num mono">${el.n}</div>
+      <div class="sym">${el.s}</div>
+      <div class="nm">${el.e}</div>
+      <div class="mass">${el.m}</div>
+    </div>`).join("");
+  stage.innerHTML = `
+  <div class="stage card">
+    <div class="eyebrow">Step 05 / the main event</div>
+    <h2>Sort all 18</h2>
+    <p>Tap an element to pick it up, then tap the family it belongs to. Use the clues: the atomic number tells you where it sits, and you just read what each family is like. Wrong answers are not fatal, they just cost you the first try point.</p>
+    <div class="bench" id="bench">${tiles}</div>
+    <div class="bins">${bins}</div>
+    <div class="note" id="sortfb" style="display:none"></div>
+  </div>`;
+
+  let sel = null, tried = new Set();
+  const bench = $("bench");
+  bench.querySelectorAll(".tile").forEach(t=>{
+    t.onclick = ()=>{
+      bench.querySelectorAll(".tile").forEach(x=>x.classList.remove("sel"));
+      t.classList.add("sel"); sel = t;
+      hint.textContent = "Now tap a family bin.";
+    };
+  });
+  stage.querySelectorAll(".bin").forEach(b=>{
+    b.onclick = ()=>{
+      if(!sel){ hint.textContent = "Pick an element first."; return; }
+      const el = SORTSET.find(x=>x.n===+sel.dataset.n);
+      const key = "n"+el.n;
+      if(b.dataset.f === el.f){
+        if(!tried.has(key)) S.sort.firstTry++;
+        S.sort.placed++;
+        $("drop-"+el.f).insertAdjacentHTML("beforeend",`<span class="chip">${el.s}</span>`);
+        sel.remove(); sel = null;
+        const fb = $("sortfb");
+        fb.style.display="block";
+        fb.innerHTML = `<strong>${el.e}</strong> is a ${FAMILIES[el.f].name.toLowerCase().replace(/s$/,"")}. ${FAMILIES[el.f].meet}`;
+        const left = 18 - S.sort.placed;
+        if(left===0){ gate(true,"All 18 sorted. Nice."); fb.innerHTML = "<strong>Done.</strong> Every element is home. Look at the columns you built."; }
+        else hint.textContent = `${left} left.`;
+      } else {
+        if(!tried.has(key)){ S.sort.misses++; tried.add(key); }
+        b.classList.add("bad");
+        setTimeout(()=>b.classList.remove("bad"),320);
+        const fb = $("sortfb");
+        fb.style.display="block";
+        fb.innerHTML = `Not that one. Hint for <strong>${el.e}</strong>: ${hintFor(el)}`;
+      }
+    };
+  });
+  gate(false,"18 left.");
+};
+
+function hintFor(el){
+  const h = {
+    alkali:"it is in the very first column, and it turns water alkaline",
+    alkaline:"second column. Think bones, chalk, bright fireworks",
+    transition:"it is a hard shiny metal from the wide middle block",
+    nonmetal:"living things are built out of it, and it is no metal at all",
+    halogen:"pair it with sodium and you get a salt",
+    noble:"it refuses to react with anything, and it might glow in a sign"
+  };
+  return h[el.f]+".";
+}
+
+RENDER.vocab = ()=>{
+  const terms = [...VOCAB].sort(()=>Math.random()-0.5);
+  const defs = [...VOCAB].sort(()=>Math.random()-0.5);
+  stage.innerHTML = `
+  <div class="stage card">
+    <div class="eyebrow">Step 06</div>
+    <h2>The words, one more time</h2>
+    <p>Tap a word on the left, then tap its meaning on the right. Eight pairs.</p>
+    <div class="match">
+      <div class="mcol" id="mt">${terms.map(t=>`<button class="mitem" data-t="${t[0]}">${t[0]}</button>`).join("")}</div>
+      <div class="mcol" id="md">${defs.map(d=>`<button class="mitem" data-t="${d[0]}">${d[1]}</button>`).join("")}</div>
+    </div>
+  </div>`;
+  let pick = null;
+  const clear = ()=>stage.querySelectorAll("#mt .mitem").forEach(x=>x.classList.remove("sel"));
+  stage.querySelectorAll("#mt .mitem").forEach(b=>{
+    b.onclick = ()=>{ if(b.classList.contains("done")) return; clear(); b.classList.add("sel"); pick=b; hint.textContent="Now tap its meaning."; };
+  });
+  stage.querySelectorAll("#md .mitem").forEach(b=>{
+    b.onclick = ()=>{
+      if(b.classList.contains("done")) return;
+      if(!pick){ hint.textContent="Pick a word on the left first."; return; }
+      if(pick.dataset.t === b.dataset.t){
+        pick.classList.add("done"); pick.classList.remove("sel");
+        pick.disabled = true; b.classList.add("done"); b.disabled = true;
+        S.vocab.done++; pick=null;
+        const left = 8 - S.vocab.done;
+        if(left===0) gate(true,"All eight matched.");
+        else hint.textContent = `${left} pairs left.`;
+      } else {
+        S.vocab.misses++;
+        b.classList.add("miss");
+        setTimeout(()=>b.classList.remove("miss"),320);
+        hint.textContent = "Not that one. Try again.";
+      }
+    };
+  });
+  gate(false,"8 pairs left.");
+};
+
+RENDER.exit = ()=>{
+  const total = S.sort.firstTry + S.vocab.done;
+  stage.innerHTML = `
+  <div class="stage card">
+    <div class="eyebrow">Step 07</div>
+    <h2>Before you go</h2>
+    <div class="scorebox">
+      <div class="stat"><div class="n">${S.sort.firstTry}/18</div><div class="l">Sorted on first try</div></div>
+      <div class="stat"><div class="n">${S.vocab.done}/8</div><div class="l">Words matched</div></div>
+      ${catBars()}
+      <div class="stat"><div class="n" id="tm">${Math.floor(S.elapsed/60)} min</div><div class="l">Time spent</div></div>
+    </div>
+    <p>Answer these in full sentences. Your own words beat copied words every time.</p>
+    <div class="field"><label for="e1">1. What does the atomic number tell you about an atom?</label><textarea id="e1"></textarea></div>
+    <div class="field"><label for="e2">2. Why did chemists name Group 18 the noble gases?</label><textarea id="e2"></textarea></div>
+    <div class="field"><label for="e3">3. Name one element from today and one real place it shows up in your life.</label><textarea id="e3"></textarea></div>
+  </div>
+
+  <div class="stage card hw">
+    <div class="tag">Homework / due next class</div>
+    <h2>Build an element trading card</h2>
+    <p>On one sheet of unlined paper, front and back. Pick any element from 1 to 36. No two people in your period may pick the same one, so claim yours fast.</p>
+    <ol>
+      <li><strong>Front side, drawn big.</strong> Copy the square exactly as the periodic table shows it: atomic number in the top left corner, chemical symbol large in the center, full name under it, atomic mass at the bottom.</li>
+      <li><strong>Address.</strong> Write its period and its group. If its group has a family name, write that too.</li>
+      <li><strong>Family traits.</strong> In two sentences, explain what its family is like and where the family name comes from.</li>
+      <li><strong>In the wild.</strong> Find one real object or living thing that contains your element. Draw it or describe it in a sentence.</li>
+      <li><strong>Neighbors.</strong> Name the element directly above yours and the one directly below. Why should those three act alike?</li>
+      <li><strong>One question.</strong> Write one thing about your element you could not figure out and want answered in class.</li>
+    </ol>
+    <p class="small dim">Bring the card to class ready to trade. We are building a class table on the back wall out of them.</p>
+    <button class="btn-ghost noprint" onclick="window.print()" style="margin-top:6px">Print this homework</button>
+  </div>
+
+  <div class="stage card">
+    <h3>Turn it in</h3>
+    <p class="small dim">Press Turn in below. Wait for the green confirmation before you close the tab.</p>
+    <div class="status" id="status"></div>
+    <button class="btn-ghost noprint" id="backup" style="display:none;margin-top:12px">Download my answers instead</button>
+  </div>`;
+
+  const check = ()=>{
+    S.exit.q1 = $("e1").value.trim();
+    S.exit.q2 = $("e2").value.trim();
+    S.exit.q3 = $("e3").value.trim();
+    const ok = S.exit.q1.length>8 && S.exit.q2.length>8 && S.exit.q3.length>8;
+    gate(ok, ok ? "Ready to turn in." : "Answer all three questions.");
+  };
+  ["e1","e2","e3"].forEach(i=>$(i).oninput = check);
+  $("backup").onclick = download;
+  check();
+};
+
+/* ---------------- scoring ---------------- */
+function catScores(){
+  const checkVals = Object.values(S.checks);
+  const checkTotal = checkVals.length;
+  const checkRight = checkVals.filter(v=>v==="correct").length;
+  const checkPct = checkTotal ? Math.round(checkRight/checkTotal*100) : 0;
+  const sortPct = Math.round(S.sort.firstTry/18*100);
+  const vocabAttempts = S.vocab.done + S.vocab.misses;
+  const vocabPct = vocabAttempts ? Math.round(S.vocab.done/vocabAttempts*100) : 0;
+  return {checkRight, checkTotal, checkPct, sortPct, vocabPct};
+}
+
+/* ---------------- submit ---------------- */
+function payload(){
+  const c = catScores();
+  return {
+    timestamp:new Date().toISOString(),
+    submittedAt:new Date().toLocaleString(),
+    name:S.name,
+    teacher:S.teacher,
+    classPeriod:S.period,
+    checkQuestionsPct:c.checkPct, checkCorrect:c.checkRight, checkTotal:c.checkTotal,
+    sortAccuracyPct:c.sortPct,
+    vocabAccuracyPct:c.vocabPct,
+    minutesSpent:Math.round(S.elapsed/60*10)/10,
+    sortedFirstTry:S.sort.firstTry,
+    sortMisses:S.sort.misses,
+    vocabMatched:S.vocab.done,
+    vocabMisses:S.vocab.misses,
+    checkBasics1:S.checks.basics_1||"", checkBasics2:S.checks.basics_2||"",
+    checkTile1:S.checks.tile_1||"", checkTile2:S.checks.tile_2||"", checkTile3:S.checks.tile_3||"",
+    checkGrid1:S.checks.grid_1||"", checkGrid2:S.checks.grid_2||"",
+    exit1_atomicNumber:S.exit.q1,
+    exit2_nobleGases:S.exit.q2,
+    exit3_elementInLife:S.exit.q3
+  };
+}
+
+function download(){
+  const p = payload();
+  const txt = Object.entries(p).map(([k,v])=>k+": "+v).join("\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([txt],{type:"text/plain"}));
+  a.download = "ElementSort_"+S.name.replace(/\s+/g,"_")+".txt";
+  a.click();
+}
+
+async function submit(){
+  const st = $("status");
+  nextBtn.disabled = true;
+  nextBtn.textContent = "Sending...";
+  st.className = "status ok";
+  st.textContent = "Sending your work to "+S.teacher+"...";
+  try{
+    if(!SCRIPT_URL || SCRIPT_URL.indexOf("script.google.com")===-1) throw new Error("no url");
+    await fetch(SCRIPT_URL,{
+      method:"POST",
+      mode:"no-cors",
+      headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body:JSON.stringify(payload())
+    });
+    S.sent = true;
+    st.className = "status ok";
+    st.innerHTML = "<strong>Turned in.</strong> "+S.name+", your work is with "+S.teacher+". You can close this tab. Homework is above if you want to print it.";
+    nextBtn.textContent = "Turned in";
+    hint.textContent = "";
+  }catch(e){
+    st.className = "status err";
+    st.innerHTML = "<strong>That did not send.</strong> Press the download button below, then upload the file to the Classroom assignment.";
+    $("backup").style.display = "";
+    nextBtn.textContent = "Try again";
+    nextBtn.disabled = false;
+  }
+}
+
+function catBars(){
+  const c = catScores();
+  const rows = [["Check questions",c.checkPct,"reading tiles, rows, columns"],["Element sort",c.sortPct,"placing elements in families"],["Vocabulary",c.vocabPct,"matching the words"]];
+  return '<div class="catwrap"><h3 style="margin:14px 0 6px;font-size:16px">How you did in each skill</h3>'+rows.map(([t,a,d])=>{
+    const col = a>=80?"#2F7A45":a>=60?"#C48A14":"#B8372F";
+    return `<div class="catbar"><div class="lab"><span>${t}</span><span style="color:${col}">${a}%</span></div><div class="track"><div class="fill" style="width:${a}%;background:${col}"></div></div><small>${d}</small></div>`;
+  }).join("")+'<p style="font-size:13px;color:#6E6657;margin-top:6px">The lowest bar is the skill to review.</p></div>';
+}
+
+/* ---------------- boot ---------------- */
+go(0);
+</script>
+</body>
+</html>
