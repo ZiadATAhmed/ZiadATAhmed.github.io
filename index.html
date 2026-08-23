@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ziad Ahmed - Portfolio</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .container {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 800px;
+      padding: 40px;
+    }
+    
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 2.5em;
+    }
+    
+    .subtitle {
+      color: #666;
+      margin-bottom: 40px;
+      font-size: 1.1em;
+    }
+    
+    .projects {
+      display: grid;
+      gap: 20px;
+    }
+    
+    .project-card {
+      background: #f8f9fa;
+      border: 2px solid #e9ecef;
+      border-radius: 8px;
+      padding: 25px;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+    
+    .project-card:hover {
+      border-color: #667eea;
+      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+      transform: translateY(-2px);
+    }
+    
+    .project-card h2 {
+      color: #667eea;
+      margin-bottom: 8px;
+      font-size: 1.5em;
+    }
+    
+    .project-card p {
+      color: #666;
+      line-height: 1.6;
+      margin-bottom: 15px;
+    }
+    
+    .project-card .badge {
+      display: inline-block;
+      background: #667eea;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.85em;
+      font-weight: 600;
+    }
+    
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #e9ecef;
+      color: #999;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>👋 Ziad Ahmed</h1>
+    <p class="subtitle">Projects & Interactive Experiences</p>
+    
+    <div class="projects">
+      <a href="checkpoint_game.html" class="project-card">
+        <h2>🦊 Wildlife Crossing Checkpoint</h2>
+        <p>An interactive educational game where you work as an officer at a wildlife crossing checkpoint. Learn to distinguish between quantitative observations, qualitative observations, and inferences while deciding which animals can cross based on their permits and destination.</p>
+        <span class="badge">Interactive Game</span>
+      </a>
+    </div>
+    
+    <footer>
+      <p>© 2024 Ziad Ahmed. All rights reserved.</p>
+    </footer>
+  </div>
+</body>
+</html>
