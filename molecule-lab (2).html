@@ -1,0 +1,1886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Molecule Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bench:#E3E9E2; --bench-line:#CBD5CA; --panel:#FBFCFA;
+  --ink:#16231C; --ink-soft:#5A6B60; --steel:#7C8B82; --bond:#8A9A90;
+  --signal:#F0632B; --signal-dark:#C64A17; --good:#2E9E63;
+  --proton:#E8503B; --neutron:#79877F; --electron:#2E63D8;
+  --radius:14px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bench);
+  background-image:linear-gradient(var(--bench-line) 1px,transparent 1px),linear-gradient(90deg,var(--bench-line) 1px,transparent 1px);
+  background-size:28px 28px;
+  color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  font-size:16px;line-height:1.5;min-height:100vh;
+}
+h1,h2,h3,.display,button,.formula,.big{font-family:"Bricolage Grotesque",system-ui,sans-serif}
+.wrap{max-width:1100px;margin:0 auto;padding:18px 16px 10px}
+header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+.brand{display:flex;align-items:baseline;gap:10px;margin-right:auto}
+.brand h1{font-size:26px;font-weight:800;letter-spacing:-.02em;margin:0}
+.brand span{color:var(--ink-soft);font-size:14px}
+nav{display:flex;gap:3px;background:var(--panel);border:2px solid var(--ink);border-radius:999px;padding:4px;overflow-x:auto;max-width:100%}
+nav button{font-size:15px;font-weight:700;border:0;background:transparent;color:var(--ink);padding:7px 13px;border-radius:999px;cursor:pointer;white-space:nowrap}
+nav button[aria-selected="true"]{background:var(--ink);color:var(--panel)}
+.sound{border:2px solid var(--ink);background:var(--panel);border-radius:999px;padding:8px 14px;font-size:14px;font-weight:700;cursor:pointer;color:var(--ink)}
+:focus-visible{outline:3px solid var(--signal);outline-offset:2px}
+.card{background:var(--panel);border:2px solid var(--ink);border-radius:var(--radius);box-shadow:0 2px 0 var(--bench-line)}
+.lead{margin:0 0 12px;font-size:16px;color:var(--ink-soft);max-width:68ch}
+sub{font-size:.7em} sup{font-size:.7em}
+svg.stage{display:block;width:100%;height:auto;touch-action:manipulation}
+.stage-wrap{position:relative;overflow:hidden}
+.controls{display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap}
+.go{background:var(--signal);color:#fff;border:2px solid var(--ink);border-radius:12px;padding:12px 22px;font-size:17px;font-weight:800;cursor:pointer;box-shadow:0 3px 0 var(--signal-dark)}
+.go:active{transform:translateY(3px);box-shadow:none}
+.go:disabled{background:var(--bench-line);color:var(--steel);box-shadow:none;border-color:var(--steel);cursor:not-allowed}
+.ghost{background:transparent;border:2px solid var(--steel);color:var(--ink-soft);border-radius:12px;padding:11px 16px;font-weight:700;font-size:15px;cursor:pointer}
+
+/* teaching blocks */
+.teach{padding:16px 18px;margin-bottom:12px}
+.teach h2{margin:0 0 6px;font-size:21px}
+.teach h3{margin:14px 0 4px;font-size:17px}
+.teach p{margin:8px 0 0;font-size:15.5px;max-width:72ch}
+.teach p:first-of-type{margin-top:4px}
+.teach ul{margin:8px 0 0;padding-left:20px;font-size:15.5px;max-width:72ch}
+.teach li{margin:4px 0}
+.teach svg{display:block;width:100%;height:auto;margin:12px 0 2px}
+.caption{font-size:13.5px;color:var(--ink-soft);margin:2px 0 0;font-style:normal}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.keyline{border-left:8px solid var(--signal);padding-left:12px;margin-top:14px}
+.keyline p{margin:0;font-size:15.5px}
+
+/* atom tab */
+.atom-cols{display:grid;grid-template-columns:1fr 232px 1fr;gap:12px;align-items:start}
+.readout{padding:15px}
+.readout .big{font-size:26px;font-weight:800;line-height:1.1;margin:0}
+.readout .iso{color:var(--ink-soft);font-weight:700;margin:2px 0 10px;font-family:"Bricolage Grotesque"}
+.row{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px dashed var(--bench-line);font-size:15px}
+.row b{font-family:"Bricolage Grotesque";font-size:16px;text-align:right}
+.verdict{margin-top:10px;padding:10px 12px;border-radius:10px;font-size:14.5px;background:#EAF5EE;border-left:6px solid var(--good)}
+.verdict.hot{background:#FDEAE0;border-left-color:var(--signal)}
+.verdict.warn{background:#F3EFDF;border-left-color:#C79A1E}
+.elcard{border:3px solid var(--ink);border-radius:12px;padding:12px;position:relative;min-height:230px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
+.elcard .z{position:absolute;top:8px;left:11px;font-family:"Bricolage Grotesque";font-weight:800;font-size:19px}
+.elcard .qbadge{position:absolute;top:8px;right:11px;font-family:"Bricolage Grotesque";font-weight:800;font-size:17px;background:var(--panel);border:2px solid var(--ink);border-radius:999px;padding:1px 9px}
+.elcard .sym{font-family:"Bricolage Grotesque";font-weight:800;font-size:74px;line-height:.95;margin:6px 0 0}
+.elcard .nm{font-family:"Bricolage Grotesque";font-weight:700;font-size:17px}
+.elcard .mass{font-size:13px;margin-top:6px;line-height:1.35}
+.elcard .mass b{font-family:"Bricolage Grotesque";font-size:17px}
+.savebar{margin-top:10px;display:flex;gap:8px;flex-direction:column}
+.counters{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+.counter{padding:10px;text-align:center}
+.counter .lbl{font-size:13px;color:var(--ink-soft);display:flex;align-items:center;justify-content:center;gap:6px}
+.dot{width:13px;height:13px;border-radius:50%;display:inline-block;border:1.5px solid rgba(0,0,0,.4)}
+.counter .val{font-family:"Bricolage Grotesque";font-size:26px;font-weight:800;line-height:1.1;margin:2px 0 6px}
+.pm{display:flex;gap:6px;justify-content:center}
+.pm button{width:38px;height:34px;border:2px solid var(--ink);background:var(--panel);border-radius:9px;font-size:18px;font-weight:800;cursor:pointer;color:var(--ink)}
+.pm button:disabled{color:var(--bench-line);border-color:var(--bench-line);cursor:not-allowed}
+
+/* shelf */
+.shelf{padding:12px;margin-top:12px}
+.shelf h3{margin:0 0 8px;font-size:16px}
+.shelfrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.sitem{border:2px solid var(--ink);border-radius:11px;background:var(--panel);padding:5px 9px;display:flex;align-items:center;gap:7px;font-weight:700}
+.sitem .ball{width:28px;height:28px;border-radius:50%;border:2px solid rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;font-family:"Bricolage Grotesque"}
+.sitem .n{font-family:"Bricolage Grotesque";font-size:16px}
+.sitem button{border:0;background:transparent;color:var(--steel);font-size:17px;cursor:pointer;line-height:1;padding:0 2px}
+.muted{color:var(--ink-soft);font-size:15px;margin:0}
+.stockbox{margin-top:10px;padding:12px;border:2px dashed var(--steel);border-radius:12px}
+.stockbox h4{margin:0 0 6px;font-size:15px;font-family:"Bricolage Grotesque"}
+.stockrow{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+input[type=text],input[type=password]{font-family:inherit;font-size:15px;padding:9px 11px;border:2px solid var(--ink);border-radius:11px;background:var(--panel);color:var(--ink);font-weight:600;min-width:0}
+
+/* bond tab */
+.picker{padding:12px;margin-bottom:12px}
+.picker h3{margin:0 0 8px;font-size:16px}
+.chips{display:flex;gap:7px;flex-wrap:wrap}
+.echip{border:2px solid var(--ink);background:var(--panel);border-radius:11px;padding:6px 10px 5px;cursor:pointer;text-align:center;min-width:62px;color:var(--ink)}
+.echip .ball{width:32px;height:32px;border-radius:50%;margin:0 auto 3px;border:2px solid rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;font-family:"Bricolage Grotesque"}
+.echip small{display:block;font-size:11px;color:var(--ink-soft);line-height:1.2}
+.echip.sel{background:#FDEAE0;border-color:var(--signal);box-shadow:0 0 0 3px rgba(240,99,43,.25)}
+.explain{padding:14px;margin-top:12px;border-left:8px solid var(--good)}
+.explain.none{border-left-color:var(--steel)}
+.explain.part{border-left-color:#C79A1E}
+.explain h3{margin:0 0 4px;font-size:20px}
+.explain p{margin:8px 0 0;font-size:15px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--ink-soft);padding:10px 14px;margin-top:10px}
+.legend span{display:flex;align-items:center;gap:6px}
+
+/* bench */
+.mission{display:flex;align-items:center;gap:12px;padding:10px 14px;margin-bottom:12px;flex-wrap:wrap}
+.mission .step{background:var(--ink);color:var(--panel);font-weight:700;font-size:13px;padding:3px 10px;border-radius:999px;white-space:nowrap}
+.mission p{margin:0;font-size:16px}
+.mission .hintbtn{margin-left:auto;border:2px solid var(--steel);background:transparent;color:var(--ink-soft);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:700;cursor:pointer}
+.hinttext{width:100%;margin:4px 0 0;color:var(--ink-soft);font-size:14px}
+.shake{animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-9px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(4px)}}
+.atomnode{cursor:pointer}
+.atomnode.locked{cursor:default}
+.pos{transition:transform .8s cubic-bezier(.22,1,.36,1)}
+.bob{animation:bob 4.4s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(-4px)}50%{transform:translateY(4px)}}
+.bondline{transition:opacity .45s ease .4s}
+.flyer{transition:transform .9s cubic-bezier(.5,0,.3,1)}
+.empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--ink-soft);font-size:16px;padding:24px;pointer-events:none}
+@media (prefers-reduced-motion:reduce){.bob{animation:none}.pos,.flyer{transition:none}.shake{animation:none}}
+.rack{margin-top:12px;padding:12px}
+.rack-row{display:flex;gap:9px;overflow-x:auto;padding-bottom:4px}
+.tile{flex:0 0 auto;width:92px;border:2px solid var(--ink);border-radius:12px;background:var(--panel);padding:8px 4px 6px;cursor:pointer;text-align:center;position:relative;color:var(--ink)}
+.tile:disabled{opacity:.4;cursor:not-allowed}
+.tile .ball{width:38px;height:38px;border-radius:50%;margin:0 auto 5px;border:2px solid rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;font-family:"Bricolage Grotesque"}
+.tile .nm{font-size:12px;color:var(--ink-soft);display:block;line-height:1.2}
+.tile .va{font-size:11px;color:var(--ink);display:block;font-weight:700}
+.tile .ct{position:absolute;top:-9px;right:-9px;min-width:24px;height:24px;border-radius:999px;background:var(--ink);color:#fff;font-weight:800;font-size:13px;border:2px solid var(--panel);display:flex;align-items:center;justify-content:center;font-family:"Bricolage Grotesque"}
+.live{margin-left:auto;font-weight:700;font-size:17px}
+.live .formula{font-size:19px}
+.result{padding:14px;margin-top:12px;border-left:8px solid var(--good)}
+.result.miss{border-left-color:var(--signal)}
+.result h3{margin:0 0 2px;font-size:20px}
+.result p{margin:6px 0 0;font-size:15px}
+.result .formula{font-size:15px;color:var(--ink-soft);font-weight:700}
+
+/* collection */
+h2.section{font-size:20px;margin:24px 0 8px}
+.filters{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px}
+.filters button{border:2px solid var(--ink);background:var(--panel);border-radius:999px;padding:6px 13px;font-size:14px;font-weight:700;cursor:pointer;color:var(--ink)}
+.filters button[aria-pressed="true"]{background:var(--ink);color:var(--panel)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:12px}
+.mol{padding:12px;position:relative}
+.mol svg{width:100%;height:104px;display:block}
+.mol h3{margin:6px 0 0;font-size:18px}
+.mol .formula{color:var(--ink-soft);font-weight:700;font-size:15px}
+.mol p{margin:6px 0 0;font-size:14px;line-height:1.45}
+.mol .own{position:absolute;top:8px;right:8px;background:var(--ink);color:var(--panel);font-family:"Bricolage Grotesque";font-weight:800;font-size:13px;border-radius:999px;padding:2px 9px}
+.mol .kind{display:inline-block;margin-top:6px;font-size:12px;font-weight:700;border-radius:999px;padding:2px 9px;border:2px solid var(--bench-line);color:var(--ink-soft)}
+.mol.locked{background:repeating-linear-gradient(45deg,var(--panel),var(--panel) 10px,#F2F4F1 10px,#F2F4F1 20px)}
+.mol.locked .qm{height:104px;display:flex;align-items:center;justify-content:center;font-size:40px;color:var(--bench-line);font-family:"Bricolage Grotesque";font-weight:800}
+.tally{margin:0 0 12px;font-size:16px}
+
+/* quiz */
+.quiz{padding:18px;max-width:660px}
+.quiz h2{margin:0 0 4px;font-size:22px}
+.prog{color:var(--ink-soft);font-size:14px;margin:0 0 14px}
+.q{font-size:19px;font-weight:700;margin:0 0 6px;font-family:"Bricolage Grotesque"}
+.subject{font-family:"Bricolage Grotesque";font-size:32px;font-weight:800;margin:0 0 2px}
+.opts{display:grid;gap:8px;margin-top:10px}
+.opt{text-align:left;padding:12px 14px;border:2px solid var(--ink);border-radius:12px;background:var(--panel);font-size:16px;cursor:pointer;color:var(--ink);font-weight:600}
+.opt.right{background:#DEF3E7;border-color:var(--good)}
+.opt.wrong{background:#FCE4DA;border-color:var(--signal)}
+.opt:disabled{cursor:default}
+.why{margin:14px 0 0;font-size:15px;color:var(--ink-soft)}
+
+/* groups tab */
+.gwrap{padding:14px;margin-bottom:12px;overflow-x:auto}
+.ggrid{display:grid;grid-template-columns:repeat(18,minmax(42px,1fr));gap:4px;min-width:780px}
+.ghead{border:2px solid var(--ink);background:var(--panel);border-radius:8px;font-family:"Bricolage Grotesque";
+  font-weight:800;font-size:13px;padding:6px 0;cursor:pointer;color:var(--ink);text-align:center}
+.ghead.off{border-color:var(--bench-line);color:var(--bench-line);cursor:default;background:transparent}
+.ghead.on{background:var(--ink);color:var(--panel)}
+.gcell{aspect-ratio:1/1;border-radius:7px;border:2px solid transparent;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;line-height:1;padding:0;cursor:pointer}
+.gcell b{font-family:"Bricolage Grotesque";font-size:16px;font-weight:800}
+.gcell i{font-style:normal;font-size:9px;opacity:.8;font-weight:700}
+.gcell.dim{opacity:.28}
+.gcell.on{border-color:var(--signal);box-shadow:0 0 0 3px rgba(240,99,43,.28)}
+.gblank{aspect-ratio:1/1;border-radius:7px;border:2px dashed var(--bench-line)}
+.grow-label{display:flex;gap:10px;align-items:center;margin:10px 0 0;font-size:13.5px;color:var(--ink-soft)}
+.gdetail{padding:16px 18px;margin-top:12px;border-left:8px solid var(--signal)}
+.gdetail h3{margin:0;font-size:21px}
+.gdetail .sub{color:var(--ink-soft);font-weight:700;font-family:"Bricolage Grotesque";margin:2px 0 0}
+.gdetail p{margin:10px 0 0;font-size:15.5px;max-width:72ch}
+.gdetail svg{display:block;width:100%;height:auto;margin:10px 0 0}
+
+/* periodic minimap */
+.ptwrap{margin-top:22px;padding:12px}
+.pthead{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.pthead h3{margin:0;font-size:16px}
+.pthead p{margin:0;font-size:13px;color:var(--ink-soft);flex:1;min-width:200px}
+.ptscroll{overflow-x:auto;margin-top:10px}
+.ptgrid{display:grid;grid-template-columns:repeat(18,minmax(38px,1fr));gap:3px;min-width:700px}
+.ptcell{aspect-ratio:1/1;border-radius:6px;border:2px solid transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;padding:0;line-height:1}
+.ptcell b{font-family:"Bricolage Grotesque";font-size:15px;font-weight:800}
+.ptcell i{font-style:normal;font-size:9px;opacity:.8;font-weight:700}
+.ptcell:hover{border-color:var(--ink)}
+.ptcell.now{border-color:var(--signal);box-shadow:0 0 0 3px rgba(240,99,43,.3)}
+.ptgroups{display:grid;grid-template-columns:repeat(18,minmax(38px,1fr));gap:3px;min-width:700px;margin-bottom:3px}
+.ptgroups span{text-align:center;font-size:10px;color:var(--ink-soft);font-weight:700}
+
+/* dna bar */
+.dnabar{position:sticky;bottom:0;z-index:30;background:var(--ink);color:var(--panel);border-radius:14px 14px 0 0;padding:10px 14px;display:flex;gap:9px;align-items:center;flex-wrap:wrap;box-shadow:0 -3px 0 rgba(0,0,0,.12)}
+.dnabar strong{font-family:"Bricolage Grotesque";font-size:15px;white-space:nowrap}
+.dnabar input{flex:1;min-width:150px;border-color:var(--panel)}
+.dnabar button{border:2px solid var(--panel);background:transparent;color:var(--panel);border-radius:11px;padding:9px 14px;font-weight:700;font-size:14px;cursor:pointer}
+.dnabar button.prim{background:var(--signal);border-color:var(--signal);color:#fff}
+.dnabar .note{font-size:12.5px;opacity:.8;width:100%;margin:0}
+footer{margin-top:20px;color:var(--ink-soft);font-size:13px;text-align:center;padding-bottom:6px}
+@media (max-width:900px){.atom-cols{grid-template-columns:1fr 200px}.atom-cols .readout{grid-column:1/-1}.two{grid-template-columns:1fr}}
+@media (max-width:640px){.brand h1{font-size:22px}.brand span{display:none}nav button{padding:7px 10px;font-size:14px}.atom-cols{grid-template-columns:1fr}.live{width:100%;margin-left:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><h1>Molecule Lab</h1><span>elements, bonds, compounds</span></div>
+    <nav role="tablist">
+      <button role="tab" id="tab-atom" aria-selected="true">Atom</button>
+      <button role="tab" id="tab-groups" aria-selected="false">Groups</button>
+      <button role="tab" id="tab-bond" aria-selected="false">Bond</button>
+      <button role="tab" id="tab-build" aria-selected="false">Build</button>
+      <button role="tab" id="tab-sort" aria-selected="false">Sort it</button>
+      <button role="tab" id="tab-quiz" aria-selected="false">Quiz</button>
+    </nav>
+    <button class="sound" id="sound">Sound on</button>
+  </header>
+
+  <!-- ================= ATOM ================= -->
+  <section id="view-atom">
+    <div class="card teach">
+      <h2>An element is a promise about protons</h2>
+      <p>There are only about 90 kinds of atom that occur naturally, and every single thing you have ever touched is built out of them. What separates one kind from another is not size or color or how it smells. It is the number of protons in the nucleus. Six protons is carbon. Always. Add a seventh and it stops being carbon and becomes nitrogen instead.</p>
+      <p>That is what an element is: a substance made of only one kind of atom. Neutrons can vary, and you get isotopes of the same element. Electrons can vary, and you get ions of the same element. The proton count is the part that cannot move.</p>
+      <svg viewBox="0 0 700 150" role="img" aria-label="Three atoms with different proton counts are three different elements">
+        <g id="teach-elements"></g>
+      </svg>
+      <p class="caption">Same picture three times, red for protons and grey for neutrons. Only the proton count changes, and that is enough to change the element.</p>
+      <div class="keyline"><p>Build an atom below. Watch the element card change the moment you add or remove a proton, and watch it stay put when you add a neutron.</p></div>
+    </div>
+    <p class="lead">Add protons and neutrons to the nucleus and electrons to the shells. When you have an atom you like, save it to the shelf so you can bond with it later.</p>
+    <div class="atom-cols">
+      <div class="card stage-wrap"><svg class="stage" id="atomStage" viewBox="0 0 520 440" aria-label="Atom under construction"></svg></div>
+      <div>
+        <div class="card elcard" id="elcard"></div>
+        <div class="savebar">
+          <button class="go" id="saveAtom">Save to shelf</button>
+          <button class="ghost" id="clearAtom">Empty the builder</button>
+        </div>
+      </div>
+      <div class="card readout" id="readout"></div>
+    </div>
+    <div class="counters">
+      <div class="card counter">
+        <div class="lbl"><i class="dot" style="background:var(--proton)"></i> Protons</div>
+        <div class="val" id="pVal">0</div>
+        <div class="pm"><button id="pMinus">&minus;</button><button id="pPlus">+</button></div>
+      </div>
+      <div class="card counter">
+        <div class="lbl"><i class="dot" style="background:var(--neutron)"></i> Neutrons</div>
+        <div class="val" id="nVal">0</div>
+        <div class="pm"><button id="nMinus">&minus;</button><button id="nPlus">+</button></div>
+      </div>
+      <div class="card counter">
+        <div class="lbl"><i class="dot" style="background:var(--electron)"></i> Electrons</div>
+        <div class="val" id="eVal">0</div>
+        <div class="pm"><button id="eMinus">&minus;</button><button id="ePlus">+</button></div>
+      </div>
+    </div>
+    <div class="card shelf">
+      <h3>Your shelf</h3>
+      <div class="shelfrow" id="shelfAtom"></div>
+      <div class="stockbox">
+        <h4>Teacher stock</h4>
+        <p class="muted" id="stockMsg">Enter the class code to open the stockroom.</p>
+        <div class="controls" id="stockGate">
+          <input type="password" id="stockPass" placeholder="class code" autocomplete="off">
+          <button class="ghost" id="stockGo">Unlock</button>
+        </div>
+        <div class="stockrow" id="stockRow" hidden></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= GROUPS ================= -->
+  <section id="view-groups" hidden>
+    <div class="card teach">
+      <h2>The table is arranged by behavior, not by size</h2>
+      <p>The periodic table looks like a filing cabinet, and students usually treat it that way. It is not. It is sorted so that atoms which behave the same way end up in the same column, and the reason is sitting in the outer shell.</p>
+      <p>Every element in a column has the same number of outer electrons. Same number of outer electrons means the same gap to fill, which means the same bonding behavior. Sodium and lithium both hand over one electron. Fluorine and chlorine both grab one. That is why the column, called a group, is the most useful thing on the table.</p>
+      <div class="keyline"><p>Groups run down. Periods run across, and a period number tells you how many shells the atom is using. Row 1 has one shell, row 2 has two, row 3 has three.</p></div>
+    </div>
+
+    <div class="card gwrap">
+      <div class="ggrid" id="gGrid"></div>
+      <div class="grow-label">Tap a column number or any element to see what that group does.</div>
+    </div>
+
+    <div class="card gdetail" id="gDetail"></div>
+
+    <div class="card teach">
+      <h3>Metals on the left, nonmetals on the right</h3>
+      <p>There is a second split running through the table, and it decides which kind of bond you get. Metals sit on the left and give electrons away. Nonmetals sit on the right and take or share them. A metal meeting a nonmetal gives you an ionic bond. Two nonmetals give you a covalent bond. Two metals give you the shared electron pool that makes a wire bend instead of snap.</p>
+      <p>So you can predict the bond before you build anything. Look up both elements, check which side of the table each one sits on, and you already know the answer.</p>
+    </div>
+  </section>
+
+  <!-- ================= BOND ================= -->
+  <section id="view-bond" hidden>
+    <div class="card teach">
+      <h2>Why atoms bond at all</h2>
+      <p>Atoms are not trying to be friendly. A bond forms for one reason: the atoms involved end up in a lower energy arrangement together than they were apart. In middle school terms, every atom is chasing a full outer shell, because a full outer shell is the settled, low energy state.</p>
+      <p>The first shell holds 2 electrons. The next two hold 8 each. Helium and neon already have a full outer shell, which is why they sit in the corner of the room and react with nothing. Every other atom on this page has a gap, and that gap is the whole reason chemistry happens.</p>
+      <svg viewBox="0 0 700 204" role="img" aria-label="Energy drops when two atoms bond">
+        <g id="teach-energy"></g>
+      </svg>
+      <p class="caption">Roll the ball toward the dip. Bonded is downhill, and that is why the bond holds.</p>
+    </div>
+
+    <div class="card teach">
+      <h2>Three ways to fill a shell</h2>
+      <p>An atom with a gap has options. Which one it takes depends almost entirely on whether it is a metal.</p>
+      <svg viewBox="0 0 700 272" role="img" aria-label="Ionic, covalent and metallic bonding compared">
+        <g id="teach-bondtypes"></g>
+      </svg>
+      <h3>Ionic: hand it over</h3>
+      <p>A metal like sodium has one lonely outer electron sitting above a shell that is already full. Giving it away is cheaper than collecting seven more. A nonmetal like chlorine is one short, so it takes it. Now one particle is positive, one is negative, and the pull between opposite charges is the bond. Those charged particles are called ions.</p>
+      <h3>Covalent: share it</h3>
+      <p>Two nonmetals cannot do that. Neither one will give an electron up, so instead they overlap and share a pair. Here is the part students miss: a shared pair is counted by both atoms. Nobody loses anything and both shells read as fuller.</p>
+      <h3>Metallic: pool it</h3>
+      <p>Two metals together do something stranger. They all release their outer electrons into a shared pool that drifts through the whole lump. That is why metals conduct electricity, why they bend instead of shattering, and why a copper wire is not made of molecules.</p>
+    </div>
+
+    <div class="card teach">
+      <h2>One bond, two bonds, three bonds</h2>
+      <p>Atoms can share more than one pair. Oxygen is two electrons short, so two oxygen atoms share two pairs and make a double bond. Nitrogen is three short, so nitrogen gas has a triple bond. More shared pairs pulls the atoms closer and makes the bond harder to break.</p>
+      <svg viewBox="0 0 700 200" role="img" aria-label="Single, double and triple bonds compared by length and strength">
+        <g id="teach-order"></g>
+      </svg>
+      <p class="caption">That triple bond in the air around you is one of the strongest in chemistry, which is why plants cannot use nitrogen straight from the atmosphere.</p>
+    </div>
+
+    <div class="card teach">
+      <h2>Sharing is rarely equal</h2>
+      <p>Two identical atoms share a pair right down the middle. Two different atoms almost never do. Oxygen pulls harder on electrons than hydrogen does, so in water the shared pairs sit closer to the oxygen. The oxygen end goes slightly negative and the hydrogen ends go slightly positive.</p>
+      <svg viewBox="0 0 700 190" role="img" aria-label="Equal sharing in hydrogen gas versus unequal sharing in water">
+        <g id="teach-polar"></g>
+      </svg>
+      <p>That small lopsidedness is why water sticks to itself, climbs up a plant stem, dissolves salt, and beads on a leaf. Ionic and covalent are not really two boxes. They are two ends of a slider, and polar covalent lives in between.</p>
+    </div>
+
+    <h2 class="section">Try it</h2>
+    <p class="lead">A practice bench, so nothing gets used up here. Pick any two atoms and watch what the outer electrons do.</p>
+    <div class="card picker"><h3>Pick two atoms</h3><div class="chips" id="bondChips"></div></div>
+    <div class="card stage-wrap"><svg class="stage" id="bondStage" viewBox="0 0 640 380" aria-label="Two atoms bonding"></svg></div>
+    <div class="card legend">
+      <span><i class="dot" style="background:var(--electron)"></i> outer shell electron</span>
+      <span><i class="dot" style="background:#F0632B"></i> electron that moved or is shared</span>
+      <span>The colored circle holds the nucleus and any inner shells. The thin ring is the outer shell.</span>
+    </div>
+    <div class="controls">
+      <button class="go" id="bondGo" disabled>Bond them</button>
+      <button class="ghost" id="bondReset">Start over</button>
+    </div>
+    <div id="bondExplain" hidden></div>
+  </section>
+
+  <!-- ================= BUILD ================= -->
+  <section id="view-build" hidden>
+    <div class="card teach">
+      <h2>Compound and molecule are not the same word</h2>
+      <p>Students mix these two up more than any other pair in this unit, and it is not carelessness. It is that the two words answer different questions, and nobody says so out loud.</p>
+      <ul>
+        <li><b>Compound</b> answers <i>what is in it</i>. Two or more different elements chemically bonded together, in a fixed ratio.</li>
+        <li><b>Molecule</b> answers <i>how it is held together</i>. A set of atoms bonded into a separate unit that you could, in principle, pick up on its own.</li>
+      </ul>
+      <p>Because they answer different questions, all four combinations exist. That is the whole difficulty, and the grid below is the fastest way to see it.</p>
+      <svg viewBox="0 0 700 320" role="img" aria-label="Grid showing that compound and molecule are separate labels">
+        <g id="teach-matrix"></g>
+      </svg>
+      <p>Oxygen gas is a molecule but not a compound, because both atoms are the same element. Table salt is a compound but not a molecule, because there is no unit of two atoms in there to point at. Water is both. Copper is neither.</p>
+      <div class="keyline"><p>A quick test. Ask whether the atoms are different kinds, and you have answered element or compound. Ask whether you could lift out one repeating unit, and you have answered molecule or not. Answer both questions every time and the confusion goes away.</p></div>
+
+      <h3>Where mixtures come in</h3>
+      <p>A compound is bonded and fixed. A mixture is neither. Air is not a compound, because the nitrogen and oxygen are not bonded to each other and the ratio changes from one room to another. Boil salt water and the salt is still salt, because nothing was ever bonded in the first place.</p>
+      <svg viewBox="0 0 700 240" role="img" aria-label="Jars showing an element, a compound and a mixture">
+        <g id="teach-jars"></g>
+      </svg>
+
+      <h3>Reading a formula</h3>
+      <svg viewBox="0 0 700 168" role="img" aria-label="How to read the formula for sulfuric acid">
+        <g id="teach-formula"></g>
+      </svg>
+      <p>Change any subscript and it is a different substance with different properties, which is why H&#8322;O and H&#8322;O&#8322; behave nothing alike.</p>
+    </div>
+
+    <div class="card mission">
+      <span class="step" id="missionStep">Goal 1 of 6</span>
+      <p id="missionText">Make water.</p>
+      <button class="hintbtn" id="hintBtn">Show hint</button>
+      <p class="hinttext" id="hintText" hidden></p>
+    </div>
+    <div class="card stage-wrap">
+      <svg class="stage" id="stage" viewBox="0 0 640 420" aria-label="Molecule bench"></svg>
+      <div class="empty" id="empty">Take atoms off your shelf below and they will float here.</div>
+    </div>
+    <div id="result" hidden></div>
+    <div class="card rack">
+      <div class="rack-row" id="rack"></div>
+      <div class="controls">
+        <button class="go" id="bondBtn" disabled>Bond it</button>
+        <button class="ghost" id="clearBtn">Put them back</button>
+        <div class="live">On the bench: <span class="formula" id="liveFormula">nothing yet</span></div>
+      </div>
+    </div>
+    <h2 class="section">Collection</h2>
+    <p class="tally" id="tally"></p>
+    <div class="filters" id="filters"></div>
+    <div class="grid" id="collection"></div>
+  </section>
+
+  <section id="view-sort" hidden><div class="card quiz" id="sortCard"></div></section>
+  <section id="view-quiz" hidden><div class="card quiz" id="quizCard"></div></section>
+
+  <div class="card ptwrap">
+    <div class="pthead">
+      <h3>Periodic table, first three rows</h3>
+      <p>Group 1 has 1 outer electron, group 2 has 2, then groups 13 to 18 have 3 through 8. Tap any element to load it in the builder.</p>
+      <button class="ghost" id="ptToggle">Hide</button>
+    </div>
+    <div class="ptscroll" id="ptScroll">
+      <div class="ptgroups" id="ptGroups"></div>
+      <div class="ptgrid" id="ptGrid"></div>
+    </div>
+  </div>
+
+  <footer>Atom colors follow the standard chemistry color code. Shells use the simple 2, 8, 8 model, which works for the first eighteen elements.</footer>
+
+  <div class="dnabar">
+    <strong>Lab code</strong>
+    <input type="text" id="dnaBox" placeholder="paste a code here to load your work" spellcheck="false" autocomplete="off">
+    <button id="dnaGet">Copy my code</button>
+    <button class="prim" id="dnaLoad">Load code</button>
+    <p class="note" id="dnaNote">Your code stores your shelf, your molecules and your scores. Write it down before you close the tab.</p>
+  </div>
+</div>
+
+<script>
+/* ===================== element data ===================== */
+var EL = {
+  H: {name:"Hydrogen",  color:"#F4F6F5", text:"#16231C", r:16, valence:1},
+  He:{name:"Helium",    color:"#8ED8E6", text:"#16231C", r:18, valence:2},
+  C: {name:"Carbon",    color:"#31403A", text:"#FFFFFF", r:22, valence:4},
+  N: {name:"Nitrogen",  color:"#3A63C9", text:"#FFFFFF", r:21, valence:5},
+  O: {name:"Oxygen",    color:"#E24232", text:"#FFFFFF", r:21, valence:6},
+  F: {name:"Fluorine",  color:"#A8D65C", text:"#16231C", r:20, valence:7},
+  Ne:{name:"Neon",      color:"#E0A6F0", text:"#16231C", r:20, valence:8},
+  Na:{name:"Sodium",    color:"#9B59D0", text:"#FFFFFF", r:25, valence:1, metal:true},
+  Mg:{name:"Magnesium", color:"#1F7A5A", text:"#FFFFFF", r:24, valence:2, metal:true},
+  Al:{name:"Aluminum",  color:"#8E9AA3", text:"#FFFFFF", r:24, valence:3, metal:true},
+  Si:{name:"Silicon",   color:"#C9A227", text:"#16231C", r:23, valence:4},
+  P: {name:"Phosphorus",color:"#E8863A", text:"#16231C", r:23, valence:5},
+  S: {name:"Sulfur",    color:"#D8C32E", text:"#16231C", r:23, valence:6},
+  Cl:{name:"Chlorine",  color:"#49A863", text:"#FFFFFF", r:26, valence:7}
+};
+var ORDER = ["C","H","N","O","F","Na","Mg","Al","Si","P","S","Cl"];
+
+var PT = [null,
+ {s:"H", n:"Hydrogen",  stable:[0,1],        w:1.008,  g:1,  row:1, c:"#F4F6F5", t:"#16231C"},
+ {s:"He",n:"Helium",    stable:[1,2],        w:4.003,  g:18, row:1, c:"#8ED8E6", t:"#16231C"},
+ {s:"Li",n:"Lithium",   stable:[3,4],        w:6.94,   g:1,  row:2, c:"#C79BE8", t:"#16231C"},
+ {s:"Be",n:"Beryllium", stable:[5],          w:9.012,  g:2,  row:2, c:"#8FC7A6", t:"#16231C"},
+ {s:"B", n:"Boron",     stable:[5,6],        w:10.81,  g:13, row:2, c:"#E8C39E", t:"#16231C"},
+ {s:"C", n:"Carbon",    stable:[6,7],        w:12.011, g:14, row:2, c:"#31403A", t:"#FFFFFF"},
+ {s:"N", n:"Nitrogen",  stable:[7,8],        w:14.007, g:15, row:2, c:"#3A63C9", t:"#FFFFFF"},
+ {s:"O", n:"Oxygen",    stable:[8,9,10],     w:15.999, g:16, row:2, c:"#E24232", t:"#FFFFFF"},
+ {s:"F", n:"Fluorine",  stable:[10],         w:18.998, g:17, row:2, c:"#A8D65C", t:"#16231C"},
+ {s:"Ne",n:"Neon",      stable:[10,11,12],   w:20.180, g:18, row:2, c:"#E0A6F0", t:"#16231C"},
+ {s:"Na",n:"Sodium",    stable:[12],         w:22.990, g:1,  row:3, c:"#9B59D0", t:"#FFFFFF"},
+ {s:"Mg",n:"Magnesium", stable:[12,13,14],   w:24.305, g:2,  row:3, c:"#1F7A5A", t:"#FFFFFF"},
+ {s:"Al",n:"Aluminum",  stable:[14],         w:26.982, g:13, row:3, c:"#8E9AA3", t:"#FFFFFF"},
+ {s:"Si",n:"Silicon",   stable:[14,15,16],   w:28.085, g:14, row:3, c:"#C9A227", t:"#16231C"},
+ {s:"P", n:"Phosphorus",stable:[16],         w:30.974, g:15, row:3, c:"#E8863A", t:"#16231C"},
+ {s:"S", n:"Sulfur",    stable:[16,17,18,20],w:32.06,  g:16, row:3, c:"#D8C32E", t:"#16231C"},
+ {s:"Cl",n:"Chlorine",  stable:[18,20],      w:35.45,  g:17, row:3, c:"#49A863", t:"#FFFFFF"},
+ {s:"Ar",n:"Argon",     stable:[18,20,22],   w:39.95,  g:18, row:3, c:"#7FD4E0", t:"#16231C"}
+];
+var CAP=[2,8,8], MAXE=18, MAXP=18, MAXN=22;
+function shellsFor(e){var out=[],left=e;for(var i=0;i<CAP.length;i++){var put=Math.min(CAP[i],left);out.push(put);left-=put;if(left<=0)break;}return out;}
+function zOf(sym){var z=-1;PT.forEach(function(x,i){if(x&&x.s===sym)z=i;});return z;}
+
+/* ===================== molecules ===================== */
+var MOLS = [
+  { f:"H2", name:"Hydrogen gas", kind:"element", tag:"The lightest molecule there is.",
+    fact:"Each hydrogen has one electron and room for two, so they share a single pair and both count to two. A molecule, because two atoms are bonded, but still an element, because both atoms are the same.",
+    atoms:[["H",-32,0],["H",32,0]], bonds:[[0,1,1]] },
+  { f:"O2", name:"Oxygen gas", kind:"element", tag:"Every breath in.",
+    fact:"Each oxygen is two electrons short, so the two atoms share two pairs. That is a double bond. Your mitochondria use it to pull energy out of food, which is the reason you keep breathing.",
+    atoms:[["O",-36,0],["O",36,0]], bonds:[[0,1,2]] },
+  { f:"N2", name:"Nitrogen gas", kind:"element", tag:"78% of the air around you.",
+    fact:"Each nitrogen is three electrons short, so they share three pairs. That triple bond is one of the strongest in chemistry, which is why plants cannot pull it apart and rely on soil bacteria instead.",
+    atoms:[["N",-36,0],["N",36,0]], bonds:[[0,1,3]] },
+  { f:"F2", name:"Fluorine gas", kind:"element", tag:"The greediest element there is.",
+    fact:"Fluorine pulls electrons harder than anything else on the table. Two of them share one pair, but the molecule is so eager to react that it attacks glass and water.",
+    atoms:[["F",-34,0],["F",34,0]], bonds:[[0,1,1]] },
+  { f:"Cl2", name:"Chlorine gas", kind:"element", tag:"Green, heavy, nasty.",
+    fact:"Each chlorine is one electron short, so two of them share a single pair. As a gas it attacks lung tissue, which is why the pool version is heavily diluted.",
+    atoms:[["Cl",-40,0],["Cl",40,0]], bonds:[[0,1,1]] },
+  { f:"O3", name:"Ozone", kind:"element", tag:"Three oxygens, completely different job.",
+    fact:"Same element as the oxygen you breathe, one atom heavier, and it behaves nothing like it. High in the atmosphere it blocks ultraviolet light. Down at ground level it is a pollutant that irritates lungs.",
+    atoms:[["O",0,-32],["O",-66,24],["O",66,24]], bonds:[[0,1,2],[0,2,1]] },
+  { f:"H2O", name:"Water", kind:"compound", tag:"You are about 60% this.",
+    fact:"Oxygen needs two electrons and each hydrogen has one to share. The two hydrogens sit at an angle rather than a straight line, and because oxygen pulls harder on the shared pairs, one end of the molecule is slightly negative. That lopsidedness is why water beads up and why it dissolves salt.",
+    atoms:[["O",0,-12],["H",-46,26],["H",46,26]], bonds:[[0,1,1],[0,2,1]] },
+  { f:"H2O2", name:"Hydrogen peroxide", kind:"compound", tag:"One extra oxygen changes everything.",
+    fact:"Water with one more oxygen wedged in. That extra atom makes it reactive enough to damage cells, which is why it bubbles on a cut and why your cells carry an enzyme whose only job is to destroy it.",
+    atoms:[["H",-92,26],["O",-34,2],["O",34,-2],["H",92,-26]], bonds:[[0,1,1],[1,2,1],[2,3,1]] },
+  { f:"CO", name:"Carbon monoxide", kind:"compound", tag:"One atom short of harmless.",
+    fact:"Carbon dioxide missing an oxygen, and it behaves nothing like it. It sticks to the hemoglobin in your blood far tighter than oxygen does, so the oxygen has nowhere to ride. It has no smell, which is why detectors exist.",
+    atoms:[["C",-36,0],["O",36,0]], bonds:[[0,1,3]] },
+  { f:"CO2", name:"Carbon dioxide", kind:"compound", tag:"Every breath out.",
+    fact:"Carbon is four electrons short and each oxygen is two short, so one carbon satisfies two oxygens with two double bonds. Straight line, perfectly symmetrical, and you make it every second.",
+    atoms:[["O",-78,0],["C",0,0],["O",78,0]], bonds:[[0,1,2],[1,2,2]] },
+  { f:"CH4", name:"Methane", kind:"compound", tag:"Swamp gas and cow burps.",
+    fact:"Carbon needs four electrons and each hydrogen brings one, so four hydrogens do the job. Drawn flat here, but in reality the four hydrogens push apart into a pyramid shape.",
+    atoms:[["C",0,0],["H",0,-64],["H",0,64],["H",-64,0],["H",64,0]], bonds:[[0,1,1],[0,2,1],[0,3,1],[0,4,1]] },
+  { f:"NH3", name:"Ammonia", kind:"compound", tag:"Sharp smell, useful atom.",
+    fact:"Nitrogen needs three electrons and three hydrogens supply them. Farmers spread this on fields because plants need nitrogen to build proteins and DNA, and most of the nitrogen in your body arrived through a plant.",
+    atoms:[["N",0,-22],["H",-54,24],["H",0,50],["H",54,24]], bonds:[[0,1,1],[0,2,1],[0,3,1]] },
+  { f:"PH3", name:"Phosphine", kind:"compound", tag:"Ammonia's heavier cousin.",
+    fact:"Phosphorus sits directly under nitrogen on the table, so it has the same five outer electrons and bonds to three hydrogens the same way. It smells like rotting fish and catches fire in air.",
+    atoms:[["P",0,-22],["H",-54,24],["H",0,50],["H",54,24]], bonds:[[0,1,1],[0,2,1],[0,3,1]] },
+  { f:"H2S", name:"Hydrogen sulfide", kind:"compound", tag:"Rotten eggs.",
+    fact:"Sulfur sits under oxygen, so this is built exactly like water. It smells foul at tiny concentrations and then, cruelly, shuts down your sense of smell at dangerous ones.",
+    atoms:[["S",0,-12],["H",-50,28],["H",50,28]], bonds:[[0,1,1],[0,2,1]] },
+  { f:"HF", name:"Hydrofluoric acid", kind:"compound", tag:"Eats through glass.",
+    fact:"Fluorine is one electron short and hydrogen has one to share. Fluorine pulls so hard on that shared pair that the bond is barely covalent, and the compound will dissolve the window it is stored behind.",
+    atoms:[["H",-34,0],["F",34,0]], bonds:[[0,1,1]] },
+  { f:"HCl", name:"Hydrochloric acid", kind:"compound", tag:"In your stomach right now.",
+    fact:"Chlorine is one electron short and hydrogen has one to share. Your stomach lining makes this to break down food and kill bacteria, and rebuilds its own lining every few days because of it.",
+    atoms:[["H",-38,0],["Cl",38,0]], bonds:[[0,1,1]] },
+  { f:"NaCl", name:"Table salt", kind:"ionic", tag:"Transferred, not shared.",
+    fact:"Sodium hands its single outer electron to chlorine. Both end up with full outer shells and opposite charges, and that attraction holds them together. In real salt the ions stack into a repeating cube, so NaCl states a ratio rather than describing a two atom molecule.",
+    atoms:[["Na",-42,0],["Cl",42,0]], bonds:[[0,1,"ionic"]], charges:[[0,"+"],[1,"-"]] },
+  { f:"NaF", name:"Sodium fluoride", kind:"ionic", tag:"On your toothbrush.",
+    fact:"Same trade as table salt, with fluoride taking the electron instead of chloride. Fluoride ions slot into tooth enamel and make it harder for acid to dissolve, which is why it is in toothpaste.",
+    atoms:[["Na",-42,0],["F",42,0]], bonds:[[0,1,"ionic"]], charges:[[0,"+"],[1,"-"]] },
+  { f:"Na2O", name:"Sodium oxide", kind:"ionic", tag:"Two donors, one taker.",
+    fact:"Oxygen needs two electrons but sodium can only give one, so it takes two sodium atoms to satisfy one oxygen. That is where the subscript 2 comes from. Formulas are ratios worked out by counting electrons.",
+    atoms:[["Na",-82,0],["O",0,0],["Na",82,0]], bonds:[[0,1,"ionic"],[1,2,"ionic"]], charges:[[0,"+"],[1,"2-"],[2,"+"]] },
+  { f:"MgO", name:"Magnesium oxide", kind:"ionic", tag:"Two electrons at once.",
+    fact:"Magnesium has two outer electrons to give and oxygen needs exactly two, so the transfer is a clean one to one match. The stronger pull between a 2+ and a 2- is why this needs far more heat to melt than table salt.",
+    atoms:[["Mg",-42,0],["O",42,0]], bonds:[[0,1,"ionic"]], charges:[[0,"2+"],[1,"2-"]] },
+  { f:"MgCl2", name:"Magnesium chloride", kind:"ionic", tag:"One donor, two takers.",
+    fact:"The mirror image of sodium oxide. Magnesium has two electrons to give away and each chlorine can only take one, so it needs two of them. This is what is spread on icy roads in cold states.",
+    atoms:[["Cl",-84,0],["Mg",0,0],["Cl",84,0]], bonds:[[0,1,"ionic"],[1,2,"ionic"]], charges:[[0,"-"],[1,"2+"],[2,"-"]] },
+  { f:"Al2O3", name:"Aluminum oxide", kind:"ionic", tag:"Why aluminum does not rust away.",
+    fact:"Aluminum gives three electrons and oxygen takes two, so the smallest whole number match is two aluminum for three oxygen. A skin of this forms instantly on bare aluminum and protects the metal underneath.",
+    atoms:[["O",-124,0],["Al",-62,0],["O",0,0],["Al",62,0],["O",124,0]],
+    bonds:[[0,1,"ionic"],[1,2,"ionic"],[2,3,"ionic"],[3,4,"ionic"]],
+    charges:[[1,"3+"],[3,"3+"],[0,"2-"],[4,"2-"]] },
+  { f:"NaOH", name:"Lye", kind:"ionic", tag:"The opposite end of the scale.",
+    fact:"Sodium gives its electron away again, this time to a hydroxide group. Mixed with fat this makes soap. Handled bare it burns skin, so it is a look but do not touch chemical.",
+    atoms:[["Na",-76,4],["O",0,0],["H",56,-28]], bonds:[[0,1,"ionic"],[1,2,1]], charges:[[0,"+"]] },
+  { f:"NaHCO3", name:"Baking soda", kind:"ionic", tag:"In the cupboard, in the volcano.",
+    fact:"A sodium ion sitting next to a bicarbonate group. Add vinegar and the bicarbonate falls apart into carbon dioxide gas, which is the fizz in the classic volcano and the lift in a cake.",
+    atoms:[["Na",-150,10],["O",-72,10],["C",0,0],["O",4,-78],["O",76,38],["H",134,14]],
+    bonds:[[0,1,"ionic"],[1,2,1],[2,3,2],[2,4,1],[4,5,1]], charges:[[0,"+"]] },
+  { f:"SO2", name:"Sulfur dioxide", kind:"compound", tag:"The smell of a struck match.",
+    fact:"Burning anything containing sulfur makes this. Released by volcanoes and by coal power plants, and when it meets water in the air it turns into acid rain.",
+    atoms:[["S",0,-16],["O",-74,26],["O",74,26]], bonds:[[0,1,2],[0,2,2]] },
+  { f:"SO3", name:"Sulfur trioxide", kind:"compound", tag:"One step from acid rain.",
+    fact:"Sulfur dioxide that has picked up another oxygen. Flat and symmetrical, three double bonds spread evenly around the sulfur, and it reacts with water almost violently.",
+    atoms:[["S",0,4],["O",0,-78],["O",-68,42],["O",68,42]], bonds:[[0,1,2],[0,2,2],[0,3,2]] },
+  { f:"H2SO4", name:"Sulfuric acid", kind:"compound", tag:"The most produced chemical on Earth.",
+    fact:"More of this is made each year than any other industrial chemical. Car batteries, fertilizer, detergent, paper. Notice how the formula packs in four oxygens and only two hydrogens.",
+    atoms:[["S",0,0],["O",0,-84],["O",0,84],["O",-80,-24],["H",-126,-74],["O",80,-24],["H",126,-74]],
+    bonds:[[0,1,2],[0,2,2],[0,3,1],[3,4,1],[0,5,1],[5,6,1]] },
+  { f:"HNO3", name:"Nitric acid", kind:"compound", tag:"Dissolves most metals.",
+    fact:"Strong enough to dissolve copper and silver. It is also made naturally in tiny amounts by lightning, which is one of the few ways nitrogen from the air gets into soil without bacteria.",
+    atoms:[["N",0,0],["O",0,-80],["O",-72,40],["O",72,40],["H",128,10]],
+    bonds:[[0,1,2],[0,2,2],[0,3,1],[3,4,1]] },
+  { f:"NO", name:"Nitric oxide", kind:"compound", tag:"A signal inside your body.",
+    fact:"An odd molecule with an unpaired electron, which usually means trouble. Your blood vessels use it as a signal to relax and widen, and car engines produce it as a pollutant.",
+    atoms:[["N",-36,0],["O",36,0]], bonds:[[0,1,2]] },
+  { f:"NO2", name:"Nitrogen dioxide", kind:"compound", tag:"The brown in smog.",
+    fact:"The reddish brown haze over a city on a hot day. It forms when nitric oxide from engines meets oxygen, and it is one of the ingredients of acid rain.",
+    atoms:[["N",0,-16],["O",-72,26],["O",72,26]], bonds:[[0,1,2],[0,2,1]] },
+  { f:"N2O", name:"Nitrous oxide", kind:"compound", tag:"Laughing gas.",
+    fact:"Used at the dentist as a mild anesthetic. It is also a greenhouse gas far more powerful than carbon dioxide, and farm soil is the main source of it.",
+    atoms:[["N",-74,0],["N",0,0],["O",74,0]], bonds:[[0,1,3],[1,2,1]] },
+  { f:"SiO2", name:"Quartz", kind:"compound", tag:"Sand, glass, computer chips.",
+    fact:"Written as SiO2, but it is not a molecule. Every silicon bonds to four oxygens and every oxygen bridges two silicons, forming one giant network. The formula gives the ratio in that network, which is why quartz is so hard and melts at such a high temperature.",
+    atoms:[["O",-80,0],["Si",0,0],["O",80,0]], bonds:[[0,1,2],[1,2,2]] },
+  { f:"CH2O", name:"Formaldehyde", kind:"compound", tag:"The preserved frog smell.",
+    fact:"One carbon, one double bonded oxygen, two hydrogens. Count the bonds on the carbon: two to the oxygen and one to each hydrogen makes four, which is what carbon always insists on.",
+    atoms:[["C",0,10],["O",0,-72],["H",-64,46],["H",64,46]], bonds:[[0,1,2],[0,2,1],[0,3,1]] },
+  { f:"CH4O", name:"Methanol", kind:"compound", tag:"Looks like drinking alcohol. Is not.",
+    fact:"One carbon shorter than ethanol and dangerously toxic, because your body breaks it down into formaldehyde. A good reminder that one atom of difference is not a small difference.",
+    atoms:[["C",-40,0],["O",44,-6],["H",100,-42],["H",-40,-70],["H",-100,36],["H",-40,70]],
+    bonds:[[0,1,1],[1,2,1],[0,3,1],[0,4,1],[0,5,1]] },
+  { f:"C2H2", name:"Acetylene", kind:"compound", tag:"The hottest torch flame.",
+    fact:"Two carbons held by a triple bond, with one hydrogen each. Burning it releases so much energy so fast that a welding torch running on it cuts through steel.",
+    atoms:[["C",-40,0],["C",40,0],["H",-106,0],["H",106,0]], bonds:[[0,1,3],[0,2,1],[1,3,1]] },
+  { f:"C2H4", name:"Ethene", kind:"compound", tag:"How fruit tells fruit to ripen.",
+    fact:"Two carbons joined by a double bond. Ripening fruit gives it off as a signal, and it spreads to nearby fruit, which is exactly why one bad banana takes the whole bunch with it.",
+    atoms:[["C",-40,0],["C",40,0],["H",-96,-52],["H",-96,52],["H",96,-52],["H",96,52]],
+    bonds:[[0,1,2],[0,2,1],[0,3,1],[1,4,1],[1,5,1]] },
+  { f:"C2H6", name:"Ethane", kind:"compound", tag:"Second in the natural gas family.",
+    fact:"A single bond between the carbons this time, so each one has room for three hydrogens. Methane, ethane, propane, butane. Add one carbon each time and the pattern keeps going.",
+    atoms:[["C",-46,0],["C",46,0],["H",-46,-74],["H",-108,44],["H",-46,74],["H",46,-74],["H",108,44],["H",46,74]],
+    bonds:[[0,1,1],[0,2,1],[0,3,1],[0,4,1],[1,5,1],[1,6,1],[1,7,1]] },
+  { f:"C3H8", name:"Propane", kind:"compound", tag:"The grill tank.",
+    fact:"Three carbons in a chain. The two on the ends carry three hydrogens each and the middle one only has room for two, because two of its four bonds are already used holding the chain together.",
+    atoms:[["C",-84,18],["C",0,-16],["C",84,18],["H",-146,-18],["H",-146,64],["H",-84,84],["H",-34,-82],["H",34,-82],["H",146,-18],["H",146,64],["H",84,84]],
+    bonds:[[0,1,1],[1,2,1],[0,3,1],[0,4,1],[0,5,1],[1,6,1],[1,7,1],[2,8,1],[2,9,1],[2,10,1]] },
+  { f:"C2H6O", name:"Ethanol", kind:"compound", tag:"What yeast leaves behind.",
+    fact:"Yeast makes this when it breaks down sugar without oxygen, the same fermentation that makes bread rise. Every carbon has four bonds and the oxygen has two, which is the pattern almost all of biology is built on.",
+    atoms:[["C",-90,20],["C",0,-20],["O",80,20],["H",140,-4],["H",-90,-44],["H",-152,52],["H",-62,84],["H",0,-84],["H",56,-52]],
+    bonds:[[0,1,1],[1,2,1],[2,3,1],[0,4,1],[0,5,1],[0,6,1],[1,7,1],[1,8,1]] }
+];
+
+/* glucose is built programmatically because 24 atoms is too many to place by hand */
+(function(){
+  var atoms=[],bonds=[],R=88;
+  var ring=[];
+  for(var i=0;i<6;i++){var a=(-90+i*60)*Math.PI/180;ring.push([Math.cos(a)*R,Math.sin(a)*R]);}
+  /* index 0 is the ring oxygen, 1 to 5 are ring carbons */
+  atoms.push(["O",ring[0][0],ring[0][1]]);
+  for(i=1;i<6;i++)atoms.push(["C",ring[i][0],ring[i][1]]);
+  for(i=0;i<6;i++)bonds.push([i,(i+1)%6,1]);
+  function out(idx,scale,dy){return [ring[idx][0]*scale,ring[idx][1]*scale+(dy||0)];}
+  /* four hydroxyl groups on ring carbons 1 to 4 */
+  [1,2,3,4].forEach(function(ci){
+    var o=out(ci,1.72), h=out(ci,2.22);
+    atoms.push(["O",o[0],o[1]]); var oi=atoms.length-1; bonds.push([ci,oi,1]);
+    atoms.push(["H",h[0],h[1]]); bonds.push([oi,atoms.length-1,1]);
+  });
+  /* the sixth carbon hangs off ring carbon 5, carrying its own hydroxyl */
+  var c6=[ring[5][0]*1.85,ring[5][1]*1.85-30];
+  atoms.push(["C",c6[0],c6[1]]); var c6i=atoms.length-1; bonds.push([5,c6i,1]);
+  atoms.push(["O",c6[0]-8,c6[1]-72]); var o6=atoms.length-1; bonds.push([c6i,o6,1]);
+  atoms.push(["H",c6[0]-52,c6[1]-118]); bonds.push([o6,atoms.length-1,1]);
+  atoms.push(["H",c6[0]+62,c6[1]-24]); bonds.push([c6i,atoms.length-1,1]);
+  atoms.push(["H",c6[0]-64,c6[1]+22]); bonds.push([c6i,atoms.length-1,1]);
+  /* one hydrogen on each ring carbon */
+  [1,2,3,4,5].forEach(function(ci){
+    var h=[ring[ci][0]*0.42,ring[ci][1]*0.42];
+    atoms.push(["H",h[0],h[1]]); bonds.push([ci,atoms.length-1,1]);
+  });
+  MOLS.push({f:"C6H12O6",name:"Glucose",kind:"compound",tag:"The reason you eat.",
+    fact:"Twenty four atoms in one molecule, and every carbon still has exactly four bonds. In water it curls into this ring. Your cells break it apart to release the energy stored in those bonds, which is where almost all of your energy comes from.",
+    atoms:atoms,bonds:bonds});
+})();
+
+var MISSIONS=["H2O","O2","CO2","CH4","NaCl","NH3"];
+function molByF(f){var m=null;MOLS.forEach(function(x){if(x.f===f)m=x;});return m;}
+
+/* ===================== state ===================== */
+var state={
+  atom:{p:6,n:6,e:6},
+  shelf:{}, have:{},
+  bondPick:[],
+  tray:[], nextId:1, bonded:false,
+  found:{}, mission:0,
+  filter:"all",
+  sound:true, teacher:false
+};
+var TEACHER_CODE="ROOM11";
+var reduced=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+function $(s){return document.querySelector(s);}
+var svgNS="http://www.w3.org/2000/svg";
+function el(n,a){var e=document.createElementNS(svgNS,n);for(var k in a)e.setAttribute(k,a[k]);return e;}
+function sub(f){return f.replace(/(\d+)/g,"<sub>$1</sub>");}
+function counts(l){var c={};l.forEach(function(x){c[x]=(c[x]||0)+1;});return c;}
+function formulaOf(l){var c=counts(l);return ORDER.filter(function(e){return c[e];}).map(function(e){return e+(c[e]>1?c[e]:"");}).join("");}
+function sameCounts(a,b){var k=Object.keys(a);return k.length===Object.keys(b).length&&k.every(function(x){return a[x]===b[x];});}
+function findMol(l){var c=counts(l),hit=null;MOLS.forEach(function(m){if(!hit&&sameCounts(c,counts(m.atoms.map(function(a){return a[0];}))))hit=m;});return hit;}
+function keySym(k){return k.split("^")[0];}
+function keyCharge(k){var p=k.split("^");return p[1]?parseInt(p[1],10):0;}
+function chargeText(q){return q===0?"":(Math.abs(q)>1?Math.abs(q):"")+(q>0?"+":"-");}
+function foundCount(){return Object.keys(state.found).length;}
+
+/* ===================== sound ===================== */
+var actx=null;
+function beep(freqs,type){
+  if(!state.sound)return;
+  try{
+    actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+    freqs.forEach(function(f,i){
+      var o=actx.createOscillator(),g=actx.createGain();
+      o.type=type||"sine";o.frequency.value=f;
+      var t=actx.currentTime+i*0.09;
+      g.gain.setValueAtTime(0.0001,t);
+      g.gain.exponentialRampToValueAtTime(0.11,t+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+0.28);
+      o.connect(g);g.connect(actx.destination);o.start(t);o.stop(t+0.3);
+    });
+  }catch(e){}
+}
+function sndTick(){beep([620]);}
+function sndGood(){beep([523,659,784,1047]);}
+function sndBad(){beep([180,140],"triangle");}
+
+/* ===================== shared svg pieces ===================== */
+function dotEl(x,y,color,r){return el("circle",{cx:x,cy:y,r:r||8,fill:color||"var(--electron)",stroke:"#fff","stroke-width":2});}
+function labelEl(x,y,txt,size,color,weight){
+  var t=el("text",{x:x,y:y,"text-anchor":"middle","font-size":size||14,fill:color||"var(--ink-soft)","font-family":"system-ui, sans-serif"});
+  if(weight)t.setAttribute("font-weight",weight);
+  t.textContent=txt;return t;
+}
+function chargeBadge(x,y,txt){
+  var g=el("g",{});
+  g.appendChild(el("circle",{cx:x,cy:y,r:15,fill:"#FBFCFA",stroke:"var(--ink)","stroke-width":2.5}));
+  var t=el("text",{x:x,y:y,"text-anchor":"middle","dominant-baseline":"central","font-size":15,"font-weight":"800","font-family":"Bricolage Grotesque, sans-serif",fill:"var(--ink)"});
+  t.textContent=txt;g.appendChild(t);return g;
+}
+function atomNode(sym,floaty){
+  var d=EL[sym];
+  var g=el("g",{class:"atomnode"});
+  var pos=el("g",{class:"pos"});
+  var bob=el("g",{class:floaty?"bob":""});
+  bob.appendChild(el("circle",{r:d.r,fill:d.color,stroke:"rgba(0,0,0,.45)","stroke-width":2.5}));
+  bob.appendChild(el("circle",{r:d.r-6,cx:-d.r*0.28,cy:-d.r*0.3,fill:"rgba(255,255,255,.28)"}));
+  var t=el("text",{"text-anchor":"middle","dominant-baseline":"central","font-family":"Bricolage Grotesque, sans-serif","font-weight":"800","font-size":sym.length>1?15:17,fill:d.text,"pointer-events":"none"});
+  t.textContent=sym;bob.appendChild(t);
+  pos.appendChild(bob);g.appendChild(pos);
+  return {g:g,pos:pos,bob:bob};
+}
+function place(node,x,y){node.pos.style.transform="translate("+x+"px,"+y+"px)";}
+function ball(sym,x,y,r){
+  var d=EL[sym]||{color:"#ccc",text:"#16231C"};
+  var g=el("g",{});
+  g.appendChild(el("circle",{cx:x,cy:y,r:r,fill:d.color,stroke:"rgba(0,0,0,.45)","stroke-width":2.5}));
+  g.appendChild(el("circle",{cx:x-r*0.3,cy:y-r*0.32,r:r*0.4,fill:"rgba(255,255,255,.26)"}));
+  var t=el("text",{x:x,y:y,"text-anchor":"middle","dominant-baseline":"central","font-family":"Bricolage Grotesque, sans-serif","font-weight":"800","font-size":r*0.8,fill:d.text});
+  t.textContent=sym;g.appendChild(t);return g;
+}
+function drawBondLine(x1,y1,x2,y2,order){
+  var g=el("g",{class:"bondline",opacity:0});
+  var dx=x2-x1,dy=y2-y1,len=Math.hypot(dx,dy)||1,nx=-dy/len,ny=dx/len;
+  var offs=order===2?[-5,5]:(order===3?[-9,0,9]:[0]);
+  offs.forEach(function(o){
+    var l=el("line",{x1:x1+nx*o,y1:y1+ny*o,x2:x2+nx*o,y2:y2+ny*o,stroke:"var(--bond)","stroke-width":7,"stroke-linecap":"round"});
+    if(order==="ionic"){l.setAttribute("stroke-dasharray","3 12");l.setAttribute("stroke-width",6);}
+    g.appendChild(l);
+  });
+  return g;
+}
+
+/* ===================== teaching visuals ===================== */
+function nucleusCluster(cx,cy,p,n,scale){
+  var g=el("g",{}),mixed=[],pi=0,ni=0,s=scale||1;
+  while(pi<p||ni<n){if(pi<p){mixed.push("p");pi++;}if(ni<n){mixed.push("n");ni++;}}
+  mixed.forEach(function(kind,i){
+    var ang=i*2.399963,rad=(i===0?0:7.0*s*Math.sqrt(i));
+    g.appendChild(el("circle",{cx:cx+Math.cos(ang)*rad,cy:cy+Math.sin(ang)*rad,r:7*s,
+      fill:kind==="p"?"var(--proton)":"var(--neutron)",stroke:"rgba(0,0,0,.3)","stroke-width":1.2}));
+  });
+  return g;
+}
+function teachElements(){
+  var g=$("#teach-elements");if(!g)return;
+  [[6,"Carbon",120],[7,"Nitrogen",350],[8,"Oxygen",580]].forEach(function(item){
+    var p=item[0],name=item[1],cx=item[2];
+    g.appendChild(el("circle",{cx:cx,cy:62,r:46,fill:"none",stroke:"var(--bench-line)","stroke-width":2}));
+    g.appendChild(nucleusCluster(cx,62,p,p,0.9));
+    g.appendChild(labelEl(cx,124,p+" protons",15,"var(--ink)","700"));
+    g.appendChild(labelEl(cx,143,name,14));
+  });
+  [235,465].forEach(function(x){
+    g.appendChild(el("line",{x1:x,y1:24,x2:x,y2:100,stroke:"var(--bench-line)","stroke-width":2,"stroke-dasharray":"6 6"}));
+    g.appendChild(labelEl(x,18,"+1",13,"var(--signal)","700"));
+  });
+}
+function teachEnergy(){
+  var g=$("#teach-energy");if(!g)return;
+  g.appendChild(el("line",{x1:56,y1:24,x2:56,y2:182,stroke:"var(--ink)","stroke-width":2}));
+  var ax=el("text",{x:22,y:104,"font-size":13,fill:"var(--ink-soft)","text-anchor":"middle",
+    "font-family":"system-ui, sans-serif",transform:"rotate(-90 22 104)"});
+  ax.textContent="energy";g.appendChild(ax);
+  g.appendChild(el("path",{d:"M90 54 C 190 54, 240 152, 350 152 C 460 152, 510 54, 610 54",
+    fill:"none",stroke:"var(--bench-line)","stroke-width":5,"stroke-linecap":"round"}));
+  g.appendChild(ball("H",96,32,15));g.appendChild(ball("H",140,32,15));
+  g.appendChild(labelEl(118,192,"two lone atoms, restless",13));
+  var bl=drawBondLine(330,126,370,126,1);bl.setAttribute("opacity",1);bl.setAttribute("class","");g.appendChild(bl);
+  g.appendChild(ball("H",330,126,15));g.appendChild(ball("H",370,126,15));
+  g.appendChild(labelEl(340,192,"bonded and settled",13,"var(--ink)","700"));
+  g.appendChild(el("path",{d:"M206 78 L 292 122",stroke:"var(--signal)","stroke-width":3.5,"stroke-linecap":"round"}));
+  g.appendChild(el("path",{d:"M298 125 l -18 -2 l 5 -13 z",fill:"var(--signal)"}));
+  g.appendChild(labelEl(228,60,"energy released",13,"var(--signal)","700"));
+  g.appendChild(el("path",{d:"M414 122 L 500 78",stroke:"var(--steel)","stroke-width":3.5,"stroke-linecap":"round","stroke-dasharray":"6 6"}));
+  g.appendChild(el("path",{d:"M506 74 l -5 13 l -13 -3 z",fill:"var(--steel)"}));
+  g.appendChild(labelEl(566,192,"breaking it costs that energy back",13));
+}
+function panelBox(g,x,y,w,h,title){
+  g.appendChild(el("rect",{x:x,y:y,width:w,height:h,rx:12,fill:"#F2F5F1",stroke:"var(--ink)","stroke-width":2.5}));
+  var t=el("text",{x:x+w/2,y:y+26,"text-anchor":"middle","font-size":16,"font-weight":"800","font-family":"Bricolage Grotesque, sans-serif",fill:"var(--ink)"});
+  t.textContent=title;g.appendChild(t);
+}
+function teachBondTypes(){
+  var g=$("#teach-bondtypes");if(!g)return;
+
+  panelBox(g,10,10,215,250,"Ionic");
+  g.appendChild(ball("Na",68,108,24));
+  g.appendChild(ball("Cl",170,108,26));
+  g.appendChild(el("path",{d:"M100 78 Q 128 54, 152 76",fill:"none",stroke:"var(--signal)","stroke-width":3}));
+  g.appendChild(el("path",{d:"M156 80 l -13 -4 l 2 -12 z",fill:"var(--signal)"}));
+  g.appendChild(dotEl(97,80,"var(--signal)",7));
+  g.appendChild(chargeBadge(38,72,"+"));
+  g.appendChild(chargeBadge(200,72,"-"));
+  g.appendChild(labelEl(117,170,"metal gives, nonmetal takes",12.5));
+  g.appendChild(labelEl(117,188,"both become charged ions",12.5));
+  g.appendChild(labelEl(117,218,"salt, bone, rust",13,"var(--ink)","700"));
+
+  panelBox(g,242,10,215,250,"Covalent");
+  var cb=drawBondLine(306,108,392,108,2);cb.setAttribute("opacity",1);cb.setAttribute("class","");g.appendChild(cb);
+  g.appendChild(ball("O",306,108,24));
+  g.appendChild(ball("O",392,108,24));
+  [[338,92],[360,92],[338,124],[360,124]].forEach(function(p){g.appendChild(dotEl(p[0],p[1],"var(--signal)",7));});
+  g.appendChild(labelEl(349,170,"two nonmetals share pairs",12.5));
+  g.appendChild(labelEl(349,188,"both count the same pair",12.5));
+  g.appendChild(labelEl(349,218,"water, air, sugar",13,"var(--ink)","700"));
+
+  panelBox(g,474,10,215,250,"Metallic");
+  for(var r=0;r<3;r++)for(var c=0;c<3;c++){
+    var mx=530+c*44,my=70+r*32;
+    g.appendChild(el("circle",{cx:mx,cy:my,r:14,fill:"#8E9AA3",stroke:"rgba(0,0,0,.4)","stroke-width":2}));
+    g.appendChild(labelEl(mx,my+5,"+",14,"#fff","800"));
+  }
+  var seeds=[[552,86],[596,86],[552,118],[596,118],[504,70],[504,134],[644,86],[644,118]];
+  seeds.forEach(function(p,i){
+    var d=dotEl(p[0],p[1],"var(--electron)",6);
+    if(!reduced){
+      d.appendChild(el("animate",{attributeName:"cx",values:p[0]+";"+(p[0]+(i%2?14:-14))+";"+p[0],dur:(3.4+i*0.4)+"s",repeatCount:"indefinite"}));
+      d.appendChild(el("animate",{attributeName:"cy",values:p[1]+";"+(p[1]+(i%3?-11:11))+";"+p[1],dur:(4.2+i*0.3)+"s",repeatCount:"indefinite"}));
+    }
+    g.appendChild(d);
+  });
+  g.appendChild(labelEl(581,170,"outer electrons pool together",12.5));
+  g.appendChild(labelEl(581,188,"and drift through the metal",12.5));
+  g.appendChild(labelEl(581,218,"copper wire, foil",13,"var(--ink)","700"));
+}
+function teachOrder(){
+  var g=$("#teach-order");if(!g)return;
+  [["H",1,"single","Hydrogen gas",112,104,"longest, weakest"],
+   ["O",2,"double","Oxygen gas",350,84,"shorter, stronger"],
+   ["N",3,"triple","Nitrogen gas",588,66,"shortest, strongest"]].forEach(function(it){
+    var sym=it[0],order=it[1],nm=it[2],who=it[3],cx=it[4],gap=it[5],note=it[6];
+    var bl=drawBondLine(cx-gap/2,84,cx+gap/2,84,order);
+    bl.setAttribute("opacity",1);bl.setAttribute("class","");g.appendChild(bl);
+    g.appendChild(ball(sym,cx-gap/2,84,22));
+    g.appendChild(ball(sym,cx+gap/2,84,22));
+    g.appendChild(labelEl(cx,30,who,14));
+    g.appendChild(labelEl(cx,142,order+" shared pair"+(order>1?"s":""),15,"var(--ink)","700"));
+    g.appendChild(labelEl(cx,162,nm+" bond",14));
+    g.appendChild(labelEl(cx,184,note,13,"var(--signal)","700"));
+  });
+}
+function teachPolar(){
+  var g=$("#teach-polar");if(!g)return;
+
+  g.appendChild(labelEl(184,30,"equal sharing",15,"var(--ink)","700"));
+  var bl=drawBondLine(144,88,224,88,1);bl.setAttribute("opacity",1);bl.setAttribute("class","");g.appendChild(bl);
+  g.appendChild(ball("H",144,88,22));g.appendChild(ball("H",224,88,22));
+  g.appendChild(dotEl(177,88,"var(--signal)",7));g.appendChild(dotEl(191,88,"var(--signal)",7));
+  g.appendChild(labelEl(184,142,"identical atoms pull the same,",13));
+  g.appendChild(labelEl(184,160,"so the pair sits in the middle",13));
+
+  g.appendChild(el("line",{x1:350,y1:22,x2:350,y2:168,stroke:"var(--bench-line)","stroke-width":2,"stroke-dasharray":"6 6"}));
+
+  g.appendChild(labelEl(520,30,"unequal sharing",15,"var(--ink)","700"));
+  var b2=drawBondLine(470,94,566,62,1);b2.setAttribute("opacity",1);b2.setAttribute("class","");g.appendChild(b2);
+  var b3=drawBondLine(470,94,566,126,1);b3.setAttribute("opacity",1);b3.setAttribute("class","");g.appendChild(b3);
+  g.appendChild(ball("O",470,94,26));
+  g.appendChild(ball("H",566,62,18));g.appendChild(ball("H",566,126,18));
+  g.appendChild(dotEl(513,80,"var(--signal)",7));
+  g.appendChild(dotEl(513,108,"var(--signal)",7));
+  g.appendChild(labelEl(430,58,"slightly negative",12,"var(--signal)","700"));
+  g.appendChild(labelEl(624,44,"slightly positive",12,"var(--electron)","700"));
+  g.appendChild(labelEl(520,160,"oxygen pulls harder, so the pairs sit closer to it",13));
+}
+function teachMatrix(){
+  var g=$("#teach-matrix");if(!g)return;
+  var x0=176,y0=64,cw=252,ch=118,gapx=6,gapy=8;
+  g.appendChild(labelEl(x0+cw/2,46,"one kind of atom",15,"var(--ink)","800"));
+  g.appendChild(labelEl(x0+cw+gapx+cw/2,46,"different kinds bonded",15,"var(--ink)","800"));
+  function rowLabel(y,a,b){
+    g.appendChild(labelEl(84,y,a,15,"var(--ink)","800"));
+    g.appendChild(labelEl(84,y+20,b,12.5));
+  }
+  rowLabel(y0+52,"a molecule","separate units");
+  rowLabel(y0+ch+gapy+52,"not a molecule","one endless grid");
+  function cell(cx,cy,tint){
+    g.appendChild(el("rect",{x:cx,y:cy,width:cw,height:ch,rx:12,fill:tint,stroke:"var(--ink)","stroke-width":2.5}));
+  }
+  var ax=x0,bx=x0+cw+gapx,ay=y0,by=y0+ch+gapy;
+
+  function cellTitle(cx,cy,txt){g.appendChild(labelEl(cx+cw/2,cy+24,txt,14,"var(--ink)","800"));}
+  function cellNote(cx,cy,txt){g.appendChild(labelEl(cx+cw/2,cy+ch-14,txt,12.5,"var(--ink-soft)"));}
+
+  cell(ax,ay,"#EDF4EF");
+  cellTitle(ax,ay,"Oxygen gas");
+  var b1=drawBondLine(ax+96,ay+66,ax+156,ay+66,2);b1.setAttribute("opacity",1);b1.setAttribute("class","");g.appendChild(b1);
+  g.appendChild(ball("O",ax+96,ay+66,20));g.appendChild(ball("O",ax+156,ay+66,20));
+  cellNote(ax,ay,"molecule, but not a compound");
+
+  cell(bx,ay,"#EDF4EF");
+  cellTitle(bx,ay,"Water");
+  var b2=drawBondLine(bx+104,ay+68,bx+156,ay+48,1);b2.setAttribute("opacity",1);b2.setAttribute("class","");g.appendChild(b2);
+  var b3=drawBondLine(bx+104,ay+68,bx+156,ay+88,1);b3.setAttribute("opacity",1);b3.setAttribute("class","");g.appendChild(b3);
+  g.appendChild(ball("O",bx+104,ay+68,20));
+  g.appendChild(ball("H",bx+156,ay+48,14));g.appendChild(ball("H",bx+156,ay+88,14));
+  cellNote(bx,ay,"molecule and compound");
+
+  cell(ax,by,"#F4F1EC");
+  cellTitle(ax,by,"Copper");
+  for(var r=0;r<2;r++)for(var c=0;c<4;c++){
+    var mx=ax+82+c*30,my=by+52+r*26;
+    g.appendChild(el("circle",{cx:mx,cy:my,r:11,fill:"#8E9AA3",stroke:"rgba(0,0,0,.4)","stroke-width":2}));
+    g.appendChild(labelEl(mx,my+4,"+",12,"#fff","800"));
+  }
+  [[ax+97,by+65],[ax+127,by+65],[ax+157,by+65],[ax+187,by+65]].forEach(function(p){
+    g.appendChild(dotEl(p[0],p[1],"var(--electron)",5));
+  });
+  cellNote(ax,by,"neither, just one metal lattice");
+
+  cell(bx,by,"#F4F1EC");
+  cellTitle(bx,by,"Table salt");
+  for(r=0;r<2;r++)for(c=0;c<4;c++){
+    var nx=bx+82+c*30,ny=by+52+r*26,isNa=((r+c)%2===0);
+    g.appendChild(el("circle",{cx:nx,cy:ny,r:isNa?9:12,fill:isNa?"#9B59D0":"#49A863",stroke:"rgba(0,0,0,.4)","stroke-width":2}));
+    g.appendChild(labelEl(nx,ny+4,isNa?"+":"-",12,"#fff","800"));
+  }
+  cellNote(bx,by,"compound, but not a molecule");
+}
+function teachJars(){
+  var g=$("#teach-jars");if(!g)return;
+  function jar(x,title,sub){
+    g.appendChild(el("rect",{x:x+52,y:16,width:76,height:20,rx:6,fill:"#DCE3DB",stroke:"var(--ink)","stroke-width":2.5}));
+    g.appendChild(el("rect",{x:x,y:32,width:180,height:142,rx:14,fill:"#EFF3EE",stroke:"var(--ink)","stroke-width":2.5}));
+    g.appendChild(labelEl(x+90,202,title,16,"var(--ink)","800"));
+    g.appendChild(labelEl(x+90,222,sub,12.5));
+  }
+  jar(20,"Element","one kind of atom only");
+  [[66,80],[116,72],[152,110],[74,140],[126,136]].forEach(function(p){g.appendChild(ball("N",p[0],p[1],16));});
+  jar(258,"Compound","different atoms bonded, fixed ratio");
+  [[302,78],[302,134],[374,78],[374,134]].forEach(function(p){
+    var bl=drawBondLine(p[0],p[1],p[0]+38,p[1],2);bl.setAttribute("opacity",1);bl.setAttribute("class","");g.appendChild(bl);
+    g.appendChild(ball("C",p[0],p[1],15));g.appendChild(ball("O",p[0]+38,p[1],15));
+  });
+  jar(496,"Mixture","stirred together, not bonded");
+  [[540,78,"N"],[598,70,"O"],[644,102,"N"],[546,136,"O"],[604,130,"N"],[650,150,"O"]].forEach(function(p){
+    g.appendChild(ball(p[2],p[0],p[1],15));
+  });
+}
+function teachFormula(){
+  var g=$("#teach-formula");if(!g)return;
+  function big(txt,x,y,size,color){
+    var t=el("text",{x:x,y:y,"text-anchor":"middle","font-size":size,"font-weight":"800",
+      "font-family":"Bricolage Grotesque, sans-serif",fill:color});
+    t.textContent=txt;g.appendChild(t);return t;
+  }
+  function left(txt,x,y,size,color,weight){
+    var t=el("text",{x:x,y:y,"font-size":size||13.5,fill:color||"var(--ink-soft)","font-family":"system-ui, sans-serif"});
+    if(weight)t.setAttribute("font-weight",weight);
+    t.textContent=txt;g.appendChild(t);return t;
+  }
+  g.appendChild(el("rect",{x:104,y:26,width:200,height:104,rx:12,fill:"#F2F5F1",stroke:"var(--ink)","stroke-width":2.5}));
+  big("H",146,96,52,"var(--ink)");
+  big("2",174,110,30,"var(--signal)");
+  big("S",204,96,52,"var(--ink)");
+  big("O",244,96,52,"var(--ink)");
+  big("4",274,110,30,"var(--signal)");
+  left("sulfuric acid",204,48,13,"var(--ink-soft)");
+  g.appendChild(el("line",{x1:340,y1:26,x2:340,y2:130,stroke:"var(--bench-line)","stroke-width":2,"stroke-dasharray":"6 6"}));
+  left("Each subscript counts the symbol before it",368,42,13.5,"var(--ink)","700");
+  left("H then 2: two hydrogen atoms",368,70);
+  left("S with no number: one sulfur atom",368,94);
+  left("O then 4: four oxygen atoms",368,118);
+  left("seven atoms in one molecule",368,146,13.5,"var(--ink)","700");
+  [70,94,118].forEach(function(y){g.appendChild(dotEl(356,y-4,"var(--signal)",4.5));});
+}
+
+/* ===================== atom builder ===================== */
+function drawAtom(){
+  var p=state.atom.p,n=state.atom.n,e=state.atom.e;
+  var s=$("#atomStage");s.innerHTML="";
+  var cx=260,cy=220,radii=[68,114,160];
+  var shells=shellsFor(e);
+  shells.forEach(function(cnt,i){s.appendChild(el("circle",{cx:cx,cy:cy,r:radii[i],fill:"none",stroke:"var(--bench-line)","stroke-width":2}));});
+  var nuc=el("g",{}),mixed=[],pi=0,ni=0;
+  while(pi<p||ni<n){if(pi<p){mixed.push("p");pi++;}if(ni<n){mixed.push("n");ni++;}}
+  mixed.forEach(function(kind,i){
+    var ang=i*2.399963,rad=(i===0?0:7.6*Math.sqrt(i));
+    var x=cx+Math.cos(ang)*rad,y=cy+Math.sin(ang)*rad;
+    nuc.appendChild(el("circle",{cx:x,cy:y,r:8.5,fill:kind==="p"?"var(--proton)":"var(--neutron)",stroke:"rgba(0,0,0,.35)","stroke-width":1.5}));
+    if(kind==="p"){
+      var t=el("text",{x:x,y:y,"text-anchor":"middle","dominant-baseline":"central","font-size":11,"font-weight":"800",fill:"#fff","font-family":"Bricolage Grotesque, sans-serif"});
+      t.textContent="+";nuc.appendChild(t);
+    }
+  });
+  s.appendChild(nuc);
+  shells.forEach(function(cnt,i){
+    var g=el("g",{transform:"translate("+cx+","+cy+")"}),rot=el("g",{});
+    for(var k=0;k<cnt;k++){
+      var a=(k/cnt)*Math.PI*2-Math.PI/2;
+      rot.appendChild(el("circle",{cx:Math.cos(a)*radii[i],cy:Math.sin(a)*radii[i],r:7.5,fill:"var(--electron)",stroke:"#fff","stroke-width":2}));
+    }
+    if(!reduced)rot.appendChild(el("animateTransform",{attributeName:"transform",type:"rotate",from:"0 0 0",to:(i%2?"-360":"360")+" 0 0",dur:(11+i*5)+"s",repeatCount:"indefinite"}));
+    g.appendChild(rot);s.appendChild(g);
+  });
+  if(p===0&&n===0&&e===0)s.appendChild(labelEl(cx,cy,"Nothing here yet. Add a proton.",16,"var(--steel)"));
+  readout();
+}
+function readout(){
+  var p=state.atom.p,n=state.atom.n,e=state.atom.e;
+  var info=(p>=1&&p<=18)?PT[p]:null;
+  var charge=p-e;
+  var shells=shellsFor(e);
+  var outer=shells.length?shells[shells.length-1]:0;
+  var outerCap=shells.length?CAP[shells.length-1]:0;
+  var full=shells.length>0&&outer===outerCap;
+  var card=$("#elcard");
+  if(!info){
+    card.style.background="var(--panel)";card.style.color="var(--ink)";
+    card.innerHTML="<div class='sym' style='font-size:44px;color:var(--bench-line)'>?</div><div class='nm'>no element yet</div><div class='mass'>The proton count is what names an element.</div>";
+  } else {
+    card.style.background=info.c;card.style.color=info.t;
+    card.innerHTML="<span class='z'>"+p+"</span>"+
+      (charge!==0?"<span class='qbadge' style='color:var(--ink)'>"+chargeText(charge)+"</span>":"")+
+      "<div class='sym'>"+info.s+"</div><div class='nm'>"+info.n+"</div>"+
+      "<div class='mass'>mass number <b>"+(p+n)+"</b><br>average atomic mass "+info.w+"<br>charge <b>"+(charge===0?"0":chargeText(charge))+"</b></div>";
+  }
+  $("#saveAtom").disabled=!info||e===0;
+  var title,iso;
+  if(p===0){title=e>0?"Not an atom yet":"Empty";iso="Electrons need a nucleus to orbit.";}
+  else{title=info.n;iso=info.s+"-"+(p+n)+", so "+p+" protons and "+n+" neutrons";}
+  var ct;
+  if(charge===0)ct=(p===0?"0":"0, a neutral atom");
+  else ct=(charge>0?"+":"")+charge+", an ion"+(info?" written "+info.s+"<sup>"+chargeText(charge)+"</sup>":"");
+  var nuc="";
+  if(p>0){
+    if(info.stable.indexOf(n)>=0)nuc="A known stable isotope.";
+    else if(n<info.stable[0])nuc="Too few neutrons to hold this many protons together. A nucleus like this falls apart.";
+    else nuc="Not a stable isotope. A nucleus like this breaks down over time and gives off radiation.";
+  }
+  var verdict="",cls="";
+  if(p===0){verdict="Add protons. Without them there is no element and nothing holding electrons in place.";cls="warn";}
+  else if(e===0){verdict="A bare nucleus with no electrons. All of chemistry happens in the shells, so this cannot bond.";cls="warn";}
+  else if(full&&charge===0){verdict="Unreactive. A full outer shell means this atom has no reason to bond with anything.";}
+  else if(full&&charge!==0){verdict="Charged, but the outer shell is now full, and that is exactly why the ion is stable in this form.";}
+  else{
+    var need=outerCap-outer;
+    var path=outer<=3?("lose "+outer+" electron"+(outer>1?"s":"")+" and use the full shell underneath"):("gain "+need+" electron"+(need>1?"s":""));
+    verdict="Reactive. The outer shell holds "+outer+" of "+outerCap+". The shortest route to a full shell is to "+path+".";
+    cls="hot";
+  }
+  $("#readout").innerHTML=
+    "<p class='big'>"+title+"</p><p class='iso'>"+iso+"</p>"+
+    "<div class='row'><span>Net charge</span><b>"+ct+"</b></div>"+
+    "<div class='row'><span>Mass number</span><b>"+(p+n)+"</b></div>"+
+    "<div class='row'><span>Shells</span><b>"+(shells.length?shells.join(" , "):"none")+"</b></div>"+
+    "<div class='row'><span>Outer shell</span><b>"+(shells.length?outer+" of "+outerCap:"none")+"</b></div>"+
+    (p>0?"<div class='row'><span>Nucleus</span><b style='font-size:13.5px;font-weight:600;max-width:62%'>"+nuc+"</b></div>":"")+
+    "<div class='verdict "+cls+"'>"+verdict+"</div>";
+  $("#pVal").textContent=p;$("#nVal").textContent=n;$("#eVal").textContent=e;
+  $("#pPlus").disabled=p>=MAXP;$("#pMinus").disabled=p<=0;
+  $("#nPlus").disabled=n>=MAXN;$("#nMinus").disabled=n<=0;
+  $("#ePlus").disabled=e>=MAXE;$("#eMinus").disabled=e<=0;
+  var cells=document.querySelectorAll(".ptcell");
+  Array.prototype.forEach.call(cells,function(c){c.classList.toggle("now",!!info&&parseInt(c.dataset.z,10)===p);});
+}
+function bump(part,d){
+  var max=part==="p"?MAXP:(part==="n"?MAXN:MAXE);
+  state.atom[part]=Math.max(0,Math.min(max,state.atom[part]+d));
+  sndTick();drawAtom();
+}
+["p","n","e"].forEach(function(k){
+  $("#"+k+"Plus").addEventListener("click",function(){bump(k,1);});
+  $("#"+k+"Minus").addEventListener("click",function(){bump(k,-1);});
+});
+$("#clearAtom").addEventListener("click",function(){state.atom={p:0,n:0,e:0};drawAtom();});
+function loadElement(z){state.atom={p:z,n:PT[z].stable[0],e:z};sndTick();drawAtom();}
+
+/* ===================== shelf ===================== */
+function shelfKey(sym,q){return q?sym+"^"+q:sym;}
+function shelfAdd(key,n){state.shelf[key]=(state.shelf[key]||0)+(n||1);if(state.shelf[key]>60)state.shelf[key]=60;renderShelves();}
+function shelfTake(key,n){
+  var have=state.shelf[key]||0,take=Math.min(have,n||1);
+  state.shelf[key]=have-take;
+  if(state.shelf[key]<=0)delete state.shelf[key];
+  renderShelves();return take;
+}
+function shelfCountEl(sym){var t=0;Object.keys(state.shelf).forEach(function(k){if(keySym(k)===sym)t+=state.shelf[k];});return t;}
+$("#saveAtom").addEventListener("click",function(){
+  var p=state.atom.p,e=state.atom.e;
+  if(p<1||p>18||e===0)return;
+  if(!EL[PT[p].s]){alert("This lab only bonds with the elements on the shelf list. Try one of those.");return;}
+  shelfAdd(shelfKey(PT[p].s,p-e));sndGood();
+});
+function shelfChip(key,onRemove){
+  var sym=keySym(key),q=keyCharge(key);
+  var z=zOf(sym);
+  var d=EL[sym]||{color:PT[z].c,text:PT[z].t};
+  var w=document.createElement("div");
+  w.className="sitem";
+  w.innerHTML="<span class='ball' style='background:"+d.color+";color:"+(d.text||"#16231C")+"'>"+sym+"</span>"+
+    "<span>"+(q?sym+"<sup>"+chargeText(q)+"</sup>":sym)+"</span><span class='n'>x"+state.shelf[key]+"</span>";
+  if(onRemove){
+    var b=document.createElement("button");b.textContent="x";b.title="throw one away";
+    b.addEventListener("click",function(){shelfTake(key,1);});
+    w.appendChild(b);
+  }
+  return w;
+}
+function renderShelves(){
+  var keys=Object.keys(state.shelf).sort();
+  var box=$("#shelfAtom");box.innerHTML="";
+  if(!keys.length)box.innerHTML="<p class='muted'>Nothing saved yet. Build an atom and press save. Anything on this shelf can be used on the Build tab.</p>";
+  else keys.forEach(function(k){box.appendChild(shelfChip(k,true));});
+  renderStock();renderRack();
+}
+function renderStock(){
+  var row=$("#stockRow");
+  if(!state.teacher){row.hidden=true;return;}
+  row.hidden=false;row.innerHTML="";
+  ORDER.forEach(function(sym){
+    var d=EL[sym];
+    var b=document.createElement("button");
+    b.className="echip";
+    b.innerHTML="<span class='ball' style='background:"+d.color+";color:"+d.text+"'>"+sym+"</span><small>+1 each tap</small>";
+    b.addEventListener("click",function(){shelfAdd(sym,1);sndTick();});
+    row.appendChild(b);
+  });
+}
+$("#stockGo").addEventListener("click",function(){
+  var v=($("#stockPass").value||"").trim().toUpperCase();
+  if(v===TEACHER_CODE){
+    state.teacher=true;
+    $("#stockMsg").textContent="Stockroom open. Every tap adds one atom, so five taps on O gives five oxygen.";
+    $("#stockGate").hidden=true;
+    sndGood();renderStock();
+  } else {
+    $("#stockMsg").textContent="That code did not work. Check with your teacher and try again.";
+    sndBad();
+  }
+});
+
+/* ===================== bond lab ===================== */
+var BONDSET=["H","C","N","O","F","Na","Mg","Al","Si","P","S","Cl","He","Ne"];
+function capOf(s){return (s==="H"||s==="He")?2:8;}
+function needOf(s){return capOf(s)-EL[s].valence;}
+function renderBondChips(){
+  var w=$("#bondChips");w.innerHTML="";
+  BONDSET.forEach(function(sym){
+    var d=EL[sym];
+    var b=document.createElement("button");
+    b.className="echip"+(state.bondPick.indexOf(sym)>=0?" sel":"");
+    b.innerHTML="<span class='ball' style='background:"+d.color+";color:"+d.text+"'>"+sym+"</span><small>"+d.valence+" outer</small>";
+    b.addEventListener("click",function(){
+      if(state.bondPick.length>=2)state.bondPick=[];
+      state.bondPick.push(sym);
+      sndTick();renderBondChips();drawBondStage();
+      $("#bondExplain").hidden=true;
+      $("#bondGo").disabled=state.bondPick.length!==2;
+    });
+    w.appendChild(b);
+  });
+}
+function coreNode(sym,cx,cy){
+  var d=EL[sym],R=34,g=el("g",{});
+  g.appendChild(el("circle",{cx:cx,cy:cy,r:R,fill:d.color,stroke:"rgba(0,0,0,.45)","stroke-width":3}));
+  g.appendChild(el("circle",{cx:cx-R*0.3,cy:cy-R*0.32,r:R*0.42,fill:"rgba(255,255,255,.25)"}));
+  var t=el("text",{x:cx,y:cy,"text-anchor":"middle","dominant-baseline":"central","font-size":22,"font-weight":"800",fill:d.text,"font-family":"Bricolage Grotesque, sans-serif"});
+  t.textContent=sym;g.appendChild(t);return g;
+}
+function drawBondStage(){
+  var s=$("#bondStage");s.innerHTML="";
+  var spots=[[190,180],[450,180]];
+  [state.bondPick[0],state.bondPick[1]].forEach(function(sym,i){
+    var cx=spots[i][0],cy=spots[i][1];
+    if(!sym){
+      s.appendChild(el("circle",{cx:cx,cy:cy,r:34,fill:"none",stroke:"var(--bench-line)","stroke-width":3,"stroke-dasharray":"7 7"}));
+      s.appendChild(labelEl(cx,cy+70,i===0?"pick an atom":"pick a second atom"));return;
+    }
+    var R=76;
+    s.appendChild(el("circle",{cx:cx,cy:cy,r:R,fill:"none",stroke:"var(--bench-line)","stroke-width":2}));
+    s.appendChild(coreNode(sym,cx,cy));
+    var v=EL[sym].valence;
+    for(var k=0;k<v;k++){var a=(k/v)*Math.PI*2-Math.PI/2;s.appendChild(dotEl(cx+Math.cos(a)*R,cy+Math.sin(a)*R));}
+    s.appendChild(labelEl(cx,cy+R+32,EL[sym].name+", "+v+" outer electron"+(v>1?"s":""),14));
+    var nd=needOf(sym);
+    s.appendChild(labelEl(cx,cy+R+52,nd===0?"outer shell already full":"needs "+nd+" more to fill the shell",14,nd===0?"var(--good)":"var(--signal)"));
+  });
+}
+function bondGo(){
+  var A=state.bondPick[0],B=state.bondPick[1];
+  var ex=$("#bondExplain");ex.hidden=false;
+  var aN=needOf(A),bN=needOf(B),aM=!!EL[A].metal,bM=!!EL[B].metal;
+  if(aN===0||bN===0){
+    drawBondStage();sndBad();
+    var noble=aN===0?A:B;
+    ex.className="card explain none";
+    ex.innerHTML="<h3>Nothing happens</h3><p>"+EL[noble].name+" already has a full outer shell, so there is nothing to gain by bonding. Atoms react in order to fill that shell. Fill it already and the atom just drifts around on its own, which is why helium and neon float through the room without reacting with anything in it.</p>";
+    return;
+  }
+  if(aM&&bM){metallic(A,B);return;}
+  if(aM||bM)ionic(A,B,aM);else covalent(A,B,aN,bN);
+}
+function metallic(A,B){
+  var s=$("#bondStage");s.innerHTML="";
+  for(var r=0;r<3;r++)for(var c=0;c<5;c++){
+    var x=180+c*70,y=110+r*70,sym=((r+c)%2===0)?A:B;
+    s.appendChild(coreNode(sym,x,y));
+    s.appendChild(chargeBadge(x+26,y-26,"+"));
+  }
+  var seeds=[[150,90],[250,150],[350,100],[450,180],[520,120],[200,230],[320,250],[430,90],[500,240],[260,80]];
+  seeds.forEach(function(p,i){
+    var d=dotEl(p[0],p[1],"var(--electron)",7);
+    if(!reduced){
+      d.appendChild(el("animate",{attributeName:"cx",values:p[0]+";"+(p[0]+(i%2?60:-60))+";"+p[0],dur:(3+i*0.3)+"s",repeatCount:"indefinite"}));
+      d.appendChild(el("animate",{attributeName:"cy",values:p[1]+";"+(p[1]+(i%3?-34:34))+";"+p[1],dur:(4+i*0.25)+"s",repeatCount:"indefinite"}));
+    }
+    s.appendChild(d);
+  });
+  s.appendChild(labelEl(320,44,"outer electrons leave their atoms and drift through the whole lump",15,"var(--ink)"));
+  s.appendChild(labelEl(320,340,"positive cores sitting in a sea of shared electrons",15,"var(--ink)"));
+  sndGood();
+  var ex=$("#bondExplain");
+  ex.className="card explain";
+  ex.innerHTML="<h3>Metallic bond: everybody pools</h3>"+
+    "<p>Both of these are metals, and metals react by giving electrons away. Neither one will take them, so no ionic bond forms and no molecule forms either. Instead every atom releases its outer electrons into a shared pool that belongs to the whole piece of metal.</p>"+
+    "<p>That explains three things at once. The loose electrons carry charge, so metals conduct electricity. The cores can slide past each other without breaking the bond, so metals bend instead of shattering. And there are no separate units in there, so a copper wire has no molecules to point at.</p>"+
+    "<p>Two metals melted together make an alloy, which is a mixture rather than a compound. Bronze and steel are made this way.</p>";
+}
+function ionic(A,B,aIsMetal){
+  var s=$("#bondStage");s.innerHTML="";
+  var metal=aIsMetal?A:B,non=aIsMetal?B:A;
+  var mx=aIsMetal?190:450,nx=aIsMetal?450:190,cy=180,R=76;
+  var give=EL[metal].valence,need=needOf(non),moved=Math.min(give,need);
+  s.appendChild(el("circle",{cx:mx,cy:cy,r:R,fill:"none",stroke:"var(--bench-line)","stroke-width":2}));
+  s.appendChild(el("circle",{cx:nx,cy:cy,r:R,fill:"none",stroke:"var(--bench-line)","stroke-width":2}));
+  s.appendChild(coreNode(metal,mx,cy));s.appendChild(coreNode(non,nx,cy));
+  var flyers=[];
+  for(var k=0;k<give;k++){
+    var a=(k/give)*Math.PI*2-Math.PI/2;
+    var c=dotEl(mx+Math.cos(a)*R,cy+Math.sin(a)*R,k<moved?"var(--signal)":"var(--electron)");
+    c.setAttribute("class","flyer");s.appendChild(c);
+    if(k<moved)flyers.push(c);
+  }
+  var nonV=EL[non].valence,open=[];
+  for(k=0;k<8;k++){
+    var a2=(k/8)*Math.PI*2-Math.PI/2;
+    var x=nx+Math.cos(a2)*R,y=cy+Math.sin(a2)*R;
+    if(k<nonV)s.appendChild(dotEl(x,y));else open.push([x,y]);
+  }
+  s.appendChild(labelEl(320,44,"the outer electron moves across, it is not shared",15,"var(--ink)"));
+  var targets=open.slice(0,moved);
+  requestAnimationFrame(function(){
+    flyers.forEach(function(c,i){
+      var t=targets[i]||[nx,cy];
+      c.setAttribute("transform","translate("+(t[0]-parseFloat(c.getAttribute("cx")))+","+(t[1]-parseFloat(c.getAttribute("cy")))+")");
+    });
+  });
+  setTimeout(function(){
+    s.appendChild(chargeBadge(mx-R*0.72,cy-R*0.72,(moved>1?moved:"")+"+"));
+    s.appendChild(chargeBadge(nx+R*0.72,cy-R*0.72,(moved>1?moved:"")+"-"));
+    s.appendChild(el("line",{x1:Math.min(mx,nx)+R+8,y1:cy,x2:Math.max(mx,nx)-R-8,y2:cy,stroke:"var(--signal)","stroke-width":5,"stroke-dasharray":"3 11","stroke-linecap":"round"}));
+    s.appendChild(labelEl(320,330,"opposite charges pull together, and that pull is the ionic bond",15,"var(--ink)"));
+    sndGood();
+  },reduced?0:950);
+  var leftover=give-moved,short=need-moved;
+  var ionM=(moved>1?metal+"<sup>"+moved+"+</sup>":metal+"<sup>+</sup>");
+  var ionN=(moved>1?non+"<sup>"+moved+"-</sup>":non+"<sup>-</sup>");
+  var extra="";
+  if(short>0)extra=" The "+EL[non].name.toLowerCase()+" is still "+short+" short, so a second "+EL[metal].name.toLowerCase()+" atom hands over its electron too. The real compound is "+metal+"<sub>2</sub>"+non+".";
+  if(leftover>0)extra=" The "+EL[metal].name.toLowerCase()+" still has "+leftover+" outer electron to get rid of, so another "+EL[non].name.toLowerCase()+" atom takes it. The real compound is "+metal+non+"<sub>2</sub>.";
+  var ex=$("#bondExplain");
+  ex.className="card explain"+((leftover===0&&short===0)?"":" part");
+  ex.innerHTML="<h3>Ionic bond: the electron changes owner</h3>"+
+    "<p>"+EL[metal].name+" has "+give+" outer electron"+(give>1?"s":"")+" sitting above a shell that is already full, so the cheapest move is to hand "+(give>1?"them":"it")+" over. "+EL[non].name+" is "+need+" short of a full shell, so it takes "+moved+".</p>"+
+    "<p>Now recount the charge. "+EL[metal].name+" still has all its protons but fewer electrons, so it is "+ionM+". "+EL[non].name+" has an extra electron, so it is "+ionN+". Neither one is a neutral atom anymore. They are ions, and the pull between opposite charges is what holds them together."+extra+"</p>"+
+    "<p>Ionic compounds do not sit in pairs. Millions of these ions stack into a repeating grid, so the formula gives the ratio rather than describing a single molecule.</p>";
+}
+function covalent(A,B,aN,bN){
+  var s=$("#bondStage");s.innerHTML="";
+  var order=Math.min(aN,bN,3),R=76,cy=180,ax=268,bx=372,mid=(ax+bx)/2;
+  s.appendChild(el("circle",{cx:ax,cy:cy,r:R,fill:"none",stroke:"var(--bench-line)","stroke-width":2}));
+  s.appendChild(el("circle",{cx:bx,cy:cy,r:R,fill:"none",stroke:"var(--bench-line)","stroke-width":2}));
+  s.appendChild(coreNode(A,ax,cy));s.appendChild(coreNode(B,bx,cy));
+  var loneA=EL[A].valence-order,loneB=EL[B].valence-order,k,a;
+  for(k=0;k<loneA;k++){a=Math.PI/2+(k+1)/(loneA+1)*Math.PI;s.appendChild(dotEl(ax+Math.cos(a)*R,cy+Math.sin(a)*R));}
+  for(k=0;k<loneB;k++){a=-Math.PI/2+(k+1)/(loneB+1)*Math.PI;s.appendChild(dotEl(bx+Math.cos(a)*R,cy+Math.sin(a)*R));}
+  var g=el("g",{transform:"translate("+mid+","+cy+")"}),rot=el("g",{});
+  for(k=0;k<order;k++){
+    var yy=(k-(order-1)/2)*34;
+    rot.appendChild(dotEl(-13,yy,"var(--signal)"));rot.appendChild(dotEl(13,yy,"var(--signal)"));
+  }
+  if(!reduced)rot.appendChild(el("animateTransform",{attributeName:"transform",type:"rotate",from:"0 0 0",to:"360 0 0",dur:"6s",repeatCount:"indefinite"}));
+  g.appendChild(rot);s.appendChild(g);
+  s.appendChild(labelEl(320,44,order===1?"one shared pair":(order===2?"two shared pairs, a double bond":"three shared pairs, a triple bond"),15,"var(--ink)"));
+  s.appendChild(labelEl(320,330,"the orange electrons sit in both shells at once, so both atoms count them",15,"var(--ink)"));
+  sndGood();
+  var aCap=capOf(A),bCap=capOf(B),aTot=loneA+order*2,bTot=loneB+order*2;
+  var done=(aTot===aCap&&bTot===bCap);
+  var more="";
+  if(!done){
+    var aShort=aCap-aTot,bShort=bCap-bTot;
+    var shortSym=aShort>0?A:B,bondsLeft=Math.round((aShort>0?aShort:bShort)/2);
+    more="<p>Now recount. "+EL[shortSym].name+" reaches only "+(aShort>0?aTot:bTot)+" of "+(aShort>0?aCap:bCap)+", so this pair on its own is not finished. It needs "+bondsLeft+" more bond"+(bondsLeft>1?"s":"")+", which means "+(bondsLeft>1?bondsLeft+" more atoms join in":"another atom joins in")+". Take the same two elements to the Build tab and see what the finished molecule turns out to be.</p>";
+  }
+  var polar="";
+  if(A!==B)polar="<p>The two atoms are not identical, so they do not pull on the shared pair equally. The pair sits closer to whichever atom pulls harder, leaving one end of the bond slightly negative and the other slightly positive. That is a polar covalent bond, and it is the reason water behaves the way it does.</p>";
+  var ex=$("#bondExplain");
+  ex.className="card explain"+(done?"":" part");
+  ex.innerHTML="<h3>Covalent bond: the electrons are shared</h3>"+
+    "<p>Neither of these atoms can pull an electron off the other, so instead they overlap their outer shells and share. "+EL[A].name+" puts in "+order+" electron"+(order>1?"s":"")+" and "+EL[B].name+" puts in "+order+", making "+order+" shared pair"+(order>1?"s":"")+".</p>"+
+    "<p>Here is the part that trips people up. A shared pair gets counted by both atoms. "+EL[A].name+" now counts "+loneA+" of its own plus the "+(order*2)+" shared, which is "+aTot+" of "+aCap+". "+EL[B].name+" counts "+loneB+" plus "+(order*2)+", which is "+bTot+" of "+bCap+". Nobody gave anything away and both shells are fuller than before.</p>"+
+    more+polar+"<p>Because those electrons stay in the middle, the two atoms are held together as one unit, and that unit is a molecule.</p>";
+}
+$("#bondGo").addEventListener("click",bondGo);
+$("#bondReset").addEventListener("click",function(){state.bondPick=[];renderBondChips();drawBondStage();$("#bondExplain").hidden=true;$("#bondGo").disabled=true;});
+
+/* ===================== build bench ===================== */
+var CX=320,CY=205;
+var SLOTS=[];
+for(var sr=0;sr<4;sr++)for(var sc=0;sc<7;sc++)SLOTS.push([64+sc*86,66+sr*96]);
+function freeSlot(){
+  var taken=state.tray.map(function(a){return a.slot;}),open=[];
+  SLOTS.forEach(function(s,i){if(taken.indexOf(i)<0)open.push(i);});
+  return open.length?open[Math.floor(Math.random()*open.length)]:null;
+}
+function trayCount(sym){var t=0;state.tray.forEach(function(a){if(a.el===sym)t++;});return t;}
+function renderBench(){
+  var stage=$("#stage");stage.innerHTML="";
+  $("#empty").hidden=state.tray.length>0;
+  state.tray.forEach(function(a){
+    var node=atomNode(a.el,!state.bonded&&!reduced);
+    place(node,a.x,a.y);
+    node.bob.style.animationDelay=(a.id%5)*0.45+"s";
+    if(state.bonded)node.g.classList.add("locked");
+    else{
+      node.g.addEventListener("click",function(){removeAtom(a.id);});
+      node.g.setAttribute("tabindex","0");
+      node.g.addEventListener("keydown",function(ev){if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();removeAtom(a.id);}});
+      var ti=el("title",{});ti.textContent=EL[a.el].name+" (tap to put it back)";node.g.appendChild(ti);
+    }
+    a.node=node;
+    stage.appendChild(node.g);
+  });
+  updateLive();
+}
+function updateLive(){
+  var list=state.tray.map(function(a){return a.el;});
+  $("#liveFormula").innerHTML=list.length?sub(formulaOf(list)):"nothing yet";
+  $("#bondBtn").disabled=list.length<2||state.bonded;
+}
+function addAtom(sym){
+  if(state.bonded)resetBench(false);
+  if(shelfCountEl(sym)-trayCount(sym)<=0)return;
+  var slot=freeSlot();if(slot===null)return;
+  state.tray.push({id:state.nextId++,el:sym,x:SLOTS[slot][0]+(Math.random()*18-9),y:SLOTS[slot][1]+(Math.random()*18-9),slot:slot});
+  sndTick();hideResult();renderBench();renderRack();
+}
+function removeAtom(id){state.tray=state.tray.filter(function(a){return a.id!==id;});hideResult();renderBench();renderRack();}
+function resetBench(render){
+  state.tray=[];state.bonded=false;hideResult();
+  if(render!==false){renderBench();renderRack();}
+}
+function benchBond(){
+  var list=state.tray.map(function(a){return a.el;});
+  var mol=findMol(list);
+  if(!mol){
+    sndBad();
+    var w=$("#view-build .stage-wrap");
+    w.classList.remove("shake");void w.offsetWidth;w.classList.add("shake");
+    showMiss(list);return;
+  }
+  state.bonded=true;$("#bondBtn").disabled=true;
+  animateInto(mol);sndGood();
+  var isNew=!state.found[mol.f];
+  state.found[mol.f]=1;
+  list.forEach(function(sym){
+    var keys=Object.keys(state.shelf).filter(function(k){return keySym(k)===sym;});
+    if(keys.length)shelfTake(keys[0],1);
+  });
+  state.have[mol.f]=(state.have[mol.f]||0)+1;
+  showHit(mol,isNew);
+  if(MISSIONS[state.mission]===mol.f)state.mission++;
+  renderMission();renderCollection();renderShelves();
+}
+function animateInto(mol){
+  var stage=$("#stage");
+  var pool=state.tray.slice();
+  var scale=mol.atoms.length>12?0.62:1;
+  var placed=mol.atoms.map(function(a){
+    var sym=a[0],tx=CX+a[1]*scale,ty=CY+a[2]*scale;
+    var best=-1,bd=1e9;
+    pool.forEach(function(q,i){if(q.el!==sym)return;var d=Math.hypot(q.x-tx,q.y-ty);if(d<bd){bd=d;best=i;}});
+    return {atom:pool.splice(best,1)[0],x:tx,y:ty};
+  });
+  var layer=el("g",{});
+  stage.insertBefore(layer,stage.firstChild);
+  mol.bonds.forEach(function(b){layer.appendChild(drawBondLine(placed[b[0]].x,placed[b[0]].y,placed[b[1]].x,placed[b[1]].y,b[2]));});
+  placed.forEach(function(p){
+    var node=p.atom.node;if(!node)return;
+    node.bob.classList.remove("bob");
+    node.g.classList.add("locked");
+    requestAnimationFrame(function(){place(node,p.x,p.y);});
+  });
+  requestAnimationFrame(function(){
+    var lines=layer.querySelectorAll(".bondline");
+    Array.prototype.forEach.call(lines,function(b){b.setAttribute("opacity",1);});
+  });
+  if(mol.charges){
+    setTimeout(function(){
+      mol.charges.forEach(function(c){
+        var p=placed[c[0]];
+        stage.appendChild(chargeBadge(p.x+EL[p.atom.el].r-2,p.y-EL[p.atom.el].r+2,c[1]));
+      });
+    },reduced?0:800);
+  }
+}
+function hideResult(){var r=$("#result");r.hidden=true;r.innerHTML="";}
+function kindLabel(k){
+  if(k==="element")return "element and molecule";
+  if(k==="ionic")return "compound, not a molecule";
+  return "compound and molecule";
+}
+function showHit(mol,isNew){
+  var r=$("#result");r.hidden=false;r.className="card result";
+  r.innerHTML="<h3>"+(isNew?"New: ":"")+mol.name+"</h3>"+
+    "<div class='formula'>"+sub(mol.f)+" &nbsp;·&nbsp; "+mol.tag+" &nbsp;·&nbsp; "+kindLabel(mol.kind)+"</div><p>"+mol.fact+"</p>"+
+    "<p><button class='ghost' id='againBtn'>Clear the bench</button></p>";
+  $("#againBtn").addEventListener("click",function(){resetBench();});
+}
+function showMiss(list){
+  var r=$("#result");r.hidden=false;r.className="card result miss";
+  var c=counts(list);
+  var readable=ORDER.filter(function(e){return c[e];}).map(function(e){return c[e]+" "+EL[e].name.toLowerCase();}).join(" and ");
+  r.innerHTML="<h3>Nothing forms from that</h3><p>You have "+readable+" on the bench. Every atom has to end up with a full outer shell, and this mix cannot manage it. Take one off, add another, and try again.</p>";
+}
+function renderRack(){
+  var rack=$("#rack");rack.innerHTML="";
+  var syms=[];
+  Object.keys(state.shelf).forEach(function(k){var s=keySym(k);if(syms.indexOf(s)<0&&EL[s])syms.push(s);});
+  syms.sort(function(a,b){return ORDER.indexOf(a)-ORDER.indexOf(b);});
+  if(!syms.length){
+    rack.innerHTML="<p class='muted'>Your shelf is empty. Go to the Atom tab, build some atoms and save them, or ask your teacher for the class code.</p>";
+    return;
+  }
+  syms.forEach(function(sym){
+    var d=EL[sym],left=shelfCountEl(sym)-trayCount(sym);
+    var b=document.createElement("button");
+    b.className="tile";b.disabled=left<=0;
+    b.innerHTML="<span class='ball' style='background:"+d.color+";color:"+d.text+"'>"+sym+"</span>"+
+      "<span class='nm'>"+d.name+"</span><span class='va'>"+d.valence+" outer</span><span class='ct'>"+left+"</span>";
+    b.addEventListener("click",function(){addAtom(sym);});
+    rack.appendChild(b);
+  });
+}
+function renderMission(){
+  var step=$("#missionStep"),text=$("#missionText"),hb=$("#hintBtn"),ht=$("#hintText");
+  ht.hidden=true;hb.hidden=false;hb.textContent="Show hint";
+  if(state.mission<MISSIONS.length){
+    var mol=molByF(MISSIONS[state.mission]);
+    step.textContent="Goal "+(state.mission+1)+" of "+MISSIONS.length;
+    text.textContent="Build "+mol.name.toLowerCase()+".";
+    var c=counts(mol.atoms.map(function(a){return a[0];}));
+    ht.textContent=ORDER.filter(function(e){return c[e];}).map(function(e){return c[e]+" "+EL[e].name.toLowerCase();}).join(" + ");
+  } else {
+    step.textContent="Free build";
+    var left=MOLS.length-foundCount();
+    text.textContent=left>0?("All six goals done. "+left+" more molecule"+(left>1?"s":"")+" are hiding in these elements."):"You found every molecule in the lab.";
+    hb.hidden=true;
+  }
+}
+function miniSVG(mol){
+  var pts=mol.atoms.map(function(a){return {s:a[0],x:a[1],y:a[2]};});
+  var xs=pts.map(function(p){return p.x;}),ys=pts.map(function(p){return p.y;}),pad=40;
+  var minX=Math.min.apply(null,xs)-pad,maxX=Math.max.apply(null,xs)+pad;
+  var minY=Math.min.apply(null,ys)-pad,maxY=Math.max.apply(null,ys)+pad;
+  var s=el("svg",{viewBox:minX+" "+minY+" "+(maxX-minX)+" "+(maxY-minY)});
+  mol.bonds.forEach(function(b){
+    var line=drawBondLine(pts[b[0]].x,pts[b[0]].y,pts[b[1]].x,pts[b[1]].y,b[2]);
+    line.setAttribute("opacity",1);line.setAttribute("class","");s.appendChild(line);
+  });
+  pts.forEach(function(p){var node=atomNode(p.s,false);place(node,p.x,p.y);node.g.style.cursor="default";s.appendChild(node.g);});
+  return s;
+}
+var FILTERS=[["all","Everything"],["element","Elements"],["compound","Covalent compounds"],["ionic","Ionic compounds"],["found","Only what I built"]];
+function renderFilters(){
+  var w=$("#filters");w.innerHTML="";
+  FILTERS.forEach(function(f){
+    var b=document.createElement("button");
+    b.textContent=f[1];b.setAttribute("aria-pressed",state.filter===f[0]);
+    b.addEventListener("click",function(){state.filter=f[0];renderFilters();renderCollection();});
+    w.appendChild(b);
+  });
+}
+function renderCollection(){
+  var wrap=$("#collection");wrap.innerHTML="";
+  $("#tally").innerHTML="<strong>"+foundCount()+" of "+MOLS.length+"</strong> molecules built.";
+  MOLS.forEach(function(m){
+    if(state.filter==="found"&&!state.found[m.f])return;
+    if(state.filter!=="all"&&state.filter!=="found"&&m.kind!==state.filter)return;
+    var d=document.createElement("div");
+    if(state.found[m.f]){
+      d.className="card mol";d.appendChild(miniSVG(m));
+      d.insertAdjacentHTML("beforeend","<h3>"+m.name+"</h3><div class='formula'>"+sub(m.f)+"</div>"+
+        "<span class='kind'>"+kindLabel(m.kind)+"</span><p>"+m.fact+"</p>");
+      if(state.have[m.f])d.insertAdjacentHTML("afterbegin","<span class='own'>x"+state.have[m.f]+"</span>");
+    } else {
+      var c=counts(m.atoms.map(function(a){return a[0];}));
+      d.className="card mol locked";
+      d.innerHTML="<div class='qm'>?</div><h3>Not built yet</h3><p>Made from "+ORDER.filter(function(e){return c[e];}).map(function(e){return c[e]+" "+e;}).join(" + ")+".</p>";
+    }
+    wrap.appendChild(d);
+  });
+  if(!wrap.children.length)wrap.innerHTML="<p class='muted'>Nothing here yet. Build something and it will appear.</p>";
+}
+
+/* ===================== sort it ===================== */
+var SORT=[
+  {name:"Oxygen gas",f:"O2",kind:"element",mol:true,
+   why:"Two atoms are covalently bonded, so it is a molecule. But both atoms are oxygen, and one kind of atom means it is still an element."},
+  {name:"Water",f:"H2O",kind:"compound",mol:true,
+   why:"Two different elements bonded together makes it a compound, and because the bond is covalent the unit is also a molecule."},
+  {name:"Table salt",f:"NaCl",kind:"compound",mol:false,
+   why:"Two different elements, so it is a compound. But sodium and chloride ions stack into a repeating grid instead of pairing off, so there is no unit of two atoms to point at. NaCl gives the ratio."},
+  {name:"Helium",f:"He",kind:"element",mol:false,
+   why:"One kind of atom, so an element. Its outer shell is already full, so it never bonds to anything, not even to itself, and a molecule needs at least two atoms bonded together."},
+  {name:"Carbon dioxide",f:"CO2",kind:"compound",mol:true,
+   why:"Carbon and oxygen are different elements bonded covalently, so it is both a compound and a molecule."},
+  {name:"Air",f:"",kind:"mixture",mol:null,
+   why:"Mostly nitrogen and oxygen molecules mingled together but not bonded to each other. Cool air down far enough and the two separate again, which is how factories collect them."},
+  {name:"Salt water",f:"",kind:"mixture",mol:null,
+   why:"The salt and the water are stirred together, not bonded. Boil the water off and the salt is still salt."},
+  {name:"Glucose",f:"C6H12O6",kind:"compound",mol:true,
+   why:"Three different elements bonded covalently into one unit of 24 atoms."},
+  {name:"Copper wire",f:"Cu",kind:"element",mol:false,
+   why:"One kind of atom, so an element. Copper atoms pack into a lattice and share their outer electrons across the whole piece, which is why metals conduct electricity. No separate molecules in there."},
+  {name:"Quartz",f:"SiO2",kind:"compound",mol:false,
+   why:"Two different elements bonded, so a compound. But every silicon bonds to four oxygens in one endless network, so there is no separate unit to call a molecule. The formula gives the ratio."},
+  {name:"Bronze",f:"",kind:"mixture",mol:null,
+   why:"Copper and tin melted together. The atoms mingle in the same lattice but they are not bonded in a fixed ratio, so it is a mixture, not a compound. Alloys are mixtures."},
+  {name:"Nitrogen gas",f:"N2",kind:"element",mol:true,
+   why:"A molecule, since two atoms are bonded, but still an element, since both atoms are nitrogen."}
+];
+var si=0,sScore=0,sStage=0,sMax=0;
+SORT.forEach(function(x){sMax+=(x.mol===null?1:2);});
+function renderSort(){
+  var c=$("#sortCard");
+  if(si>=SORT.length){
+    c.innerHTML="<h2>You scored "+sScore+" out of "+sMax+"</h2>"+
+      "<p class='why'>The tricky ones are oxygen gas, table salt, quartz and bronze. Element or compound asks which atoms are in there. Molecule asks how they are held together. Two different questions.</p>"+
+      "<p><button class='go' id='sRetry'>Try again</button></p>";
+    $("#sRetry").addEventListener("click",function(){si=0;sScore=0;sStage=0;renderSort();});
+    return;
+  }
+  var item=SORT[si];
+  c.innerHTML="<h2>Sort it</h2><p class='prog'>Item "+(si+1)+" of "+SORT.length+" · score "+sScore+"</p>"+
+    "<p class='subject'>"+item.name+"</p>"+
+    "<p style='color:var(--ink-soft);margin:0 0 8px;font-weight:700'>"+(item.f?sub(item.f):"a mix of things")+"</p>"+
+    "<p class='q'>"+(sStage===0?"Element, compound, or mixture?":"Is it a molecule?")+"</p>"+
+    "<div class='opts' id='sopts'></div><p class='why' id='swhy' hidden></p>";
+  (sStage===0?["Element","Compound","Mixture"]:["Yes, it is a molecule","No, it is not"]).forEach(function(txt,i){
+    var b=document.createElement("button");b.className="opt";b.textContent=txt;
+    b.addEventListener("click",function(){sortAnswer(i,b);});
+    $("#sopts").appendChild(b);
+  });
+}
+function sortAnswer(i,btn){
+  var item=SORT[si];
+  var all=Array.prototype.slice.call(document.querySelectorAll("#sopts .opt"));
+  all.forEach(function(b){b.disabled=true;});
+  var correct=sStage===0?["element","compound","mixture"].indexOf(item.kind):(item.mol?0:1);
+  if(i===correct){btn.classList.add("right");sScore++;sndGood();}
+  else{btn.classList.add("wrong");all[correct].classList.add("right");sndBad();}
+  var goSecond=(sStage===0&&item.mol!==null);
+  var w=$("#swhy");w.hidden=false;
+  w.innerHTML=goSecond?(i===correct?"Correct. Now the second question about the same thing.":"Not that one. Try the second question anyway."):item.why+" ";
+  var next=document.createElement("button");
+  next.className="ghost";next.style.marginTop="10px";next.style.display="block";
+  next.textContent=goSecond?"Next question":(si===SORT.length-1?"See score":"Next item");
+  next.addEventListener("click",function(){if(goSecond){sStage=1;}else{si++;sStage=0;}renderSort();});
+  w.appendChild(next);next.focus();
+}
+
+/* ===================== quiz ===================== */
+var QUIZ=[
+ {q:"An atom has 6 protons and 6 electrons. What is its net charge?",a:["+6","0","-6"],c:1,
+  why:"Each proton is one positive and each electron is one negative. Equal numbers cancel out, so the atom is neutral."},
+ {q:"What decides which element an atom is?",a:["The number of neutrons","The number of protons","The number of electrons"],c:1,
+  why:"Protons only. Change the neutrons and you get a different isotope of the same element. Change the electrons and you get an ion of the same element."},
+ {q:"A sodium atom loses one electron. What happens to its charge?",a:["It becomes +1","It becomes -1","Nothing changes"],c:0,
+  why:"It still has 11 protons but only 10 electrons, so one positive is left uncancelled. Losing a negative makes something positive."},
+ {q:"Why do atoms bond in the first place?",a:["They are attracted to each other's nuclei","They end up in a lower energy state with a fuller outer shell","Bigger particles are always more stable"],c:1,
+  why:"A bond forms because the bonded arrangement sits lower in energy than the separate atoms. Filling the outer shell is the middle school version of that idea."},
+ {q:"Neon has 8 electrons in its outer shell. How reactive is it?",a:["Extremely reactive","Barely reactive at all"],c:1,
+  why:"A full outer shell means there is nothing to gain by bonding, so neon drifts around as single atoms."},
+ {q:"Sodium and chlorine bond. What kind of bond is it?",a:["Covalent","Ionic","Metallic"],c:1,
+  why:"A metal and a nonmetal. Sodium hands its electron over rather than sharing it, so the two become oppositely charged ions that attract."},
+ {q:"In a covalent bond, the shared pair of electrons...",a:["Belongs to the stronger atom","Counts for both atoms at once","Sits still in the middle doing nothing"],c:1,
+  why:"That is the whole trick of covalent bonding. Both atoms count the same pair toward their own outer shell, so both end up satisfied without anyone giving anything away."},
+ {q:"Why can copper be bent into a wire without shattering?",a:["Its atoms are bonded in pairs","Its outer electrons are pooled, so the cores slide past each other","Copper has no bonds at all"],c:1,
+  why:"Metallic bonding. The electron pool holds the metal together no matter how the positive cores rearrange, so metals bend rather than crack."},
+ {q:"Nitrogen gas has a triple bond. Compared with a single bond, that bond is...",a:["Longer and weaker","Shorter and stronger","Exactly the same"],c:1,
+  why:"More shared pairs pull the two nuclei closer together and take more energy to break. That is why nitrogen in the air is so hard to react with."},
+ {q:"In water, the shared electrons sit closer to the oxygen. What does that make the bond?",a:["Ionic","Polar covalent","Metallic"],c:1,
+  why:"The pair is still shared, so it is covalent, but the sharing is uneven, which makes it polar. That small lopsidedness explains most of water's behavior."},
+ {q:"Which best describes NaCl?",a:["An element","A compound, and also a molecule","A compound, but not a molecule"],c:2,
+  why:"Two different elements makes it a compound. But the ions stack in a repeating grid rather than pairing off, so the formula gives a ratio instead of describing one molecule."},
+ {q:"Which best describes O<sub>2</sub>?",a:["An element and a molecule","A compound and a molecule","A mixture"],c:0,
+  why:"Two atoms bonded together makes it a molecule, and both atoms being oxygen keeps it an element. Molecule and compound are not the same label."},
+ {q:"How many atoms are in one molecule of H<sub>2</sub>SO<sub>4</sub>?",a:["3","7","8"],c:1,
+  why:"Two hydrogen, one sulfur, four oxygen. The subscript counts only the symbol directly in front of it, and no number means one."},
+ {q:"You add two neutrons to a carbon atom. What do you have?",a:["A different element","A different isotope of carbon","An ion of carbon"],c:1,
+  why:"Neutrons change the mass and can change whether the nucleus holds together, but the proton count still says carbon."},
+ {q:"Air is best described as...",a:["A compound","A mixture","A single element"],c:1,
+  why:"Nitrogen and oxygen molecules mingling without bonding to each other, in no fixed ratio. Cool it enough and you can separate them physically."}
+];
+var qi=0,qScore=0,qAnswered=false;
+function renderQuiz(){
+  var c=$("#quizCard");
+  if(qi>=QUIZ.length){
+    c.innerHTML="<h2>You got "+qScore+" out of "+QUIZ.length+"</h2>"+
+      "<p class='why'>"+(qScore>=11?"Solid. You can tell bonding types apart, which is the part most people fumble.":"Worth another run. Reread the Bond tab, especially the part about shared pairs being counted twice.")+"</p>"+
+      "<p><button class='go' id='retry'>Try again</button></p>";
+    $("#retry").addEventListener("click",function(){qi=0;qScore=0;renderQuiz();});
+    return;
+  }
+  var item=QUIZ[qi];qAnswered=false;
+  c.innerHTML="<h2>Quick check</h2><p class='prog'>Question "+(qi+1)+" of "+QUIZ.length+" · score "+qScore+"</p>"+
+    "<p class='q'>"+item.q+"</p><div class='opts' id='opts'></div><p class='why' id='why' hidden></p>";
+  item.a.forEach(function(txt,i){
+    var b=document.createElement("button");b.className="opt";b.innerHTML=txt;
+    b.addEventListener("click",function(){quizAnswer(i,b);});
+    $("#opts").appendChild(b);
+  });
+}
+function quizAnswer(i,btn){
+  if(qAnswered)return;qAnswered=true;
+  var item=QUIZ[qi];
+  var all=Array.prototype.slice.call(document.querySelectorAll("#opts .opt"));
+  all.forEach(function(b){b.disabled=true;});
+  if(i===item.c){btn.classList.add("right");qScore++;sndGood();}
+  else{btn.classList.add("wrong");all[item.c].classList.add("right");sndBad();}
+  var w=$("#why");w.hidden=false;w.innerHTML=item.why+" ";
+  var next=document.createElement("button");
+  next.className="ghost";next.style.marginTop="10px";next.style.display="block";
+  next.textContent=(qi===QUIZ.length-1)?"See score":"Next question";
+  next.addEventListener("click",function(){qi++;renderQuiz();});
+  w.appendChild(next);next.focus();
+}
+
+
+/* ===================== groups tab ===================== */
+var GROUPS=[
+ {g:1,name:"Group 1",nick:"the alkali metals",outer:"1 outer electron",members:[3,11],
+  body:"One electron sitting alone above a shell that is already full. Getting rid of it is far easier than collecting seven more, so these metals hand it over at the first opportunity. That is why lithium and sodium are so violently reactive, and why they are stored under oil instead of on a shelf. Everything in this column forms a 1+ ion.",
+  note:"Hydrogen sits at the top of this column because it also has one outer electron, but it is not a metal and it usually shares that electron rather than giving it away."},
+ {g:2,name:"Group 2",nick:"the alkaline earth metals",outer:"2 outer electrons",members:[4,12],
+  body:"Two electrons to give away instead of one. Still reactive, but they have to lose two at once, so they are less frantic than group 1. Magnesium burns with a white flame bright enough to hurt your eyes. Calcium, one row below the ones shown here, is the metal locked into your bones and teeth. Everything in this column forms a 2+ ion."},
+ {g:13,name:"Group 13",nick:"the boron group",outer:"3 outer electrons",members:[5,13],
+  body:"Three to give away. This is where the formulas start to look strange until you count electrons. Aluminum gives three and oxygen takes two, so the smallest whole number match is two aluminum for every three oxygen, which is exactly where Al2O3 comes from."},
+ {g:14,name:"Group 14",nick:"the carbon group",outer:"4 outer electrons",members:[6,14],
+  body:"Exactly halfway. Four is too many to give away and too many to collect, so these elements share instead, and they share four times over. That is the single fact that makes carbon the backbone of every living thing. Silicon sits below it with the same four bonds, which is why quartz and sand build endless networks the same way carbon builds endless chains."},
+ {g:15,name:"Group 15",nick:"the nitrogen group",outer:"5 outer electrons",members:[7,15],
+  body:"Three electrons short of a full shell, so they form three bonds. Watch what that predicts. Nitrogen bonds to three hydrogens and gives ammonia, NH3. Phosphorus sits directly below it and bonds to three hydrogens too, giving PH3. Same column, same shape, and you did not have to memorize the second one."},
+ {g:16,name:"Group 16",nick:"the oxygen group",outer:"6 outer electrons",members:[8,16],
+  body:"Two short, so they form two bonds, and either take two electrons or share two pairs. Oxygen and sulfur are in the same column, which is why water and hydrogen sulfide are drawn with the same bent shape. One of them keeps you alive and the other smells like a rotten egg, but structurally they are twins."},
+ {g:17,name:"Group 17",nick:"the halogens",outer:"7 outer electrons",members:[9,17],
+  body:"One electron short. Collecting one is much easier than giving away seven, so these are the great electron thieves. Fluorine is the greediest element on the whole table. Pair any halogen with any group 1 metal and you get a clean one for one trade, which is why NaCl and NaF have the same simple formula."},
+ {g:18,name:"Group 18",nick:"the noble gases",outer:"full outer shell",members:[2,10,18],
+  body:"Already full, so there is nothing to gain by bonding. These atoms drift through the room as single atoms and react with essentially nothing. They are the reason the whole unit works: every other atom on the table is trying to end up like this one, and a bond is just how it gets there.",
+  note:"Helium is full at 2 because the first shell only holds 2. Neon and argon are full at 8."}
+];
+var gPick=17;
+function groupOf(z){return PT[z]?PT[z].g:0;}
+function renderGroups(){
+  var grid=$("#gGrid");if(!grid)return;
+  grid.innerHTML="";
+  for(var g=1;g<=18;g++){
+    var live=(g<=2||g>=13);
+    var h=document.createElement("button");
+    h.className="ghead"+(live?"":" off")+(gPick===g?" on":"");
+    h.textContent=live?g:"";
+    if(live)(function(gg){h.addEventListener("click",function(){gPick=gg;renderGroups();});})(g);
+    else h.disabled=true;
+    grid.appendChild(h);
+  }
+  for(var row=1;row<=3;row++){
+    for(var col=1;col<=18;col++){
+      var found=null;
+      (function(r,c){PT.forEach(function(x,i){if(x&&x.row===r&&x.g===c)found=i;});})(row,col);
+      if(found===null){
+        var blank=document.createElement("div");blank.className="gblank";grid.appendChild(blank);continue;
+      }
+      var info=PT[found];
+      var b=document.createElement("button");
+      b.className="gcell"+(info.g===gPick?" on":" dim");
+      b.style.background=info.c;b.style.color=info.t;
+      b.title=info.n+", group "+info.g+", period "+info.row;
+      b.innerHTML="<i>"+found+"</i><b>"+info.s+"</b>";
+      (function(gg){b.addEventListener("click",function(){gPick=gg;renderGroups();});})(info.g);
+      grid.appendChild(b);
+    }
+  }
+  renderGroupDetail();
+}
+function shellDiagram(z,cx,cy){
+  var info=PT[z],g=el("g",{}),radii=[32,54,76];
+  var shells=shellsFor(z);
+  shells.forEach(function(cnt,i){
+    g.appendChild(el("circle",{cx:cx,cy:cy,r:radii[i],fill:"none",stroke:"var(--bench-line)","stroke-width":2}));
+  });
+  shells.forEach(function(cnt,i){
+    var outerMost=(i===shells.length-1);
+    for(var k=0;k<cnt;k++){
+      var a=(k/cnt)*Math.PI*2-Math.PI/2;
+      g.appendChild(el("circle",{cx:cx+Math.cos(a)*radii[i],cy:cy+Math.sin(a)*radii[i],r:outerMost?7:5,
+        fill:outerMost?"var(--signal)":"var(--electron)",stroke:"#fff","stroke-width":2}));
+    }
+  });
+  g.appendChild(el("circle",{cx:cx,cy:cy,r:21,fill:info.c,stroke:"rgba(0,0,0,.45)","stroke-width":2.5}));
+  var t=el("text",{x:cx,y:cy,"text-anchor":"middle","dominant-baseline":"central","font-size":17,"font-weight":"800",
+    "font-family":"Bricolage Grotesque, sans-serif",fill:info.t});
+  t.textContent=info.s;g.appendChild(t);
+  g.appendChild(labelEl(cx,cy+102,info.n,14,"var(--ink)","700"));
+  g.appendChild(labelEl(cx,cy+120,"period "+info.row+", "+shells.length+" shell"+(shells.length>1?"s":""),12.5));
+  return g;
+}
+function renderGroupDetail(){
+  var box=$("#gDetail");if(!box)return;
+  var grp=null;GROUPS.forEach(function(x){if(x.g===gPick)grp=x;});
+  if(!grp){box.innerHTML="";return;}
+  box.innerHTML="<h3>"+grp.name+", "+grp.nick+"</h3>"+
+    "<p class='sub'>every element in this column has "+grp.outer+"</p>"+
+    "<p>"+grp.body+"</p>"+(grp.note?"<p>"+grp.note+"</p>":"");
+  var n=grp.members.length;
+  var svg=el("svg",{viewBox:"0 0 700 264",role:"img"});
+  svg.setAttribute("aria-label","Shell diagrams for "+grp.name);
+  grp.members.forEach(function(z,i){
+    var cx=700/(n+1)*(i+1);
+    svg.appendChild(shellDiagram(z,cx,102));
+  });
+  svg.appendChild(labelEl(350,250,"different sizes and different numbers of shells, but the same outer count, so they behave alike",13.5,"var(--ink-soft)"));
+  box.appendChild(svg);
+}
+
+/* ===================== periodic minimap ===================== */
+function renderPT(){
+  var groups=$("#ptGroups");groups.innerHTML="";
+  for(var g=1;g<=18;g++){
+    var sp=document.createElement("span");
+    sp.textContent=(g<=2||g>=13)?g:"";
+    groups.appendChild(sp);
+  }
+  var grid=$("#ptGrid");grid.innerHTML="";
+  for(var row=1;row<=3;row++){
+    for(var gg=1;gg<=18;gg++){
+      var found=null;
+      (function(r,c){PT.forEach(function(x,i){if(x&&x.row===r&&x.g===c)found=i;});})(row,gg);
+      if(found===null){grid.appendChild(document.createElement("div"));continue;}
+      var info=PT[found];
+      var b=document.createElement("button");
+      b.className="ptcell";b.dataset.z=found;
+      b.style.background=info.c;b.style.color=info.t;
+      b.title=info.n+", atomic number "+found+", average mass "+info.w;
+      b.innerHTML="<i>"+found+"</i><b>"+info.s+"</b>";
+      (function(z){
+        b.addEventListener("click",function(){
+          loadElement(z);
+          document.getElementById("tab-atom").click();
+          window.scrollTo({top:0,behavior:reduced?"auto":"smooth"});
+        });
+      })(found);
+      grid.appendChild(b);
+    }
+  }
+}
+$("#ptToggle").addEventListener("click",function(){
+  var s=$("#ptScroll");
+  var hide=s.style.display!=="none";
+  s.style.display=hide?"none":"block";
+  $("#ptToggle").textContent=hide?"Show":"Hide";
+});
+
+/* ===================== lab code (save and load) ===================== */
+function packState(){
+  var shelf=Object.keys(state.shelf).map(function(k){return k+"*"+state.shelf[k];}).join(",");
+  var have=Object.keys(state.have).map(function(k){return k+"*"+state.have[k];}).join(",");
+  var found=Object.keys(state.found).join(",");
+  var raw="1|"+shelf+"|"+have+"|"+found+"|"+state.mission+"|"+qScore+"|"+sScore;
+  var b64=btoa(raw).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+  return "MLAB"+b64;
+}
+function unpackState(code){
+  code=(code||"").trim();
+  if(code.indexOf("MLAB")!==0)return false;
+  var b64=code.slice(4).replace(/-/g,"+").replace(/_/g,"/");
+  while(b64.length%4)b64+="=";
+  var raw;
+  try{raw=atob(b64);}catch(e){return false;}
+  var parts=raw.split("|");
+  if(parts[0]!=="1")return false;
+  state.shelf={};state.have={};state.found={};
+  if(parts[1])parts[1].split(",").forEach(function(x){var p=x.split("*");if(p[0])state.shelf[p[0]]=parseInt(p[1],10)||0;});
+  if(parts[2])parts[2].split(",").forEach(function(x){var p=x.split("*");if(p[0])state.have[p[0]]=parseInt(p[1],10)||0;});
+  if(parts[3])parts[3].split(",").forEach(function(f){if(f)state.found[f]=1;});
+  state.mission=parseInt(parts[4],10)||0;
+  qScore=parseInt(parts[5],10)||0;
+  sScore=parseInt(parts[6],10)||0;
+  resetBench(false);
+  renderShelves();renderBench();renderMission();renderCollection();
+  return true;
+}
+$("#dnaGet").addEventListener("click",function(){
+  var code=packState();
+  var box=$("#dnaBox");
+  box.value=code;box.focus();box.select();
+  try{document.execCommand("copy");}catch(e){}
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(code);
+  $("#dnaNote").textContent="Copied. Paste it somewhere safe, then paste it back here next lesson to pick up where you left off.";
+});
+$("#dnaLoad").addEventListener("click",function(){
+  var ok=unpackState($("#dnaBox").value);
+  $("#dnaNote").textContent=ok
+    ? "Loaded. Your shelf, molecules and progress are back."
+    : "That code did not work. Codes start with MLAB and have no spaces, so check for a missing character.";
+  if(ok)sndGood();else sndBad();
+});
+
+/* ===================== tabs ===================== */
+var TABS=[["tab-atom","view-atom"],["tab-groups","view-groups"],["tab-bond","view-bond"],["tab-build","view-build"],["tab-sort","view-sort"],["tab-quiz","view-quiz"]];
+TABS.forEach(function(pair){
+  $("#"+pair[0]).addEventListener("click",function(){
+    TABS.forEach(function(p2){
+      var on=p2[0]===pair[0];
+      $("#"+p2[0]).setAttribute("aria-selected",on);
+      $("#"+p2[1]).hidden=!on;
+    });
+  });
+});
+$("#bondBtn").addEventListener("click",benchBond);
+$("#clearBtn").addEventListener("click",function(){resetBench();});
+$("#hintBtn").addEventListener("click",function(){
+  var h=$("#hintText");h.hidden=!h.hidden;
+  $("#hintBtn").textContent=h.hidden?"Show hint":"Hide hint";
+});
+$("#sound").addEventListener("click",function(){
+  state.sound=!state.sound;
+  $("#sound").textContent=state.sound?"Sound on":"Sound off";
+});
+
+/* ===================== boot ===================== */
+teachElements();teachEnergy();teachBondTypes();teachOrder();teachPolar();teachMatrix();teachJars();teachFormula();
+renderPT();
+drawAtom();
+renderGroups();
+renderBondChips();drawBondStage();
+renderShelves();
+renderBench();renderMission();renderFilters();renderCollection();
+renderSort();renderQuiz();
+</script>
+</body>
+</html>
