@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Property Detective</title>
+<style>
+  :root{
+    --navy:#10243A; --navy2:#1B3A57; --ink:#17293B; --muted:#5D6E7E;
+    --paper:#FFFFFF; --tint:#EEF3F7; --line:#C7D3DC;
+    --blue:#1C7293; --bluel:#DCEAF0;
+    --ember:#C1502E; --emberl:#F7E3DA;
+    --gold:#E8A317; --green:#2F7D5D;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;padding:20px 16px 60px;background:var(--tint);color:var(--ink);
+    font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  h1,h2,h3{font-family:"Iowan Old Style",Georgia,"Times New Roman",serif;margin:0}
+  .wrap{max-width:1200px;margin:0 auto}
+  h1{font-size:30px;color:var(--navy)}
+  .lede{margin:8px 0 0;color:var(--muted);max-width:64ch}
+
+  .pickers{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px}
+  .pick{background:var(--paper);border-radius:14px;padding:16px 18px}
+  .pick h2{font-size:17px;color:var(--navy);margin-bottom:10px}
+  .opts{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{
+    border:2px solid var(--line);background:var(--paper);color:var(--ink);border-radius:10px;
+    padding:9px 12px;font:inherit;font-weight:600;cursor:pointer;text-align:left;font-size:14px;
+  }
+  .chip small{display:block;font-weight:400;color:var(--muted);font-size:12px;margin-top:1px}
+  .chip[aria-pressed="true"]{border-color:var(--navy);background:var(--navy);color:#fff}
+  .chip[aria-pressed="true"] small{color:#C9D8E4}
+  .chip:disabled{opacity:.4;cursor:not-allowed}
+  :focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+
+  .notice{
+    margin-top:14px;padding:10px 14px;border-radius:10px;background:var(--bluel);
+    border-left:5px solid var(--blue);font-size:14px;display:none;
+  }
+  .notice.show{display:block}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;align-items:start}
+  .panel{background:var(--paper);border-radius:14px;padding:18px 20px}
+  .panel h2{font-size:19px;color:var(--navy)}
+  .panel .sub{margin:6px 0 14px;color:var(--muted);font-size:14px}
+
+  .views{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .view{background:var(--tint);border-radius:10px;padding:8px;position:relative}
+  .banner{
+    font-size:12px;font-weight:700;letter-spacing:.3px;padding:4px 8px;border-radius:6px;
+    display:inline-block;margin-bottom:6px;
+  }
+  .banner.b{background:var(--bluel);color:var(--blue)}
+  .banner.a{background:var(--emberl);color:var(--ember)}
+  .state{float:right;font-size:12px;color:var(--muted);padding-top:6px}
+  canvas{display:block;width:100%;height:auto;border-radius:6px;background:#fff}
+  .curtain{display:flex;align-items:center;justify-content:center;text-align:center;
+    height:180px;color:var(--muted);font-size:13px;padding:0 12px;background:#fff;border-radius:6px}
+  .caption{margin:10px 0 0;font-size:13px;color:var(--muted);min-height:3em}
+  .legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;font-size:12px;color:var(--muted)}
+  .legend span{display:flex;align-items:center;gap:5px}
+  .dot{width:11px;height:11px;border-radius:50%;display:inline-block}
+
+  table{width:100%;border-collapse:collapse}
+  th,td{border:1px solid var(--line);padding:7px 9px;text-align:left;font-size:13.5px}
+  thead th{background:var(--navy);color:#fff}
+  td.val{color:var(--muted)}
+  td.val.filled{color:var(--ink);font-weight:600}
+  tr.changed td.val.filled{background:var(--emberl)}
+  tr.same td.val.filled{background:var(--bluel)}
+
+  .tools{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+  button{font:inherit;font-weight:600;border-radius:10px;border:2px solid var(--blue);
+    background:var(--paper);color:var(--blue);padding:9px 13px;cursor:pointer}
+  button:hover:not(:disabled){background:var(--bluel)}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  button.done{border-color:var(--line);color:var(--muted);background:var(--tint)}
+  button.primary{background:var(--navy);border-color:var(--navy);color:#fff}
+  button.primary:hover:not(:disabled){background:var(--navy2)}
+  button.reset{border-color:var(--ember);color:var(--ember)}
+  button.reset:hover:not(:disabled){background:var(--emberl)}
+
+  .status{margin-top:14px;padding:11px 14px;border-radius:10px;background:var(--tint);font-size:14px}
+  .status b{color:var(--navy)}
+
+  .claim{margin-top:16px}
+  fieldset{border:0;padding:0;margin:0 0 14px}
+  legend{font-weight:600;margin-bottom:8px}
+  .verdict{display:flex;gap:10px;flex-wrap:wrap}
+  .verdict button{flex:1 1 200px;padding:14px;font-size:16px}
+  .verdict button[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);color:#fff}
+  .evid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px}
+  .evid label{display:flex;gap:9px;align-items:flex-start;font-size:14px;cursor:pointer}
+  .evid input{margin-top:3px;width:17px;height:17px;flex:none}
+  .feedback{margin-top:14px;padding:14px 16px;border-radius:10px;font-size:15px;display:none}
+  .feedback.show{display:block}
+  .feedback.right{background:var(--bluel);border-left:5px solid var(--green)}
+  .feedback.close{background:#FBF0D8;border-left:5px solid var(--gold)}
+  .feedback.wrong{background:var(--emberl);border-left:5px solid var(--ember)}
+  .feedback h3{font-size:16px;margin-bottom:6px}
+  .locked{opacity:.45;pointer-events:none}
+
+  @media (max-width:900px){.grid,.pickers{grid-template-columns:1fr}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Property Detective</h1>
+<p class="lede">Pick a material, pick something to do to it, then measure the same five properties before and after. Your job is to decide whether you still have the same substance. Looking different is never enough.</p>
+
+<div class="pickers">
+  <div class="pick">
+    <h2>1. Choose a material</h2>
+    <div class="opts" id="mats"></div>
+  </div>
+  <div class="pick">
+    <h2>2. Choose what to do to it</h2>
+    <div class="opts" id="procs"><span style="color:var(--muted);font-size:14px">Choose a material first.</span></div>
+  </div>
+</div>
+<div class="notice" id="notice"></div>
+
+<div class="grid">
+  <section class="panel">
+    <h2>Particle view</h2>
+    <p class="sub" id="procLine">Nothing loaded yet.</p>
+    <div class="views">
+      <div class="view">
+        <span class="banner b">Before</span><span class="state" id="stBefore"></span>
+        <canvas id="cBefore" width="330" height="190"></canvas>
+      </div>
+      <div class="view">
+        <span class="banner a" id="afterBanner">After</span><span class="state" id="stAfter"></span>
+        <canvas id="cAfter" width="330" height="190" hidden></canvas>
+        <div class="curtain" id="curtain">Run the process to reveal this.</div>
+      </div>
+    </div>
+    <div class="legend" id="legend"></div>
+    <p class="caption" id="caption"></p>
+    <div class="tools">
+      <button id="runBtn" class="primary" disabled>Run the process</button>
+      <button id="resetBtn" class="reset">Reset this run</button>
+    </div>
+    <p class="status" id="status">Choose a material to begin.</p>
+  </section>
+
+  <section class="panel">
+    <h2>Lab bench</h2>
+    <p class="sub" id="benchSub">Measure all five properties before you change anything.</p>
+    <table>
+      <thead><tr><th>Property</th><th>Before</th><th>After</th></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div class="tools" id="tools"></div>
+  </section>
+</div>
+
+<section class="panel claim locked" id="claimPanel">
+  <h2>Make your claim</h2>
+  <p class="sub">Unlocks once every property is measured twice.</p>
+  <fieldset>
+    <legend>What happened to this material?</legend>
+    <div class="verdict">
+      <button id="btnPhys" aria-pressed="false">Physical change<br><span style="font-weight:400;font-size:13px">Same substance, new form or state</span></button>
+      <button id="btnChem" aria-pressed="false">Chemical change<br><span style="font-weight:400;font-size:13px">A different substance now exists</span></button>
+    </div>
+  </fieldset>
+  <fieldset>
+    <legend>Which measurements convinced you? Tick every row you used.</legend>
+    <div class="evid" id="evid"></div>
+  </fieldset>
+  <button id="checkBtn" class="primary" disabled>Check my reasoning</button>
+  <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
+</section>
+</div>
+
+<script>
+/* ============ atoms ============ */
+const A={
+  H :{c:"#C3CCD4",r:5,  n:"hydrogen"},
+  C :{c:"#17293B",r:7,  n:"carbon"},
+  O :{c:"#1C7293",r:8,  n:"oxygen"},
+  Na:{c:"#8E6FB0",r:9,  n:"sodium"},
+  Cl:{c:"#4E8C6A",r:9,  n:"chlorine"},
+  Fe:{c:"#8C97A1",r:9.5,n:"iron"}
+};
+/* a = atom list [symbol,dx,dy]; b = bonds as index pairs (ionic parts get no bond) */
+const M={
+  h2o :{a:[["O",0,0],["H",-10.3,8],["H",10.3,8]], b:[[0,1],[0,2]]},
+  h2  :{a:[["H",-6,0],["H",6,0]], b:[[0,1]]},
+  o2  :{a:[["O",-7,0],["O",7,0]], b:[[0,1]]},
+  fe  :{a:[["Fe",0,0]], b:[]},
+  fe2o3:{a:[["Fe",-11,-5],["Fe",11,-5],["O",0,-13],["O",-15,8],["O",15,8]],
+         b:[[0,2],[1,2],[0,3],[1,4]]},
+  fecl2:{a:[["Fe",0,0],["Cl",-17,0],["Cl",17,0]], b:[]},
+  nacl:{a:[["Na",-10,0],["Cl",10,0]], b:[]},
+  co2 :{a:[["C",0,0],["O",-14,0],["O",14,0]], b:[[0,1],[0,2]]},
+  carbon:{a:[["C",0,-13],["C",11,-6],["C",11,7],["C",0,13],["C",-11,7],["C",-11,-6]],
+          b:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,0]]},
+  sucrose:{a:[["C",0,-14],["C",12,-7],["C",12,7],["C",0,14],["C",-12,7],["O",-12,-7],
+              ["O",22,-14],["O",0,24],["H",-22,14],["H",22,16],["C",-22,-16],["O",-32,-6]],
+           b:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,0],[1,6],[3,7],[4,8],[2,9],[0,10],[10,11]]},
+  nahco3:{a:[["Na",-24,0],["C",6,0],["O",6,-13],["O",18,8],["O",-6,8],["H",-8,18]],
+          b:[[1,2],[1,3],[1,4],[4,5]]},
+  na2co3:{a:[["Na",-25,-2],["Na",25,-2],["C",0,2],["O",0,-11],["O",-12,12],["O",12,12]],
+          b:[[2,3],[2,4],[2,5]]},
+  naoac:{a:[["Na",-28,0],["C",-6,0],["C",8,0],["O",17,-10],["O",17,10],
+            ["H",-12,-12],["H",-12,12],["H",-2,-14]],
+         b:[[1,2],[2,3],[2,4],[1,5],[1,6],[1,7]]}
+};
+
+/* ============ data ============ */
+const ROWS=[
+  {id:"look",label:"Appearance and state",tool:"Look at it"},
+  {id:"mass",label:"Mass",               tool:"Weigh it"},
+  {id:"melt",label:"Melting point",      tool:"Heat it to melt"},
+  {id:"sol", label:"Dissolves in water", tool:"Stir into water"},
+  {id:"dens",label:"Density",            tool:"Find its density"}
+];
+
+const MATERIALS=[
+{
+  id:"water", name:"Water", sub:"H\u2082O",
+  before:{look:"clear colorless liquid",mass:"100.0 g",melt:"0 \u00B0C",sol:"it is the water",dens:"1.00 g/cm\u00B3"},
+  scene:{state:"liquid",sp:[{m:"h2o",n:11}]},
+  capBefore:"Bent water molecules, touching and sliding past each other.",
+  procs:[
+   {id:"freeze",name:"Freeze it solid",sub:"put it in the freezer",type:"physical",
+    after:{look:"clear hard solid (ice)",mass:"100.0 g",melt:"0 \u00B0C",sol:"melts, then mixes",dens:"0.92 g/cm\u00B3"},
+    scene:{state:"solid",sp:[{m:"h2o",n:11}]},
+    cap:"Same molecules, now locked in an open hexagonal pattern.",
+    key:["melt","mass"],trap:"dens",
+    why:"Water is unusual: it expands when it freezes, so the density really did drop. That is the state changing, not the substance. It still melts at exactly 0 \u00B0C and the mass never moved.",
+    trapMsg:"Density depends on state. You cannot compare a solid to a liquid and conclude anything about identity."},
+   {id:"boil",name:"Boil it into steam",sub:"caught in a sealed tube",type:"physical",
+    after:{look:"invisible gas, condenses back to clear liquid",mass:"100.0 g",melt:"0 \u00B0C",sol:"condenses, then mixes",dens:"0.0006 g/cm\u00B3 as gas"},
+    scene:{state:"gas",sp:[{m:"h2o",n:7}]},
+    cap:"The molecules flew apart. Same molecules, far more space between them.",
+    key:["melt","mass"],trap:"dens",
+    why:"A gas is mostly empty space, so the density number collapsed. Nothing was lost: the sealed tube still holds 100.0 g and it still freezes at 0 \u00B0C.",
+    trapMsg:"A gas is the same molecules spread out. Density always crashes when a liquid becomes a gas."},
+   {id:"dye",name:"Stir in blue food coloring",sub:"one drop",type:"physical",
+    after:{look:"deep blue liquid",mass:"100.3 g",melt:"0 \u00B0C",sol:"mixes completely",dens:"1.00 g/cm\u00B3"},
+    scene:{state:"liquid",sp:[{m:"h2o",n:11}]},
+    cap:"Dye molecules spread out between the water molecules. The water is untouched.",
+    key:["melt","dens"],trap:"look",
+    why:"It looks completely different and it is still water with dye scattered through it. Every measured number stayed put.",
+    trapMsg:"Color is the weakest evidence in this whole lab. Something changes color in almost every run here."},
+   {id:"electro",name:"Run electricity through it",sub:"electrolysis",type:"chemical",
+    after:{look:"two gases bubble off; one pops, one relights a flame",mass:"0.0 g liquid left; 11.1 g and 88.9 g of gas collected",melt:"\u2212259 \u00B0C and \u2212218 \u00B0C",sol:"barely dissolves",dens:"0.00008 and 0.0013 g/cm\u00B3"},
+    scene:{state:"gas",sp:[{m:"h2",n:8},{m:"o2",n:4}]},
+    cap:"Every bond broke. Hydrogen paired with hydrogen, oxygen with oxygen.",
+    key:["melt","sol"],trap:"mass",
+    why:"Nothing melts at 0 \u00B0C anymore. You now have hydrogen, which melts at \u2212259 \u00B0C, and oxygen, which melts at \u2212218 \u00B0C. Two substances, and neither one is water.",
+    trapMsg:"The liquid vanishing is a clue, but boiling it away would look the same. The melting points are what prove it."}
+  ]
+},
+{
+  id:"iron", name:"Iron", sub:"Fe, as steel wool",
+  before:{look:"silver-gray solid strands",mass:"20.0 g",melt:"1538 \u00B0C",sol:"does not dissolve",dens:"7.87 g/cm\u00B3"},
+  scene:{state:"solid",sp:[{m:"fe",n:15}]},
+  capBefore:"Iron atoms packed in a tight repeating pattern. Nothing else present.",
+  procs:[
+   {id:"crush",name:"Hammer it flat",sub:"crush and flatten",type:"physical",
+    after:{look:"silver-gray flat sheet",mass:"20.0 g",melt:"1538 \u00B0C",sol:"does not dissolve",dens:"7.87 g/cm\u00B3"},
+    scene:{state:"solid",sp:[{m:"fe",n:15}]},
+    cap:"Atoms slid into new positions. Still nothing but iron atoms.",
+    key:["melt","dens"],trap:"look",
+    why:"Shape is not identity. Every measured property is identical, including density to three digits.",
+    trapMsg:"Changing shape changes appearance and nothing else."},
+   {id:"melt",name:"Melt it in a furnace",sub:"heat to 1538 \u00B0C",type:"physical",
+    after:{look:"glowing orange liquid",mass:"20.0 g",melt:"1538 \u00B0C",sol:"does not dissolve",dens:"6.98 g/cm\u00B3 while liquid"},
+    scene:{state:"liquid",sp:[{m:"fe",n:15}]},
+    cap:"The pattern broke down. Atoms now slide past each other, still touching.",
+    key:["melt","mass"],trap:"dens",
+    why:"Liquid iron is less tightly packed than solid iron, so density dropped. It still solidifies at 1538 \u00B0C, which is iron's fingerprint.",
+    trapMsg:"Density fell because the state changed, not because the substance did."},
+   {id:"rust",name:"Leave it in damp air",sub:"one week",type:"chemical",
+    after:{look:"reddish-brown flakes",mass:"28.6 g",melt:"1565 \u00B0C",sol:"does not dissolve",dens:"5.24 g/cm\u00B3"},
+    scene:{state:"solid",sp:[{m:"fe2o3",n:7},{m:"fe",n:3}]},
+    cap:"Oxygen from the air bonded to the iron. These are iron oxide units now.",
+    key:["dens","mass"],trap:"sol",
+    why:"It gained 8.6 g sitting still, which only happens if something joined it. Oxygen came out of the air. Density fell from 7.87 to 5.24, so this is no longer iron. It is iron oxide, or rust.",
+    trapMsg:"Solubility stayed the same here, and that proves nothing. Two different substances can both refuse to dissolve."},
+   {id:"acid",name:"Drop it into acid",sub:"hydrochloric acid, then dry it",type:"chemical",
+    after:{look:"pale green crystals; a gas bubbled off and popped",mass:"45.4 g",melt:"677 \u00B0C",sol:"dissolves easily",dens:"3.16 g/cm\u00B3"},
+    scene:{state:"solid",sp:[{m:"fecl2",n:9},{m:"h2",n:4,as:"gas"}]},
+    cap:"Chlorine took the iron's place in the bond. Hydrogen escaped as gas.",
+    key:["melt","sol"],trap:"mass",
+    why:"Iron does not dissolve in water and melts at 1538 \u00B0C. This solid dissolves easily and melts at 677 \u00B0C. It is iron chloride, and the gas that popped was hydrogen.",
+    trapMsg:"Mass more than doubled, which is suspicious, but the melting point and solubility are what identify the new substance."}
+  ]
+},
+{
+  id:"sugar", name:"Sugar", sub:"sucrose, C\u2081\u2082H\u2082\u2082O\u2081\u2081",
+  before:{look:"white crystals",mass:"20.0 g",melt:"186 \u00B0C",sol:"dissolves easily",dens:"1.59 g/cm\u00B3"},
+  scene:{state:"solid",sp:[{m:"sucrose",n:6}]},
+  capBefore:"Large molecules of carbon, hydrogen and oxygen stacked in a crystal.",
+  procs:[
+   {id:"grind",name:"Grind it to powder",sub:"mortar and pestle",type:"physical",
+    after:{look:"fine white powder",mass:"20.0 g",melt:"186 \u00B0C",sol:"dissolves easily",dens:"1.59 g/cm\u00B3"},
+    scene:{state:"solid",sp:[{m:"sucrose",n:6}]},
+    cap:"Crystals broke into smaller crystals. The molecules were never touched.",
+    key:["melt","dens"],trap:"look",
+    why:"Smaller pieces of the same thing. Melting point, solubility and density are all unmoved.",
+    trapMsg:"Grinding changes particle size, which is appearance. Nothing else."},
+   {id:"dissolve",name:"Dissolve it, then evaporate",sub:"stir into water, boil the water off",type:"physical",
+    after:{look:"clear crystals, slightly larger",mass:"20.0 g",melt:"186 \u00B0C",sol:"dissolves easily",dens:"1.59 g/cm\u00B3"},
+    scene:{state:"solid",sp:[{m:"sucrose",n:6}]},
+    cap:"Molecules spread through the water, then stacked back up as the water left.",
+    key:["melt","mass"],trap:"look",
+    why:"You got all 20.0 g back and every property matches. Dissolving spreads molecules out, it does not take them apart.",
+    trapMsg:"Disappearing into water feels dramatic, but the sugar was there the whole time."},
+   {id:"meltsugar",name:"Melt it gently",sub:"186 \u00B0C, then cool it fast",type:"physical",
+    after:{look:"clear sticky glass",mass:"20.0 g",melt:"186 \u00B0C",sol:"dissolves easily",dens:"1.33 g/cm\u00B3 while liquid"},
+    scene:{state:"liquid",sp:[{m:"sucrose",n:6}]},
+    cap:"The crystal pattern collapsed. Molecules slide, still whole.",
+    key:["melt","sol"],trap:"dens",
+    why:"It melts at the same temperature it always did and still dissolves in water, so the molecules survived. Density dropped only because the packing loosened.",
+    trapMsg:"A liquid is looser than a crystal, so density falls in every melt. That is not evidence of a new substance."},
+   {id:"burn",name:"Heat it hard",sub:"until it turns black and smokes",type:"chemical",
+    after:{look:"black brittle crust",mass:"8.4 g",melt:"does not melt, it burns",sol:"does not dissolve",dens:"2.0 g/cm\u00B3"},
+    scene:{state:"solid",sp:[{m:"carbon",n:6},{m:"co2",n:3,as:"gas"},{m:"h2o",n:3,as:"gas"}]},
+    cap:"Bonds broke. Carbon stayed behind; water vapor and carbon dioxide floated off.",
+    key:["melt","sol"],trap:"mass",
+    why:"Sugar melts at 186 \u00B0C and dissolves in water. This black solid does neither. It is mostly carbon, and the missing 11.6 g left as water vapor and carbon dioxide.",
+    trapMsg:"Losing mass also happens when wet sand dries. It is the melting point and solubility that settle it here."}
+  ]
+},
+{
+  id:"soda", name:"Baking soda", sub:"NaHCO\u2083",
+  before:{look:"fine white powder",mass:"20.0 g",melt:"breaks down at 80 \u00B0C before it melts",sol:"dissolves a little",dens:"2.20 g/cm\u00B3"},
+  scene:{state:"solid",sp:[{m:"nahco3",n:6}]},
+  capBefore:"Sodium sitting beside bicarbonate groups in a crystal.",
+  procs:[
+   {id:"grind2",name:"Grind it finer",sub:"mortar and pestle",type:"physical",
+    after:{look:"very fine white dust",mass:"20.0 g",melt:"breaks down at 80 \u00B0C before it melts",sol:"dissolves a little",dens:"2.20 g/cm\u00B3"},
+    scene:{state:"solid",sp:[{m:"nahco3",n:6}]},
+    cap:"Smaller grains, identical units inside them.",
+    key:["sol","dens"],trap:"look",
+    why:"Nothing but particle size changed. It still dissolves the same small amount and still breaks down at the same temperature.",
+    trapMsg:"Powder versus grains is an appearance difference."},
+   {id:"dissolve2",name:"Dissolve it, then evaporate",sub:"gently, at low heat",type:"physical",
+    after:{look:"white powder again",mass:"20.0 g",melt:"breaks down at 80 \u00B0C before it melts",sol:"dissolves a little",dens:"2.20 g/cm\u00B3"},
+    scene:{state:"solid",sp:[{m:"nahco3",n:6}]},
+    cap:"The units separated in water, then came back together unchanged.",
+    key:["sol","melt"],trap:"look",
+    why:"All 20.0 g came back with the same solubility and the same breakdown temperature. Dissolving is a physical change.",
+    trapMsg:"It vanished and reappeared, which looks impressive and means nothing."},
+   {id:"vinegar",name:"Mix it with vinegar",sub:"then dry the liquid",type:"chemical",
+    after:{look:"clear crystals; a lot of gas fizzed off",mass:"19.5 g of solid, plus gas that escaped",melt:"324 \u00B0C",sol:"dissolves very easily",dens:"1.53 g/cm\u00B3"},
+    scene:{state:"solid",sp:[{m:"naoac",n:7},{m:"co2",n:4,as:"gas"}]},
+    cap:"The bicarbonate broke apart. Carbon dioxide left; sodium acetate stayed.",
+    key:["melt","sol"],trap:"look",
+    why:"Baking soda cannot melt at all, it breaks down at 80 \u00B0C. This solid melts cleanly at 324 \u00B0C and dissolves far more easily. It is sodium acetate, and the fizzing was carbon dioxide leaving.",
+    trapMsg:"Fizzing is a classic clue, but a clue is not proof. The melting point is the proof."},
+   {id:"bake",name:"Heat it in a dry pan",sub:"to 200 \u00B0C",type:"chemical",
+    after:{look:"white powder, looks almost the same",mass:"12.6 g",melt:"851 \u00B0C",sol:"dissolves very easily",dens:"2.54 g/cm\u00B3"},
+    scene:{state:"solid",sp:[{m:"na2co3",n:8},{m:"co2",n:3,as:"gas"},{m:"h2o",n:3,as:"gas"}]},
+    cap:"Two units combined and shed water and carbon dioxide. Carbonate is left.",
+    key:["melt","mass"],trap:"look",
+    why:"This is the sneakiest run in the lab. It looks like the same white powder, and it is not. It now melts at 851 \u00B0C instead of breaking down at 80 \u00B0C, and 7.4 g left as gas. This is washing soda, sodium carbonate.",
+    trapMsg:"Appearance barely changed here, and the substance still changed completely. That is exactly why appearance cannot be your evidence."}
+  ]
+}];
+
+/* ============ state ============ */
+let mat=null, proc=null, phase="before", done={before:{},after:{}}, ran=false, verdict=null;
+const $=id=>document.getElementById(id);
+
+/* ============ pickers ============ */
+MATERIALS.forEach(m=>{
+  const b=document.createElement("button");
+  b.className="chip"; b.setAttribute("aria-pressed","false");
+  b.innerHTML=m.name+"<small>"+m.sub+"</small>";
+  b.onclick=()=>chooseMat(m);
+  $("mats").appendChild(b);
+});
+function chooseMat(m){
+  mat=m; proc=null;
+  [...$("mats").children].forEach((c,i)=>c.setAttribute("aria-pressed",MATERIALS[i].id===m.id));
+  const box=$("procs"); box.innerHTML="";
+  m.procs.forEach(p=>{
+    const b=document.createElement("button");
+    b.className="chip"; b.setAttribute("aria-pressed","false");
+    b.innerHTML=p.name+"<small>"+p.sub+"</small>";
+    b.onclick=()=>{proc=p;
+      [...box.children].forEach((c,i)=>c.setAttribute("aria-pressed",m.procs[i].id===p.id));
+      startRun("New run loaded: "+m.name+", "+p.name.toLowerCase()+". The table has been cleared.");
+    };
+    box.appendChild(b);
+  });
+  startRun("Material set to "+m.name+". Now choose what to do to it.");
+}
+function say(msg){ const n=$("notice"); n.textContent=msg; n.className="notice show"; }
+
+/* ============ table + tools ============ */
+function buildTable(){
+  const tb=$("tbody"); tb.innerHTML="";
+  ROWS.forEach(r=>{
+    const tr=document.createElement("tr"); tr.id="row-"+r.id;
+    tr.innerHTML="<th scope='row'>"+r.label+"</th>"+
+      "<td class='val' id='c-before-"+r.id+"'>not measured</td>"+
+      "<td class='val' id='c-after-"+r.id+"'>not measured</td>";
+    tb.appendChild(tr);
+  });
+}
+function buildTools(){
+  const t=$("tools"); t.innerHTML="";
+  ROWS.forEach(r=>{
+    const b=document.createElement("button");
+    b.textContent=r.tool; b.id="tool-"+r.id;
+    b.disabled=!proc;
+    b.onclick=()=>measure(r);
+    t.appendChild(b);
+  });
+}
+function measure(r){
+  if(!proc) return;
+  const cell=$("c-"+phase+"-"+r.id), btn=$("tool-"+r.id);
+  btn.disabled=true; cell.textContent="measuring\u2026";
+  setTimeout(()=>{
+    const v = phase==="before" ? mat.before[r.id] : proc.after[r.id];
+    cell.textContent=v; cell.classList.add("filled");
+    done[phase][r.id]=true; btn.classList.add("done");
+    if(phase==="after"){
+      $("row-"+r.id).className = (mat.before[r.id]===proc.after[r.id]) ? "same":"changed";
+    }
+    refresh();
+  },300);
+}
+
+/* ============ flow ============ */
+function startRun(msg){
+  phase="before"; ran=false; verdict=null; done={before:{},after:{}};
+  buildTable(); buildTools(); buildEvidence();
+  $("btnPhys").setAttribute("aria-pressed","false");
+  $("btnChem").setAttribute("aria-pressed","false");
+  $("feedback").className="feedback";
+  $("cAfter").hidden=true; $("curtain").style.display="flex";
+  $("afterBanner").textContent="After";
+  $("stAfter").textContent="";
+  $("benchSub").textContent="Measure all five properties before you change anything.";
+  $("procLine").textContent = proc ? mat.name+" \u2014 "+proc.name.toLowerCase()+", "+proc.sub : mat.name+" \u2014 choose a process.";
+  $("caption").textContent = mat.capBefore;
+  makeScene("before", mat.scene);
+  $("stBefore").textContent = mat.scene.state;
+  scenes.after=null;
+  drawLegend();
+  if(msg) say(msg);
+  refresh();
+}
+$("resetBtn").onclick=()=>{ if(mat) startRun("Run reset. Every measurement cleared."); };
+
+$("runBtn").onclick=()=>{
+  ran=true; phase="after";
+  $("curtain").style.display="none"; $("cAfter").hidden=false;
+  $("afterBanner").textContent="After: "+proc.name.toLowerCase();
+  makeScene("after", proc.scene);
+  $("stAfter").textContent = proc.scene.state;
+  $("caption").textContent = proc.cap;
+  $("benchSub").textContent="Now measure the same five properties again.";
+  buildTools(); drawLegend(); refresh();
+  say("Process complete. This is a different sample now \u2014 measure it again from scratch.");
+};
+
+function refresh(){
+  const nb=Object.keys(done.before).length, na=Object.keys(done.after).length;
+  $("runBtn").disabled=!(proc && nb===5 && !ran);
+  if(!proc){ $("status").innerHTML="Choose a material and a process to begin."; }
+  else if(!ran){
+    $("status").innerHTML = nb<5
+      ? "<b>Step 1.</b> Measure all five properties. Done "+nb+" of 5."
+      : "<b>Step 2.</b> Baseline recorded. Run the process.";
+  } else if(na<5){
+    $("status").innerHTML="<b>Step 3.</b> Measure the same five again. Done "+na+" of 5.";
+  } else {
+    $("status").innerHTML="<b>Step 4.</b> Blue rows stayed the same, orange rows changed. Make your claim.";
+  }
+  const ready = ran && na===5;
+  $("claimPanel").classList.toggle("locked",!ready);
+  $("checkBtn").disabled=!(ready && verdict);
+}
+
+/* ============ claim ============ */
+function buildEvidence(){
+  const e=$("evid"); e.innerHTML="";
+  ROWS.forEach(r=>{
+    const l=document.createElement("label");
+    l.innerHTML="<input type='checkbox' value='"+r.id+"'><span>"+r.label+"</span>";
+    e.appendChild(l);
+  });
+}
+$("btnPhys").onclick=()=>setV("physical");
+$("btnChem").onclick=()=>setV("chemical");
+function setV(v){ verdict=v;
+  $("btnPhys").setAttribute("aria-pressed",v==="physical");
+  $("btnChem").setAttribute("aria-pressed",v==="chemical"); refresh(); }
+
+$("checkBtn").onclick=()=>{
+  const picked=[...document.querySelectorAll("#evid input:checked")].map(i=>i.value);
+  const f=$("feedback"), right=verdict===proc.type, usedKey=picked.some(p=>proc.key.includes(p));
+  const keyNames=proc.key.map(k=>ROWS.find(r=>r.id===k).label.toLowerCase()).join(" and ");
+  let cls,head,body;
+  if(!right){
+    cls="wrong"; head="Not this time.";
+    body=proc.why+" "+(picked.includes(proc.trap)?proc.trapMsg:"Look again at "+keyNames+".");
+  } else if(picked.length===0){
+    cls="close"; head="Right call, but show your work.";
+    body="Tick the rows you actually used. A claim with no evidence is a guess that happened to land.";
+  } else if(!usedKey){
+    cls="close"; head="Right answer, shaky evidence.";
+    body=(picked.includes(proc.trap)?proc.trapMsg+" ":"")+"The rows that settle it are "+keyNames+". "+proc.why;
+  } else {
+    cls="right"; head="That holds up.";
+    body=proc.why;
+  }
+  f.className="feedback show "+cls;
+  f.innerHTML="<h3>"+head+"</h3><p style='margin:0'>"+body+"</p>";
+};
+
+/* ============ particle engine ============ */
+const scenes={before:null,after:null};
+function molRadius(mol){
+  let r=0; M[mol].a.forEach(([s,dx,dy])=>{ r=Math.max(r, Math.hypot(dx,dy)+A[s].r); });
+  return r;
+}
+function makeScene(which,spec){
+  const cv = which==="before"?$("cBefore"):$("cAfter");
+  const W=cv.width,H=cv.height,parts=[];
+  const main=spec.sp.filter(s=>s.as!=="gas"), floaters=spec.sp.filter(s=>s.as==="gas");
+  const total=main.reduce((a,s)=>a+s.n,0);
+  const cols=Math.ceil(Math.sqrt(total*1.6)), rowsN=Math.ceil(total/cols);
+  let i=0;
+  main.forEach(s=>{
+    for(let k=0;k<s.n;k++,i++){
+      const cx=(i%cols+0.5)*(W/cols), cy=(Math.floor(i/cols)+0.5)*(H/rowsN);
+      const st=spec.state;
+      const ang=Math.random()*6.28;
+      parts.push({
+        m:s.m, st, r:molRadius(s.m),
+        ax:cx, ay:cy,
+        x: st==="gas" ? 24+Math.random()*(W-48) : cx,
+        y: st==="gas" ? 24+Math.random()*(H-48) : (st==="liquid"? Math.min(H-30, cy+H*0.18) : cy),
+        vx:Math.cos(ang)*(st==="gas"?6.5:st==="liquid"?1.2:0),
+        vy:Math.sin(ang)*(st==="gas"?6.5:st==="liquid"?0.8:0),
+        a:Math.random()*6.28,
+        va: st==="gas"?(Math.random()-.5)*0.16 : st==="liquid"?(Math.random()-.5)*0.03 : 0,
+        ph:Math.random()*6.28, ph2:Math.random()*6.28
+      });
+    }
+  });
+  floaters.forEach(s=>{
+    for(let k=0;k<s.n;k++){
+      const ang=Math.random()*6.28;
+      parts.push({m:s.m,st:"gas",r:molRadius(s.m),
+        x:24+Math.random()*(W-48), y:20+Math.random()*(H*0.5),
+        vx:Math.cos(ang)*6.5, vy:Math.sin(ang)*6.5,
+        a:Math.random()*6.28, va:(Math.random()-.5)*0.16, ph:0, ph2:0});
+    }
+  });
+  scenes[which]={ctx:cv.getContext("2d"),W,H,parts,state:spec.state};
+}
+function drawMol(ctx,mol,x,y,a){
+  const def=M[mol], ca=Math.cos(a), sa=Math.sin(a);
+  const pt=([s,dx,dy])=>[x+dx*ca-dy*sa, y+dx*sa+dy*ca];
+  ctx.strokeStyle="#B9C7D2"; ctx.lineWidth=4; ctx.lineCap="round";
+  def.b.forEach(([i,j])=>{
+    const p=pt(def.a[i]), q=pt(def.a[j]);
+    ctx.beginPath(); ctx.moveTo(p[0],p[1]); ctx.lineTo(q[0],q[1]); ctx.stroke();
+  });
+  def.a.forEach(at=>{
+    const p=pt(at), d=A[at[0]];
+    ctx.beginPath(); ctx.arc(p[0],p[1],d.r,0,6.2832); ctx.fillStyle=d.c; ctx.fill();
+  });
+}
+const still=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+let t0=0;
+function tick(ts){
+  const t=ts/1000;
+  ["before","after"].forEach(k=>{
+    const s=scenes[k]; if(!s) return;
+    const {ctx,W,H,parts}=s;
+    ctx.clearRect(0,0,W,H);
+    parts.forEach(p=>{
+      if(!still){
+        if(p.st==="solid"){
+          p.x=p.ax+Math.sin(t*4+p.ph)*3.5;
+          p.y=p.ay+Math.cos(t*4+p.ph2)*3.5;
+          p.a=Math.sin(t*4+p.ph)*0.08;
+        } else {
+          p.x+=p.vx; p.y+=p.vy; p.a+=p.va;
+          const pad=p.r+3, topPad = (p.st==="liquid"? H*0.28 : 0)+pad;
+          if(p.x<pad){p.x=pad;p.vx=Math.abs(p.vx);}
+          if(p.x>W-pad){p.x=W-pad;p.vx=-Math.abs(p.vx);}
+          if(p.y<topPad){p.y=topPad;p.vy=Math.abs(p.vy);}
+          if(p.y>H-pad){p.y=H-pad;p.vy=-Math.abs(p.vy);}
+        }
+      }
+      drawMol(ctx,p.m,p.x,p.y,p.a);
+    });
+    // keep liquid molecules from stacking on top of each other
+    if(!still && s.state==="liquid"){
+      for(let i=0;i<parts.length;i++)for(let j=i+1;j<parts.length;j++){
+        const a=parts[i],b=parts[j]; if(a.st!=="liquid"||b.st!=="liquid") continue;
+        const dx=b.x-a.x, dy=b.y-a.y, d=Math.hypot(dx,dy)||0.01, min=(a.r+b.r)*0.8;
+        if(d<min){ const o=(min-d)/2, ux=dx/d, uy=dy/d;
+          a.x-=ux*o; a.y-=uy*o; b.x+=ux*o; b.y+=uy*o;
+          const tvx=a.vx,tvy=a.vy; a.vx=b.vx;a.vy=b.vy;b.vx=tvx;b.vy=tvy; }
+      }
+    }
+  });
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+/* ============ legend ============ */
+function drawLegend(){
+  const used=new Set();
+  [mat&&mat.scene, ran&&proc&&proc.scene].forEach(sc=>{
+    if(!sc) return; sc.sp.forEach(s=>M[s.m].a.forEach(at=>used.add(at[0])));
+  });
+  $("legend").innerHTML=[...used].map(sym=>
+    "<span><i class='dot' style='background:"+A[sym].c+"'></i>"+A[sym].n+"</span>").join("");
+}
+buildTable(); buildTools(); buildEvidence(); refresh();
+</script>
+</body>
+</html>
