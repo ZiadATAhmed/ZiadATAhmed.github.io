@@ -1,0 +1,950 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Proton to Iron</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Lexend:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#1a0610; --panel:rgba(30,12,38,.84); --panel-solid:#1e0c26; --ink:#fff4e6; --muted:#dcc3b3;
+  --gold:#ffc857; --proton:#ff5a4e; --electron:#5ee3ff; --neutron:#ece6d6; --line:rgba(255,200,87,.3);
+  --bad:#ff8a80; --good:#8dffb0;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --bg:#1a0610; --panel:rgba(30,12,38,.84); --ink:#fff4e6; } }
+:root[data-theme="dark"]{ --bg:#1a0610; --panel:rgba(30,12,38,.84); --ink:#fff4e6; }
+*,*::before,*::after{box-sizing:inherit}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:"Lexend",system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden;-webkit-tap-highlight-color:transparent}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+canvas#game{position:fixed;inset:0;display:block;touch-action:none;cursor:crosshair}
+.display{font-family:"Bungee","Impact","Arial Black",sans-serif;font-weight:400;letter-spacing:.01em}
+button{font:inherit;color:inherit}
+button:focus-visible,.cell:focus-visible,.chip:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+
+/* HUD */
+.hud{position:fixed;z-index:5;pointer-events:none}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+#stats{top:calc(env(safe-area-inset-top,0px) + 10px);right:10px;width:min(250px,46vw);padding:10px 12px;font-size:13px;pointer-events:auto}
+.el-head{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.sym{font-family:"Bungee","Impact",sans-serif;font-size:34px;line-height:1;color:var(--gold);min-width:52px;text-align:center}
+.sym sup{font-size:15px;color:var(--ink)}
+#hName{font-weight:700;font-size:16px}
+#hIso{color:var(--muted);font-size:12px}
+.zbox{margin-left:auto;text-align:center;font-size:11px;color:var(--muted)}
+.zbox b{display:block;font-size:18px;color:var(--ink)}
+dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:3px 10px}
+dt{color:var(--muted)} dd{margin:0;text-align:right;font-weight:600}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:0}
+.good{color:var(--good)} .bad{color:var(--bad)}
+
+#left{top:calc(env(safe-area-inset-top,0px) + 10px);left:10px;width:min(300px,48vw);padding:10px 12px;font-size:13px;pointer-events:auto}
+.road{display:flex;justify-content:space-between;font-weight:700}
+.bar{height:8px;border-radius:6px;background:rgba(255,255,255,.12);margin:6px 0 8px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--proton),var(--gold));transition:width .4s}
+#next{line-height:1.35}
+#quest{margin-top:9px;padding-top:9px;border-top:1px solid var(--line);line-height:1.35}
+#quest h3{margin:0 0 3px;font-size:14px;color:var(--gold)}
+#quest p{margin:0 0 4px}
+#quest .state{font-weight:600}
+#items{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+#items span{background:rgba(255,200,87,.14);border:1px solid var(--line);border-radius:999px;padding:2px 8px;font-size:12px}
+
+#controls{right:10px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:70vw;pointer-events:auto}
+#controls button{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:9px 13px;font-size:13px;font-weight:600;cursor:pointer}
+#controls button:hover{border-color:var(--gold)}
+#controls kbd,.kbd{font-family:inherit;font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:5px;padding:0 4px;margin-left:4px}
+@media (hover:none){ #controls kbd{display:none} }
+
+#toast{left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 64px);max-width:min(520px,88vw);padding:10px 14px;font-size:14px;text-align:center;opacity:0;transition:opacity .25s}
+#toast.show{opacity:1}
+#fact{left:50%;top:calc(env(safe-area-inset-top,0px) + 12px);transform:translateX(-50%);width:min(360px,60vw);padding:10px 14px;display:flex;gap:12px;align-items:center;opacity:0;transition:opacity .35s}
+#fact.show{opacity:1}
+#fact .sym{font-size:30px}
+#fact h4{margin:0 0 2px;font-size:15px}
+#fact p{margin:0;font-size:12.5px;line-height:1.35;color:var(--muted)}
+
+#joy{position:fixed;z-index:6;width:110px;height:110px;margin:-55px 0 0 -55px;border-radius:50%;border:2px solid rgba(255,200,87,.4);background:rgba(255,255,255,.05);display:none;pointer-events:none}
+#joy i{position:absolute;left:50%;top:50%;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;background:rgba(255,200,87,.45)}
+
+@media (max-width:640px){
+  #stats{font-size:11.5px;padding:8px 9px}
+  .sym{font-size:26px;min-width:40px}
+  #hName{font-size:14px}
+  #left{font-size:11.5px;padding:8px 9px}
+  #quest h3{font-size:12.5px}
+  #fact{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 118px);width:min(360px,88vw)}
+  #toast{bottom:calc(env(safe-area-inset-bottom,0px) + 108px)}
+  #controls{left:10px;right:10px;max-width:none;justify-content:center}
+  #controls button{padding:8px 10px;font-size:12px}
+  .hide-sm{display:none}
+}
+
+/* Overlays */
+.overlay{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 14px) 14px calc(env(safe-area-inset-bottom,0px) + 14px);background:rgba(12,3,10,.72)}
+.overlay.open{display:flex}
+.card{background:var(--panel-solid);border:1px solid var(--line);border-radius:18px;padding:22px;max-width:620px;width:100%;max-height:100%;overflow:auto}
+.card h1{font-family:"Bungee","Impact",sans-serif;font-weight:400;font-size:clamp(30px,7vw,52px);line-height:1;margin:0 0 12px;color:var(--gold)}
+.card h2{margin:0 0 10px;font-size:22px}
+.card p{line-height:1.55;margin:0 0 12px;max-width:62ch}
+.card ul{padding-left:20px;margin:0 0 14px;line-height:1.6}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+.btn{background:var(--gold);color:#2a0a12;border:0;border-radius:999px;padding:11px 20px;font-weight:700;cursor:pointer;font-size:15px}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.note{font-size:13px;color:var(--muted)}
+.legend-p{color:var(--proton);font-weight:700}.legend-e{color:var(--electron);font-weight:700}.legend-n{color:var(--neutron);font-weight:700}
+
+/* Periodic table */
+#table .card{max-width:1180px;padding:16px}
+.tbl-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+.tbl-top h2{margin:0}
+.tbl-wrap{display:flex;gap:16px;align-items:flex-start}
+@media (max-width:900px){ .tbl-wrap{flex-direction:column} }
+.tbl-scroll{overflow-x:auto;flex:1;min-width:0;width:100%}
+.ptable{display:grid;grid-template-columns:repeat(18,minmax(40px,1fr));gap:3px;min-width:760px}
+.cell{position:relative;border-radius:6px;padding:3px 4px;color:#1f0a14;cursor:pointer;border:2px solid transparent;min-height:50px;background:#ccc;text-align:left}
+.cell .z{font-size:9.5px;font-weight:600}
+.cell .s{font-family:"Bungee","Impact",sans-serif;font-size:15px;line-height:1.1;display:block}
+.cell .m{font-size:8.5px;display:block;white-space:nowrap;overflow:hidden}
+.cell.here{border-color:#fff;box-shadow:0 0 0 2px var(--gold)}
+.cell.seen::after{content:"";position:absolute;right:4px;top:4px;width:7px;height:7px;border-radius:50%;background:#2a0a12}
+.cell.dim{opacity:.18}
+.cell.ph{background:transparent;color:var(--muted);border:1px dashed var(--line);cursor:default;font-size:10px;display:flex;align-items:center;justify-content:center}
+.gap{grid-column:1/-1;height:8px}
+.legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:12px;background:transparent;cursor:pointer;display:flex;align-items:center;gap:6px}
+.chip.on{border-color:var(--gold);background:rgba(255,200,87,.12)}
+.chip i{width:11px;height:11px;border-radius:3px;display:inline-block}
+#detail{width:300px;flex:none;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:14px;padding:14px;font-size:13.5px}
+@media (max-width:900px){ #detail{width:100%} }
+#detail .big{display:flex;gap:12px;align-items:center;margin-bottom:8px}
+#detail .sym{font-size:44px}
+#detail h3{margin:0;font-size:20px}
+#detail dl{margin:8px 0}
+#detail .fact{line-height:1.45;margin:8px 0 0}
+#detail svg{display:block;margin:6px auto 0}
+
+/* Ending */
+#ending{background:#07030a}
+#ending .card{max-width:760px;text-align:left}
+#endCanvas{width:100%;height:min(46vh,340px);display:block;border-radius:12px;background:#000;margin-bottom:14px}
+#endStats{display:none}
+</style>
+</head>
+<body>
+<canvas id="game" aria-label="Game area"></canvas>
+
+<div id="left" class="hud panel" aria-live="polite">
+  <div class="road"><span>Road to iron</span><span id="roadN">1 / 26</span></div>
+  <div class="bar"><i id="roadBar"></i></div>
+  <div id="next"></div>
+  <div id="quest"></div>
+  <div id="items"></div>
+</div>
+
+<div id="stats" class="hud panel">
+  <div class="el-head">
+    <div class="sym" id="hSym">H</div>
+    <div><div id="hName">Hydrogen</div><div id="hIso">Hydrogen-1</div></div>
+    <div class="zbox">Z<b id="hZ">1</b></div>
+  </div>
+  <dl>
+    <dt><span class="dot" style="background:var(--proton)"></span>Protons</dt><dd id="hP">1</dd>
+    <dt><span class="dot" style="background:var(--neutron)"></span>Neutrons</dt><dd id="hN">0</dd>
+    <dt><span class="dot" style="background:var(--electron)"></span>Electrons</dt><dd id="hE">0</dd>
+    <dt class="hide-sm">Mass number</dt><dd class="hide-sm" id="hA">1</dd>
+    <dt>Charge</dt><dd id="hQ">+1</dd>
+    <dt class="hide-sm">Shells</dt><dd class="hide-sm" id="hSh">none</dd>
+    <dt>Valence e⁻</dt><dd id="hV">0</dd>
+    <dt>Nucleus</dt><dd id="hStab">Stable</dd>
+  </dl>
+</div>
+
+<div id="controls" class="hud">
+  <button id="bSummon">Summon <kbd>Q</kbd></button>
+  <button id="bRelease">Release e⁻ <kbd>E</kbd></button>
+  <button id="bReleaseP">Release p⁺ <kbd>R</kbd></button>
+  <button id="bTable">Periodic table <kbd>T</kbd></button>
+  <button id="bPause" aria-label="Pause">Pause <kbd>P</kbd></button>
+</div>
+
+<div id="toast" class="hud panel" role="status"></div>
+<div id="fact" class="hud panel"><div class="sym" id="fSym">H</div><div><h4 id="fName"></h4><p id="fText"></p></div></div>
+<div id="joy"><i></i></div>
+
+<!-- Start -->
+<div id="start" class="overlay open">
+  <div class="card">
+    <h1>Proton to Iron</h1>
+    <p>You are a single proton floating in the hot plasma of a star. Grab particles to grow into heavier and heavier atoms. Reach iron, then dive into the star's core and see where your atom ends up.</p>
+    <ul>
+      <li><b>Move:</b> WASD or arrow keys. On a tablet, drag on the left side of the screen.</li>
+      <li><b>Laser:</b> hold the mouse button or Space and aim with the mouse. On a tablet, touch and hold on the right side.</li>
+      <li><span class="legend-p">Protons</span> and <span class="legend-e">electrons</span> are charged, so your laser pulls them in. The more negative you are, the harder you pull protons. The more positive you are, the harder you pull electrons. Like charges push each other away.</li>
+      <li><span class="legend-n">Neutrons</span> have no charge, so the laser can't grab them. Chase one down and keep your nucleus on it until the ring fills.</li>
+      <li><b>Bond quests:</b> become the right atom with the right number of valence electrons, then press Q to summon a partner atom and earn an item.</li>
+      <li><b>E</b> releases an electron. <b>R</b> releases a proton, which turns you back into the element before. <b>T</b> opens the periodic table.</li>
+    </ul>
+    <p class="note">Real stars mostly build heavy atoms by smashing whole nuclei together, like helium into carbon. In this game you build one particle at a time so you can see every step.</p>
+    <div class="row"><button class="btn" id="bStart">Start as a proton</button><button class="btn ghost" id="bStartTable">Look at the periodic table</button></div>
+  </div>
+</div>
+
+<!-- Pause -->
+<div id="pause" class="overlay">
+  <div class="card">
+    <h2>Paused</h2>
+    <div class="row">
+      <button class="btn" id="bResume">Resume</button>
+      <button class="btn ghost" id="bHelp">How to play</button>
+      <button class="btn ghost" id="bSound">Sound: on</button>
+      <button class="btn ghost" id="bRestart">Restart</button>
+    </div>
+  </div>
+</div>
+
+<!-- Valence lesson -->
+<div id="learn" class="overlay">
+  <div class="card">
+    <h2 id="lTitle">The bond didn't form</h2>
+    <div id="lBody"></div>
+    <div class="row"><button class="btn" id="bLearn">Got it, let me fix it</button></div>
+  </div>
+</div>
+
+<!-- Periodic table -->
+<div id="table" class="overlay">
+  <div class="card">
+    <div class="tbl-top"><h2>Periodic table</h2><button class="btn ghost" id="bCloseTable">Close <span class="kbd">T</span></button></div>
+    <div class="tbl-wrap">
+      <div class="tbl-scroll"><div class="ptable" id="ptable"></div></div>
+      <div id="detail"></div>
+    </div>
+    <div class="legend" id="legend"></div>
+    <p class="note" style="margin-top:8px">Gold outline: the element you are now. Dark dot: elements you've already been. Tap a category to highlight it.</p>
+  </div>
+</div>
+
+<!-- Ending -->
+<div id="ending" class="overlay">
+  <div class="card">
+    <canvas id="endCanvas"></canvas>
+    <h2 id="eTitle"></h2>
+    <p id="eText"></p>
+    <div id="endStats" class="note"></div>
+    <div class="row"><button class="btn" id="bEndNext">Next</button><button class="btn ghost" id="bEndAgain" style="display:none">Play again</button></div>
+  </div>
+</div>
+
+<script>
+(()=>{
+const $=s=>document.querySelector(s);
+const TAU=Math.PI*2;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- Element data ---------- */
+const RAW=`H Hydrogen 1.008 nm|He Helium 4.0026 ng|Li Lithium 6.94 am|Be Beryllium 9.0122 ae|B Boron 10.81 md|C Carbon 12.011 nm|N Nitrogen 14.007 nm|O Oxygen 15.999 nm|F Fluorine 18.998 ha|Ne Neon 20.180 ng|Na Sodium 22.990 am|Mg Magnesium 24.305 ae|Al Aluminum 26.982 pt|Si Silicon 28.085 md|P Phosphorus 30.974 nm|S Sulfur 32.06 nm|Cl Chlorine 35.45 ha|Ar Argon 39.948 ng|K Potassium 39.098 am|Ca Calcium 40.078 ae|Sc Scandium 44.956 tm|Ti Titanium 47.867 tm|V Vanadium 50.942 tm|Cr Chromium 51.996 tm|Mn Manganese 54.938 tm|Fe Iron 55.845 tm|Co Cobalt 58.933 tm|Ni Nickel 58.693 tm|Cu Copper 63.546 tm|Zn Zinc 65.38 tm|Ga Gallium 69.723 pt|Ge Germanium 72.630 md|As Arsenic 74.922 md|Se Selenium 78.971 nm|Br Bromine 79.904 ha|Kr Krypton 83.798 ng|Rb Rubidium 85.468 am|Sr Strontium 87.62 ae|Y Yttrium 88.906 tm|Zr Zirconium 91.224 tm|Nb Niobium 92.906 tm|Mo Molybdenum 95.95 tm|Tc Technetium [98] tm|Ru Ruthenium 101.07 tm|Rh Rhodium 102.91 tm|Pd Palladium 106.42 tm|Ag Silver 107.87 tm|Cd Cadmium 112.41 tm|In Indium 114.82 pt|Sn Tin 118.71 pt|Sb Antimony 121.76 md|Te Tellurium 127.60 md|I Iodine 126.90 ha|Xe Xenon 131.29 ng|Cs Cesium 132.91 am|Ba Barium 137.33 ae|La Lanthanum 138.91 la|Ce Cerium 140.12 la|Pr Praseodymium 140.91 la|Nd Neodymium 144.24 la|Pm Promethium [145] la|Sm Samarium 150.36 la|Eu Europium 151.96 la|Gd Gadolinium 157.25 la|Tb Terbium 158.93 la|Dy Dysprosium 162.50 la|Ho Holmium 164.93 la|Er Erbium 167.26 la|Tm Thulium 168.93 la|Yb Ytterbium 173.05 la|Lu Lutetium 174.97 la|Hf Hafnium 178.49 tm|Ta Tantalum 180.95 tm|W Tungsten 183.84 tm|Re Rhenium 186.21 tm|Os Osmium 190.23 tm|Ir Iridium 192.22 tm|Pt Platinum 195.08 tm|Au Gold 196.97 tm|Hg Mercury 200.59 tm|Tl Thallium 204.38 pt|Pb Lead 207.2 pt|Bi Bismuth 208.98 pt|Po Polonium [209] pt|At Astatine [210] ha|Rn Radon [222] ng|Fr Francium [223] am|Ra Radium [226] ae|Ac Actinium [227] ac|Th Thorium 232.04 ac|Pa Protactinium 231.04 ac|U Uranium 238.03 ac|Np Neptunium [237] ac|Pu Plutonium [244] ac|Am Americium [243] ac|Cm Curium [247] ac|Bk Berkelium [247] ac|Cf Californium [251] ac|Es Einsteinium [252] ac|Fm Fermium [257] ac|Md Mendelevium [258] ac|No Nobelium [259] ac|Lr Lawrencium [266] ac|Rf Rutherfordium [267] tm|Db Dubnium [268] tm|Sg Seaborgium [269] tm|Bh Bohrium [270] tm|Hs Hassium [269] tm|Mt Meitnerium [278] un|Ds Darmstadtium [281] un|Rg Roentgenium [282] un|Cn Copernicium [285] tm|Nh Nihonium [286] un|Fl Flerovium [289] un|Mc Moscovium [290] un|Lv Livermorium [293] un|Ts Tennessine [294] un|Og Oganesson [294] un`;
+const EL=[null];
+RAW.split('|').forEach((l,i)=>{const [sym,name,mass,cat]=l.split(' ');EL.push({z:i+1,sym,name,mass,cat});});
+const bySym=s=>EL.find(e=>e&&e.sym===s);
+
+const CATS={
+  am:{name:'Alkali metal',col:'#ff9466'},ae:{name:'Alkaline earth metal',col:'#ffc766'},
+  tm:{name:'Transition metal',col:'#f4a9b8'},pt:{name:'Post-transition metal',col:'#9fd8cb'},
+  md:{name:'Metalloid',col:'#c6e89a'},nm:{name:'Reactive nonmetal',col:'#86d4ff'},
+  ha:{name:'Halogen',col:'#bba3ff'},ng:{name:'Noble gas',col:'#e4b0ff'},
+  la:{name:'Lanthanide',col:'#ffdcae'},ac:{name:'Actinide',col:'#e6a3d9'},un:{name:'Unknown properties',col:'#c9bfb4'}
+};
+
+function pos(z){
+  if(z===1)return[1,1]; if(z===2)return[1,18];
+  if(z<=4)return[2,z-2]; if(z<=10)return[2,z+8];
+  if(z<=12)return[3,z-10]; if(z<=18)return[3,z];
+  if(z<=36)return[4,z-18]; if(z<=54)return[5,z-36];
+  if(z<=56)return[6,z-54]; if(z<=71)return[9,z-54];
+  if(z<=86)return[6,z-68]; if(z<=88)return[7,z-86];
+  if(z<=103)return[10,z-86]; return[7,z-100];
+}
+
+const ORB=[[1,2],[2,2],[2,6],[3,2],[3,6],[4,2],[3,10],[4,6],[5,2],[4,10],[5,6],[6,2],[4,14],[5,10],[6,6],[7,2],[5,14],[6,10],[7,6]];
+const EXC={24:[2,8,13,1],29:[2,8,18,1],41:[2,8,18,12,1],42:[2,8,18,13,1],44:[2,8,18,15,1],45:[2,8,18,16,1],46:[2,8,18,18],47:[2,8,18,18,1],57:[2,8,18,18,9,2],58:[2,8,18,19,9,2],64:[2,8,18,25,9,2],78:[2,8,18,32,17,1],79:[2,8,18,32,18,1],89:[2,8,18,32,18,9,2],90:[2,8,18,32,18,10,2],91:[2,8,18,32,20,9,2],92:[2,8,18,32,21,9,2],93:[2,8,18,32,22,9,2],96:[2,8,18,32,25,9,2],103:[2,8,18,32,32,8,3]};
+function aufbau(e){const s=[0,0,0,0,0,0,0];let r=e;for(const[n,c]of ORB){if(r<=0)break;const k=Math.min(c,r);s[n-1]+=k;r-=k;}while(s.length&&s[s.length-1]===0)s.pop();return s;}
+function shellsOf(z,e){return (e===z&&EXC[z])?EXC[z].slice():aufbau(e);}
+const valenceOf=sh=>sh.length?sh[sh.length-1]:0;
+
+// Stable neutron counts for Z = 1..26 (real stable isotopes)
+const STABLE=[null,[0,1],[1,2],[3,4],[5,5],[5,6],[6,7],[7,8],[8,10],[10,10],[10,12],[12,12],[12,14],[14,14],[14,16],[16,16],[16,20],[18,20],[18,22],[20,22],[20,28],[24,24],[24,28],[27,28],[26,30],[30,30],[28,32]];
+const minN=z=>STABLE[z][0], maxN=z=>STABLE[z][1];
+
+const FACTS={
+ 1:'The most common element in the universe. Almost all of it was made in the Big Bang.',
+ 2:'Made in the Big Bang and inside stars that fuse hydrogen. Its full outer shell means it almost never bonds.',
+ 3:'The lightest metal. It powers the batteries in phones and laptops.',
+ 4:'Mostly made when cosmic rays smash bigger atoms apart. The James Webb telescope mirrors are made of it.',
+ 5:'Also made by cosmic rays. Found in borax and in heat-proof glass.',
+ 6:'The backbone of every living thing. Stars make it by fusing three helium nuclei together.',
+ 7:'Makes up about 78% of the air. Every protein in your body contains it.',
+ 8:'About 21% of the air, and most of the mass of your body (as part of water).',
+ 9:'The most reactive element. Fluoride in toothpaste helps protect your teeth.',
+ 10:'A noble gas with a full outer shell, so it barely bonds. It glows red-orange in neon signs.',
+ 11:'A soft metal that reacts wildly with water. Half of table salt.',
+ 12:'Burns with a blinding white light. It sits at the center of chlorophyll in plants.',
+ 13:'The most common metal in Earth\'s crust. Soda cans and foil are made of it.',
+ 14:'With oxygen, it makes up most rocks and sand. Computer chips are made of it.',
+ 15:'Part of the backbone of DNA, and part of your bones and teeth.',
+ 16:'Volcanoes release it, and its compounds smell like rotten eggs.',
+ 17:'A toxic gas on its own, but bonded to sodium it becomes table salt.',
+ 18:'About 1% of the air. A noble gas used to fill light bulbs.',
+ 19:'Bananas are full of it. Your nerves use it to send signals.',
+ 20:'Builds bones, teeth, seashells, and chalk.',
+ 21:'A rare metal mixed into aluminum to make light, strong bike frames.',
+ 22:'Strong, light, and rust-proof. Used in airplanes and bone implants.',
+ 23:'A small amount makes steel much tougher.',
+ 24:'Makes stainless steel shiny and rust-proof. It also makes rubies red.',
+ 25:'Used in steel and batteries. Your body needs tiny amounts of it.',
+ 26:'The end of the line for fusion in stars. Most of Earth\'s core is iron, and it carries oxygen in your blood.'
+};
+function origin(z){
+  if(z<=2)return 'The Big Bang and stars';
+  if(z===3)return 'The Big Bang, cosmic rays, and some stars';
+  if(z<=5)return 'Cosmic rays breaking apart bigger atoms';
+  if(z<=26)return 'Fusion inside stars and supernova explosions';
+  if(z<=83)return 'Dying stars, supernovae, and neutron star collisions';
+  if(z<=92)return 'Supernovae and neutron star collisions (radioactive)';
+  return 'Made in laboratories';
+}
+function phase(z){
+  if([1,2,7,8,9,10,17,18,36,54,86].includes(z))return 'Gas';
+  if(z===35||z===80)return 'Liquid';
+  if(z>=100)return 'Unknown (too short-lived to test)';
+  return 'Solid';
+}
+
+/* ---------- Quests & items ---------- */
+const ITEMS={
+  lens:{icon:'🔭',name:'Laser Lens',desc:'Your laser reaches 40% farther.'},
+  net:{icon:'🕸️',name:'Neutron Net',desc:'You capture neutrons twice as fast.'},
+  boots:{icon:'💨',name:'Plasma Boots',desc:'You move 30% faster.'},
+  amp:{icon:'⚡',name:'Charge Amplifier',desc:'Your laser pulls 40% harder.'},
+  sponge:{icon:'🧽',name:'Electron Sponge',desc:'Nearby electrons drift toward you when you are positive.'},
+  catalyst:{icon:'🔥',name:'Fusion Catalyst',desc:'Nearby protons drift toward you when you are neutral or negative.'}
+};
+const QUESTS=[
+  {z:1,val:1,partner:'H',count:1,product:'H₂',pname:'hydrogen gas',bond:'single',angles:[0],item:'lens',blurb:'Two hydrogen atoms share their electrons to make hydrogen gas.'},
+  {z:6,val:4,partner:'O',count:2,product:'CO₂',pname:'carbon dioxide',bond:'double',angles:[0,Math.PI],item:'net',blurb:'Carbon shares its 4 valence electrons with two oxygen atoms.'},
+  {z:8,val:6,partner:'H',count:2,product:'H₂O',pname:'water',bond:'single',angles:[0.91,Math.PI-0.91],item:'boots',blurb:'Oxygen shares electrons with two hydrogen atoms to make water.'},
+  {z:11,val:1,partner:'Cl',count:1,product:'NaCl',pname:'table salt',bond:'ionic',angles:[0],item:'amp',blurb:'Sodium hands its 1 valence electron to chlorine. Opposite charges then hold them together.'},
+  {z:14,val:4,partner:'O',count:2,product:'SiO₂',pname:'quartz, the main mineral in sand',bond:'single',angles:[0,Math.PI],item:'sponge',blurb:'Silicon bonds with oxygen to make quartz.'},
+  {z:20,val:2,partner:'O',count:1,product:'CaO',pname:'lime',bond:'ionic',angles:[0],item:'catalyst',blurb:'Calcium hands 2 electrons to oxygen.'}
+];
+
+/* ---------- Canvas ---------- */
+const cv=$('#game'),cx=cv.getContext('2d');
+let W=0,H=0,DPR=1;
+function resize(){DPR=Math.min(2,window.devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;cx.setTransform(DPR,0,0,DPR,0,0);if(S){S.x=clamp(S.x,20,W-20);S.y=clamp(S.y,20,H-20);}}
+addEventListener('resize',resize);
+
+const blobs=Array.from({length:12},()=>({x:Math.random(),y:Math.random(),r:.15+Math.random()*.25,vx:(Math.random()-.5)*.01,vy:(Math.random()-.5)*.01,h:Math.random()}));
+
+/* ---------- Sound ---------- */
+let AC=null,muted=false;
+function beep(f,d=.09,type='sine',v=.05,slide=0){
+  if(muted)return;
+  try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+    const o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime;
+    o.type=type;o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(f*slide,t+d);
+    g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+    o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+d+.02);}catch(e){}
+}
+const SND={
+  e:()=>beep(1200,.07,'sine',.04,1.4),
+  p:()=>{beep(180,.25,'triangle',.08,.5);beep(360,.2,'sine',.04,2)},
+  n:()=>beep(520,.14,'triangle',.05,1.5),
+  no:()=>beep(140,.12,'square',.025,.8),
+  win:()=>{[523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,.16,'triangle',.05),i*90))},
+  fail:()=>{beep(300,.3,'sawtooth',.03,.4)}
+};
+
+/* ---------- State ---------- */
+let S=null,parts=[],fx=[],summon=null,started=false,paused=false;
+function reset(){
+  S={Z:1,N:0,e:0,x:W/2,y:H/2,vx:0,vy:0,aim:0,items:new Set(),visited:new Set([1]),qs:QUESTS.map(()=>'open'),
+     learned:false,prog:0,portal:null,t:0,ended:false,shake:0,hint:{},sig:''};
+  parts=[];fx=[];summon=null;
+  const c=counts();for(let i=0;i<c.p;i++)spawn('p',false);for(let i=0;i<c.e;i++)spawn('e',false);for(let i=0;i<c.n;i++)spawn('n',false);
+  updateHUD(true);
+}
+function counts(){const a=clamp(W*H/(1280*720),.55,1.6);return{p:Math.round(5*a)+1,e:Math.round(9*a)+2,n:Math.max(2,Math.round(3*a))};}
+const SPD={p:[55,90],e:[95,150],n:[165,235]};
+function spawn(type,edge=true){
+  let x,y;
+  if(edge){const s=Math.random()*4|0;x=s===0?-15:s===1?W+15:Math.random()*W;y=s===2?-15:s===3?H+15:Math.random()*H;if(s<2)y=Math.random()*H;}
+  else{do{x=Math.random()*W;y=Math.random()*H;}while(S&&Math.hypot(x-S.x,y-S.y)<170);}
+  const sp=SPD[type][0]+Math.random()*(SPD[type][1]-SPD[type][0]);
+  const a=Math.atan2(H/2-y+(Math.random()-.5)*H*.8,W/2-x+(Math.random()-.5)*W*.8);
+  parts.push({type,x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,sp,r:type==='e'?4.5:8,cd:0,held:false,beam:0,ph:Math.random()*TAU});
+}
+
+function geom(){
+  const A=S.Z+S.N,rn=9+Math.sqrt(A)*2.2,sh=shellsOf(S.Z,S.e);
+  const outer=sh.length?rn+12+(sh.length-1)*9:rn+5;
+  return{rn,sh,outer};
+}
+const charge=()=>S.Z-S.e;
+
+/* ---------- Input ---------- */
+const keys=new Set();let mouse={x:0,y:0,down:false,used:false},space=false;
+let joy=null,aimPtr=null;
+addEventListener('keydown',ev=>{
+  const k=ev.key.toLowerCase();
+  if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k)&&started&&!paused)ev.preventDefault();
+  if(k==='t'){ if($('#table').classList.contains('open'))closeTable(); else if(!anyBlocking('table'))openTable(); return; }
+  if(k==='escape'){ if($('#table').classList.contains('open'))closeTable(); else if($('#pause').classList.contains('open'))resume(); else if(started&&!S.ended&&!anyBlocking())pause(); return; }
+  if(!started||paused)return;
+  if(k===' ')space=true;
+  if(k==='e')releaseElectron();
+  if(k==='r')releaseProton();
+  if(k==='q')doSummon();
+  if(k==='p')pause();
+  keys.add(k);
+});
+addEventListener('keyup',ev=>{const k=ev.key.toLowerCase();keys.delete(k);if(k===' ')space=false;});
+addEventListener('blur',()=>{keys.clear();space=false;mouse.down=false;});
+
+cv.addEventListener('pointerdown',ev=>{
+  if(!started||paused)return;
+  cv.setPointerCapture(ev.pointerId);
+  if(ev.pointerType==='mouse'){mouse.down=ev.button===0;mouse.x=ev.clientX;mouse.y=ev.clientY;mouse.used=true;return;}
+  if(ev.clientX<W*.45&&!joy){joy={id:ev.pointerId,ox:ev.clientX,oy:ev.clientY,dx:0,dy:0};const j=$('#joy');j.style.left=ev.clientX+'px';j.style.top=ev.clientY+'px';j.style.display='block';j.firstElementChild.style.transform='';}
+  else if(!aimPtr){aimPtr={id:ev.pointerId,x:ev.clientX,y:ev.clientY};}
+});
+cv.addEventListener('pointermove',ev=>{
+  if(ev.pointerType==='mouse'){mouse.x=ev.clientX;mouse.y=ev.clientY;mouse.used=true;return;}
+  if(joy&&ev.pointerId===joy.id){let dx=ev.clientX-joy.ox,dy=ev.clientY-joy.oy;const d=Math.hypot(dx,dy),m=45;if(d>m){dx*=m/d;dy*=m/d;}joy.dx=dx/m;joy.dy=dy/m;$('#joy').firstElementChild.style.transform=`translate(${dx}px,${dy}px)`;}
+  if(aimPtr&&ev.pointerId===aimPtr.id){aimPtr.x=ev.clientX;aimPtr.y=ev.clientY;}
+});
+function endPtr(ev){
+  if(ev.pointerType==='mouse'){mouse.down=false;return;}
+  if(joy&&ev.pointerId===joy.id){joy=null;$('#joy').style.display='none';}
+  if(aimPtr&&ev.pointerId===aimPtr.id)aimPtr=null;
+}
+cv.addEventListener('pointerup',endPtr);cv.addEventListener('pointercancel',endPtr);
+cv.addEventListener('contextmenu',e=>e.preventDefault());
+const firing=()=>started&&!paused&&(mouse.down||space||!!aimPtr);
+
+/* ---------- UI helpers ---------- */
+let toastT=0;
+function toast(msg,sec=3.2){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),sec*1000);}
+function tip(key,msg,cool=5){if(S.t-(S.hint[key]??-99)>cool){S.hint[key]=S.t;toast(msg);}}
+let factT=0;
+function showFact(z){const el=EL[z];$('#fSym').textContent=el.sym;$('#fName').textContent=`You became ${el.name}!`;$('#fText').textContent=FACTS[z]||'';const f=$('#fact');f.classList.add('show');clearTimeout(factT);factT=setTimeout(()=>f.classList.remove('show'),6000);}
+const SUP={'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹'};
+function ionSup(q){if(q===0)return'';const n=Math.abs(q);return (n>1?String(n).split('').map(c=>SUP[c]).join(''):'')+(q>0?'⁺':'⁻');}
+const plural=(n,w)=>`${n} ${w}${n===1?'':'s'}`;
+const signed=q=>q>0?`+${q}`:q<0?`−${-q}`:'0';
+
+function currentQuest(){const i=S.qs.findIndex(s=>s==='open');return i<0?null:{i,q:QUESTS[i]};}
+
+function nextHint(){
+  if(S.portal)return 'Next: dive into the glowing star core.';
+  const q=charge(),need=[];
+  if(S.Z>=26)return 'Next: iron is complete.';
+  if(S.N<minN(S.Z))need.push(`hover on ${plural(minN(S.Z)-S.N,'neutron')} (white) to steady your nucleus`);
+  if(q>0)need.push(`grab ${plural(q,'electron')} (blue) so you aren't positive anymore`);
+  if(!need.length)return `Next: pull in a proton (red) with your laser to become ${EL[S.Z+1].name}.`;
+  return 'Next: '+need.join(', then ')+'.';
+}
+
+function questHTML(){
+  const cur=currentQuest();
+  const done=S.qs.filter(s=>s==='done').length;
+  if(!cur)return `<h3>Bond quests finished</h3><p>You completed ${done} of ${QUESTS.length}.</p>`;
+  const {q}=cur,el=EL[q.z],pe=bySym(q.partner);
+  let state;
+  if(S.Z<q.z)state=`Unlocks when you become ${el.name}.`;
+  else{const v=valenceOf(shellsOf(S.Z,S.e));state=`Your valence electrons: <b class="${v===q.val?'good':'bad'}">${v}</b> of ${q.val} needed. Press Q or tap Summon.`;}
+  return `<h3>Bond quest: make ${q.product}</h3><p>Be ${el.name} with ${plural(q.val,'valence electron')}, then summon ${q.count>1?q.count+' '+pe.name+' atoms':pe.name}. Reward: ${ITEMS[q.item].icon} ${ITEMS[q.item].name}.</p><p class="state">${state}</p>${S.learned?'':'<p class="note">Your first mistake is a free try.</p>'}`;
+}
+
+function updateHUD(force){
+  const g=geom(),q=charge(),v=valenceOf(g.sh),A=S.Z+S.N;
+  const sig=[S.Z,S.N,S.e,[...S.items].join(),S.qs.join(),S.learned,!!S.portal].join('|');
+  if(!force&&sig===S.sig)return;S.sig=sig;
+  const el=EL[S.Z];
+  $('#hSym').innerHTML=`${el.sym}<sup>${ionSup(q)}</sup>`;
+  $('#hName').textContent=el.name;
+  let iso=`${el.name}-${A}`;if(S.Z===1&&S.N===1)iso+=' (deuterium)';if(q!==0)iso+=q>0?', positive ion':', negative ion';
+  $('#hIso').textContent=iso;
+  $('#hZ').textContent=S.Z;$('#hP').textContent=S.Z;$('#hN').textContent=S.N;$('#hE').textContent=S.e;$('#hA').textContent=A;
+  $('#hQ').textContent=signed(q)+(q===0?' (neutral)':'');
+  $('#hSh').textContent=g.sh.length?g.sh.join(', '):'none';
+  $('#hV').textContent=v;
+  const lo=minN(S.Z),hi=maxN(S.Z),st=$('#hStab');
+  if(S.N<lo){st.textContent=`Unstable, needs ${lo-S.N} more n`;st.className='bad';}
+  else if(S.N>hi){st.textContent='Unstable, too many n';st.className='bad';}
+  else{st.textContent='Stable ✓';st.className='good';}
+  $('#roadN').textContent=`${S.Z} / 26`;$('#roadBar').style.width=`${(S.Z-1)/25*100}%`;
+  $('#next').textContent=nextHint();
+  $('#quest').innerHTML=questHTML();
+  $('#items').innerHTML=[...S.items].map(k=>`<span title="${ITEMS[k].desc}">${ITEMS[k].icon} ${ITEMS[k].name}</span>`).join('');
+}
+
+/* ---------- Actions ---------- */
+function releaseElectron(){
+  if(S.e<=0){tip('noe','You have no electrons to release.',2);SND.no();return;}
+  S.e--;const g=geom(),a=S.aim;
+  parts.push({type:'e',x:S.x+Math.cos(a)*(g.outer+10),y:S.y+Math.sin(a)*(g.outer+10),vx:Math.cos(a)*320,vy:Math.sin(a)*320,sp:120,r:4.5,cd:.9,held:false,beam:0,ph:0});
+  beep(900,.07,'sine',.035,.6);updateHUD();
+}
+
+function releaseProton(){
+  if(S.Z<=1){tip('nop','You are a single proton. Releasing it would leave nothing behind.',2);SND.no();return;}
+  if(summon){tip('busyp','Wait until the bond finishes forming.',2);SND.no();return;}
+  S.Z--;const g=geom(),a=S.aim;
+  parts.push({type:'p',x:S.x+Math.cos(a)*(g.rn+14),y:S.y+Math.sin(a)*(g.rn+14),vx:Math.cos(a)*300,vy:Math.sin(a)*300,sp:75,r:8,cd:1.2,held:false,beam:0,ph:0});
+  if(S.portal&&S.Z<26){S.portal=null;toast('The star core closed. Become Iron-56 again to reopen it.',4);}
+  $('#fact').classList.remove('show');
+  const el=EL[S.Z];toast(`You released a proton and went back to ${el.name}.`+(S.N>maxN(S.Z)?` Your nucleus now has too many neutrons for ${el.name}, so it's unstable.`:''),4);
+  S.shake=reduceMotion?0:.2;beep(260,.2,'triangle',.06,.6);updateHUD(true);
+}
+
+function doSummon(){
+  if(summon){tip('busy','A bond is already forming.',2);return;}
+  const cur=currentQuest();
+  if(!cur){toast('There are no bond quests left.');return;}
+  const {q}=cur;
+  if(S.Z!==q.z){toast(`You need to be ${EL[q.z].name} to make ${q.product}. Right now you're ${EL[S.Z].name}.`);SND.no();return;}
+  const atoms=q.angles.map((a,k)=>{const s=Math.random()*TAU;return{a,x:S.x+Math.cos(s)*Math.max(W,H),y:S.y+Math.sin(s)*Math.max(W,H),ox:0,oy:0};});
+  summon={i:cur.i,q,t:0,atoms,res:null,z:S.Z};
+  beep(440,.3,'sine',.04,2);
+}
+
+function resolveSummon(){
+  const s=summon,q=s.q,v=valenceOf(shellsOf(S.Z,S.e));
+  if(S.Z!==s.z){s.res='cancel';toast('You changed element before the bond formed. Try again.');return;}
+  if(v===q.val){s.res='ok';SND.win();return;}
+  s.res='fail';s.snap={Z:S.Z,e:S.e,v,sh:shellsOf(S.Z,S.e)};SND.fail();S.shake=reduceMotion?0:.4;
+}
+
+function finishSummon(){
+  const s=summon,q=s.q;summon=null;
+  if(s.res==='ok'){
+    S.qs[s.i]='done';S.items.add(q.item);
+    toast(`You made ${q.product} (${q.pname})! Got ${ITEMS[q.item].icon} ${ITEMS[q.item].name}: ${ITEMS[q.item].desc}`,5);
+  }else if(s.res==='fail'&&S.qs[s.i]==='open'){
+    const v=s.snap.v;
+    if(!S.learned){S.learned=true;showLesson(q,s.snap);}
+    else{S.qs[s.i]='failed';toast(`Bond failed. ${EL[q.z].name} needed ${plural(q.val,'valence electron')} but you had ${v}. That quest is lost.`,5);}
+  }
+  updateHUD(true);
+}
+
+function showLesson(q,snap){
+  const el=EL[q.z],diff=snap.e-snap.Z,sh=snap.sh,v=snap.v;
+  const fix=diff<0?`You're missing <b>${plural(-diff,'electron')}</b>. Point your laser at the blue electrons to pull them in.`
+    :`You have <b>${plural(diff,'extra electron')}</b>. Press E (or tap Release e⁻) to let ${diff===1?'it':'them'} go.`;
+  $('#lTitle').textContent=`The ${q.product} bond didn't form`;
+  $('#lBody').innerHTML=`<p><b>Valence electrons</b> are the electrons in an atom's outermost shell. They are the only ones that take part in bonds.</p>
+  <p>To make ${q.product}, ${el.name} needs <b>${plural(q.val,'valence electron')}</b>. Your shells were <b>${sh.length?sh.join(', '):'empty'}</b>, so you had <b>${v}</b>.</p>
+  <p>A neutral atom has the same number of electrons as protons. ${el.name} has ${plural(snap.Z,'proton')}, and you had ${plural(snap.e,'electron')}. ${fix}</p>
+  <p>Watch the Valence line in the stats box, then summon again.</p>
+  <p class="note">This was your free try. From now on, a failed bond means the quest is lost.</p>`;
+  openOverlay('#learn');
+}
+
+/* ---------- Update ---------- */
+function update(dt){
+  S.t+=dt;
+  // movement
+  let ix=0,iy=0;
+  if(keys.has('a')||keys.has('arrowleft'))ix-=1; if(keys.has('d')||keys.has('arrowright'))ix+=1;
+  if(keys.has('w')||keys.has('arrowup'))iy-=1; if(keys.has('s')||keys.has('arrowdown'))iy+=1;
+  if(joy){ix+=joy.dx;iy+=joy.dy;}
+  const il=Math.hypot(ix,iy);if(il>1){ix/=il;iy/=il;}
+  const vmax=(S.items.has('boots')?1.3:1)*250;
+  S.vx+=ix*1500*dt;S.vy+=iy*1500*dt;
+  const damp=Math.exp(-4.5*dt);S.vx*=damp;S.vy*=damp;
+  const sp=Math.hypot(S.vx,S.vy);if(sp>vmax){S.vx*=vmax/sp;S.vy*=vmax/sp;}
+  S.x+=S.vx*dt;S.y+=S.vy*dt;
+  if(S.x<15){S.x=15;S.vx=Math.abs(S.vx)*.4}if(S.x>W-15){S.x=W-15;S.vx=-Math.abs(S.vx)*.4}
+  if(S.y<15){S.y=15;S.vy=Math.abs(S.vy)*.4}if(S.y>H-15){S.y=H-15;S.vy=-Math.abs(S.vy)*.4}
+  // aim
+  if(aimPtr)S.aim=Math.atan2(aimPtr.y-S.y,aimPtr.x-S.x);
+  else if(mouse.used)S.aim=Math.atan2(mouse.y-S.y,mouse.x-S.x);
+  else if(il>.1)S.aim=Math.atan2(iy,ix);
+
+  const g=geom(),q=charge(),fire=firing();
+  const L=(S.items.has('lens')?1.4:1)*clamp(Math.min(W,H)*.42+90,200,300);
+  const amp=S.items.has('amp')?1.4:1,dx=Math.cos(S.aim),dy=Math.sin(S.aim);
+  const strP=clamp(1-.35*q,.15,3),strE=clamp(1+.35*q,.15,3);
+
+  // neutron hover
+  let over=null,best=1e9;
+  for(const p of parts){p.held=false;if(p.type!=='n')continue;const d=Math.hypot(p.x-S.x,p.y-S.y);if(d<g.rn+10&&d<best){best=d;over=p;}}
+  const capT=S.items.has('net')?.6:1.2;
+  if(over){
+    over.held=true;
+    if(S.Z>=26&&S.portal){S.prog=0;}
+    else if(S.N>=maxN(S.Z)){tip('nmax',`Another neutron would make ${EL[S.Z].name} unstable. Add a proton first.`);S.prog=Math.max(0,S.prog-dt);}
+    else{
+      over.vx+=(S.vx-over.vx)*Math.min(1,dt*4);over.vy+=(S.vy-over.vy)*Math.min(1,dt*4);
+      S.prog+=dt/capT;
+      if(S.prog>=1){S.prog=0;S.N++;parts.splice(parts.indexOf(over),1);burst(S.x,S.y,'#ece6d6',14);SND.n();updateHUD();}
+    }
+  }else S.prog=Math.max(0,S.prog-dt*.7);
+
+  // particles
+  for(const p of parts){
+    p.cd=Math.max(0,p.cd-dt);p.beam=Math.max(0,p.beam-dt*3);p.ph+=dt;
+    const rx=p.x-S.x,ry=p.y-S.y,d=Math.hypot(rx,ry)||.001;
+    let pulled=false;
+    if(p.type!=='n'){
+      const sign=p.type==='p'?1:-1,R=190;
+      if(d<R&&q!==0){const f=120*q*sign*(1-d/R);p.vx+=rx/d*f*dt;p.vy+=ry/d*f*dt;}
+      if(S.items.has('sponge')&&p.type==='e'&&q>0&&d<220){p.vx-=rx/d*160*dt;p.vy-=ry/d*160*dt;pulled=true;}
+      if(S.items.has('catalyst')&&p.type==='p'&&q<=0&&d<220){p.vx-=rx/d*140*dt;p.vy-=ry/d*140*dt;pulled=true;}
+      if(fire){
+        const t=rx*dx+ry*dy;
+        if(t>0&&t<L){const perp=Math.abs(rx*dy-ry*dx);
+          if(perp<20+t*.13){const f=560*(p.type==='p'?strP:strE)*amp;p.vx-=rx/d*f*dt;p.vy-=ry/d*f*dt;p.beam=1;pulled=true;}}
+      }
+      if(p.type==='e'){p.vx+=Math.cos(p.ph*7)*40*dt;p.vy+=Math.sin(p.ph*5.3)*40*dt;}
+    }else{
+      if(fire&&!p.held){const t=rx*dx+ry*dy;if(t>0&&t<L&&Math.abs(rx*dy-ry*dx)<20+t*.13)tip('nbeam','Neutrons have no charge, so your laser passes right through them. Chase one and hover on it.',12);}
+      if(!p.held&&Math.random()<dt*.5){const a=(Math.random()-.5)*1.6,c=Math.cos(a),s=Math.sin(a);const vx=p.vx*c-p.vy*s;p.vy=p.vx*s+p.vy*c;p.vx=vx;}
+    }
+    // keep cruising speed
+    const s=Math.hypot(p.vx,p.vy)||.001;
+    if(!p.held){
+      if(pulled){if(s>420){p.vx*=420/s;p.vy*=420/s;}}
+      else{const k=1+(p.sp-s)/s*Math.min(1,dt*1.5);p.vx*=k;p.vy*=k;}
+    }
+    p.x+=p.vx*dt;p.y+=p.vy*dt;
+    const m=20;
+    if(p.x<-m){p.x=-m;p.vx=Math.abs(p.vx)}if(p.x>W+m){p.x=W+m;p.vx=-Math.abs(p.vx)}
+    if(p.y<-m){p.y=-m;p.vy=Math.abs(p.vy)}if(p.y>H+m){p.y=H+m;p.vy=-Math.abs(p.vy)}
+  }
+
+  // collisions with charged particles
+  for(let i=parts.length-1;i>=0;i--){
+    const p=parts[i];const rx=p.x-S.x,ry=p.y-S.y,d=Math.hypot(rx,ry)||.001;
+    if(p.type==='p'&&p.cd<=0&&d<g.rn+p.r){
+      let why=null;
+      if(charge()>0)why=['repel',`Like charges repel! You're ${signed(charge())}, so protons bounce off. Grab electrons first.`];
+      else if(S.Z>=26)why=['iron','Iron is the end of fusion. Adding protons now would cost the star energy.'];
+      else if(S.N<minN(S.Z))why=['neut',`Your nucleus is unstable. Capture ${plural(minN(S.Z)-S.N,'more neutron')} before adding a proton.`];
+      if(why){p.vx=rx/d*260;p.vy=ry/d*260;p.x=S.x+rx/d*(g.rn+p.r+2);p.y=S.y+ry/d*(g.rn+p.r+2);tip(why[0],why[1]);SND.no();continue;}
+      parts.splice(i,1);fuse();
+    }else if(p.type==='e'&&p.cd<=0&&d<g.outer+p.r){
+      if(S.e>=S.Z+2){p.vx=rx/d*220;p.vy=ry/d*220;p.cd=.6;tip('emax','You already have 2 extra electrons. More won\'t stick.');continue;}
+      parts.splice(i,1);S.e++;burst(p.x,p.y,'#5ee3ff',6);SND.e();updateHUD();
+    }
+  }
+
+  // respawn
+  const c=counts(),have={p:0,e:0,n:0};parts.forEach(p=>have[p.type]++);
+  if(have.p<c.p&&Math.random()<dt*1.2)spawn('p');
+  if(have.e<c.e&&Math.random()<dt*2)spawn('e');
+  if(have.n<c.n&&Math.random()<dt*.9)spawn('n');
+
+  // effects
+  for(let i=fx.length-1;i>=0;i--){const f=fx[i];f.t+=dt;f.x+=f.vx*dt;f.y+=f.vy*dt;if(f.t>f.life)fx.splice(i,1);}
+  S.shake=Math.max(0,S.shake-dt);
+
+  // summon
+  if(summon){
+    summon.t+=dt;
+    if(summon.t>=1&&!summon.res)resolveSummon();
+    if(summon.res==='cancel'||(summon.res==='ok'&&summon.t>3.3)||(summon.res==='fail'&&summon.t>2.2))finishSummon();
+  }
+
+  // portal
+  if(S.portal){const d=Math.hypot(S.x-S.portal.x,S.y-S.portal.y);if(d<S.portal.r*.7)startEnding();}
+  updateHUD();
+}
+
+function fuse(){
+  S.Z++;S.shake=reduceMotion?0:.25;burst(S.x,S.y,'#ffc857',26);SND.p();
+  if(!S.visited.has(S.Z)){S.visited.add(S.Z);showFact(S.Z);}
+  S.qs.forEach((st,i)=>{if(st==='open'&&QUESTS[i].z<S.Z){S.qs[i]='missed';toast(`You passed ${EL[QUESTS[i].z].name}, so the ${QUESTS[i].product} quest is gone. A new one is waiting.`,4.5);}});
+  if(S.Z===26&&S.N>=minN(26)&&S.N<=maxN(26)&&!S.portal){
+    let px,py;do{px=W*(.2+Math.random()*.6);py=H*(.3+Math.random()*.5);}while(Math.hypot(px-S.x,py-S.y)<Math.min(W,H)*.3);
+    S.portal={x:px,y:py,r:Math.min(70,Math.min(W,H)*.12)};
+    setTimeout(()=>toast(`You're Iron-${S.Z+S.N}! The star's core is open. Dive in.`,6),1500);
+  }
+  updateHUD(true);
+}
+function burst(x,y,col,n){for(let i=0;i<n;i++){const a=Math.random()*TAU,s=60+Math.random()*200;fx.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,t:0,life:.4+Math.random()*.4,col});}}
+
+/* ---------- Draw ---------- */
+function draw(){
+  const t=performance.now()/1000;
+  cx.save();
+  if(S&&S.shake>0)cx.translate((Math.random()-.5)*10*S.shake,(Math.random()-.5)*10*S.shake);
+  // background heats up as you grow
+  const heat=S?(S.Z-1)/25:0;
+  const g=cx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,`hsl(${340+heat*25},${55}%,${7+heat*4}%)`);g.addColorStop(1,`hsl(${355+heat*25},${60}%,${12+heat*6}%)`);
+  cx.fillStyle=g;cx.fillRect(-20,-20,W+40,H+40);
+  for(const b of blobs){
+    if(!reduceMotion){b.x+=b.vx*.016;b.y+=b.vy*.016;if(b.x<-.2||b.x>1.2)b.vx*=-1;if(b.y<-.2||b.y>1.2)b.vy*=-1;}
+    const r=b.r*Math.max(W,H),gr=cx.createRadialGradient(b.x*W,b.y*H,0,b.x*W,b.y*H,r);
+    gr.addColorStop(0,`hsla(${15+b.h*30+heat*15},100%,60%,${.07+heat*.05})`);gr.addColorStop(1,'hsla(20,100%,50%,0)');
+    cx.fillStyle=gr;cx.fillRect(b.x*W-r,b.y*H-r,r*2,r*2);
+  }
+  if(!S){cx.restore();return;}
+
+  // portal
+  if(S.portal){
+    const p=S.portal;
+    for(let k=5;k>0;k--){const rr=p.r*(k/5)*1.4;const gr=cx.createRadialGradient(p.x,p.y,0,p.x,p.y,rr);gr.addColorStop(0,'rgba(255,255,230,.5)');gr.addColorStop(1,'rgba(255,160,40,0)');cx.fillStyle=gr;cx.beginPath();cx.arc(p.x,p.y,rr,0,TAU);cx.fill();}
+    cx.strokeStyle='rgba(255,230,160,.8)';cx.lineWidth=2;
+    for(let k=0;k<3;k++){cx.beginPath();cx.arc(p.x,p.y,p.r*(.5+k*.25),t*(1+k*.4)+k,t*(1+k*.4)+k+Math.PI*1.2);cx.stroke();}
+    cx.fillStyle='#fff4e6';cx.font='600 13px Lexend, sans-serif';cx.textAlign='center';cx.fillText('Star core',p.x,p.y+p.r+22);
+  }
+
+  // laser
+  const G=geom(),q=charge();
+  if(firing()){
+    const L=(S.items.has('lens')?1.4:1)*clamp(Math.min(W,H)*.42+90,200,300);
+    const col=q<0?'255,90,78':q>0?'94,227,255':'255,230,170';
+    const ex=S.x+Math.cos(S.aim)*L,ey=S.y+Math.sin(S.aim)*L;
+    const nx=-Math.sin(S.aim),ny=Math.cos(S.aim),wEnd=20+L*.13;
+    cx.fillStyle=`rgba(${col},.08)`;cx.beginPath();cx.moveTo(S.x+nx*20,S.y+ny*20);cx.lineTo(ex+nx*wEnd,ey+ny*wEnd);cx.lineTo(ex-nx*wEnd,ey-ny*wEnd);cx.lineTo(S.x-nx*20,S.y-ny*20);cx.fill();
+    const lg=cx.createLinearGradient(S.x,S.y,ex,ey);lg.addColorStop(0,`rgba(${col},.95)`);lg.addColorStop(1,`rgba(${col},0)`);
+    cx.strokeStyle=lg;cx.lineWidth=5+Math.sin(t*30)*1.2;cx.lineCap='round';cx.beginPath();cx.moveTo(S.x,S.y);cx.lineTo(ex,ey);cx.stroke();
+  }
+
+  // particles
+  for(const p of parts){
+    if(p.type==='p'){
+      cx.fillStyle='rgba(255,90,78,.25)';cx.beginPath();cx.arc(p.x,p.y,p.r+5+p.beam*4,0,TAU);cx.fill();
+      cx.fillStyle='#ff5a4e';cx.beginPath();cx.arc(p.x,p.y,p.r,0,TAU);cx.fill();
+      cx.strokeStyle='#fff';cx.lineWidth=2;cx.beginPath();cx.moveTo(p.x-4,p.y);cx.lineTo(p.x+4,p.y);cx.moveTo(p.x,p.y-4);cx.lineTo(p.x,p.y+4);cx.stroke();
+    }else if(p.type==='e'){
+      cx.fillStyle='rgba(94,227,255,.3)';cx.beginPath();cx.arc(p.x,p.y,p.r+4+p.beam*4,0,TAU);cx.fill();
+      cx.fillStyle='#5ee3ff';cx.beginPath();cx.arc(p.x,p.y,p.r,0,TAU);cx.fill();
+    }else{
+      const s=Math.hypot(p.vx,p.vy)||1;
+      cx.strokeStyle='rgba(236,230,214,.25)';cx.lineWidth=p.r*1.4;cx.lineCap='round';cx.beginPath();cx.moveTo(p.x,p.y);cx.lineTo(p.x-p.vx/s*22,p.y-p.vy/s*22);cx.stroke();
+      cx.fillStyle='#ece6d6';cx.beginPath();cx.arc(p.x,p.y,p.r,0,TAU);cx.fill();
+      cx.strokeStyle='#8b7f6a';cx.lineWidth=1.5;cx.beginPath();cx.arc(p.x,p.y,p.r-2.5,0,TAU);cx.stroke();
+    }
+  }
+
+  // summon atoms
+  if(summon)drawSummon(G);
+
+  // player
+  const A=S.Z+S.N,rn=G.rn;
+  const glow=cx.createRadialGradient(S.x,S.y,0,S.x,S.y,G.outer+24);
+  glow.addColorStop(0,'rgba(255,200,87,.35)');glow.addColorStop(1,'rgba(255,200,87,0)');
+  cx.fillStyle=glow;cx.beginPath();cx.arc(S.x,S.y,G.outer+24,0,TAU);cx.fill();
+  G.sh.forEach((n,i)=>{
+    const r=rn+12+i*9;
+    cx.strokeStyle='rgba(94,227,255,.28)';cx.lineWidth=1;cx.beginPath();cx.arc(S.x,S.y,r,0,TAU);cx.stroke();
+    const w=(i%2?-1:1)*(1.6-i*.2);
+    for(let j=0;j<n;j++){const a=t*w+j*TAU/n+i;cx.fillStyle='#5ee3ff';cx.beginPath();cx.arc(S.x+Math.cos(a)*r,S.y+Math.sin(a)*r,2.6,0,TAU);cx.fill();}
+  });
+  const nr=A===1?rn*.8:Math.max(2.6,rn*.95/Math.sqrt(A)*1.05);
+  for(let k=A-1;k>=0;k--){
+    const rr=A===1?0:rn*.8*Math.sqrt((k+.5)/A),a=k*2.39996;
+    const isP=Math.floor((k+1)*S.Z/A)>Math.floor(k*S.Z/A);
+    const x=S.x+Math.cos(a)*rr,y=S.y+Math.sin(a)*rr;
+    cx.fillStyle=isP?'#ff5a4e':'#ece6d6';cx.beginPath();cx.arc(x,y,nr,0,TAU);cx.fill();
+    cx.strokeStyle='rgba(40,10,20,.35)';cx.lineWidth=1;cx.stroke();
+  }
+  if(S.prog>0){
+    cx.strokeStyle='#ffc857';cx.lineWidth=4;cx.lineCap='round';cx.beginPath();cx.arc(S.x,S.y,rn+6,-Math.PI/2,-Math.PI/2+TAU*S.prog);cx.stroke();
+  }
+  // effects
+  for(const f of fx){cx.globalAlpha=1-f.t/f.life;cx.fillStyle=f.col;cx.beginPath();cx.arc(f.x,f.y,2.2,0,TAU);cx.fill();}
+  cx.globalAlpha=1;
+  cx.restore();
+}
+
+function drawSummon(G){
+  const s=summon,q=s.q,pe=bySym(q.partner),col=CATS[pe.cat].col;
+  const dist=G.outer+(pe.sym==='H'?18:24),tt=Math.min(1,s.t);
+  const ease=1-Math.pow(1-tt,3);
+  s.atoms.forEach(a=>{
+    let tx=S.x+Math.cos(a.a)*dist,ty=S.y+Math.sin(a.a)*dist;
+    let x=a.x+(tx-a.x)*ease,y=a.y+(ty-a.y)*ease;
+    if(s.res==='fail'){const k=(s.t-1)*1.8;x=tx+Math.cos(a.a)*k*260;y=ty+Math.sin(a.a)*k*260;}
+    if(s.t>=1&&s.res==='ok'){
+      cx.strokeStyle=q.bond==='ionic'?'rgba(255,200,87,.8)':'#fff4e6';cx.lineWidth=3;
+      if(q.bond==='ionic')cx.setLineDash([6,6]);
+      const nx=-Math.sin(a.a)*4,ny=Math.cos(a.a)*4;
+      if(q.bond==='double'){cx.beginPath();cx.moveTo(S.x+nx,S.y+ny);cx.lineTo(x+nx,y+ny);cx.moveTo(S.x-nx,S.y-ny);cx.lineTo(x-nx,y-ny);cx.stroke();}
+      else{cx.beginPath();cx.moveTo(S.x,S.y);cx.lineTo(x,y);cx.stroke();}
+      cx.setLineDash([]);
+    }
+    const r=pe.sym==='H'?12:17;
+    cx.fillStyle=s.res==='fail'?'rgba(255,120,110,.9)':col;cx.beginPath();cx.arc(x,y,r,0,TAU);cx.fill();
+    cx.fillStyle='#1f0a14';cx.font=`${r}px Bungee, Impact, sans-serif`;cx.textAlign='center';cx.textBaseline='middle';
+    cx.fillText(pe.sym+(s.res==='ok'&&q.bond==='ionic'?'⁻':''),x,y+1);
+  });
+  cx.textBaseline='alphabetic';
+  if(s.res==='ok'){
+    cx.fillStyle='#ffc857';cx.font='22px Bungee, Impact, sans-serif';cx.textAlign='center';
+    cx.fillText(q.product,S.x,S.y-G.outer-40);
+    cx.fillStyle='#fff4e6';cx.font='600 13px Lexend, sans-serif';cx.fillText(q.pname,S.x,S.y-G.outer-22);
+  }else if(s.res==='fail'){
+    cx.fillStyle='#ff8a80';cx.font='600 15px Lexend, sans-serif';cx.textAlign='center';cx.fillText('Valence mismatch',S.x,S.y-G.outer-22);
+  }
+}
+
+/* ---------- Overlays ---------- */
+function anyBlocking(except){return ['#start','#pause','#learn','#table','#ending'].some(id=>id!=='#'+except&&$(id).classList.contains('open'));}
+function openOverlay(id){$(id).classList.add('open');paused=true;keys.clear();space=false;mouse.down=false;aimPtr=null;joy=null;$('#joy').style.display='none';}
+function closeOverlay(id){$(id).classList.remove('open');paused=anyBlocking();}
+function pause(){openOverlay('#pause');$('#bResume').focus();}
+function resume(){closeOverlay('#pause');}
+$('#bPause').onclick=pause;$('#bResume').onclick=resume;
+$('#bHelp').onclick=()=>{closeOverlay('#pause');$('#bStart').textContent='Back to the game';openOverlay('#start');};
+$('#bSound').onclick=()=>{muted=!muted;$('#bSound').textContent='Sound: '+(muted?'off':'on');};
+$('#bRestart').onclick=()=>{closeOverlay('#pause');reset();};
+$('#bStart').onclick=()=>{closeOverlay('#start');if(!started){started=true;reset();}beep(660,.1,'sine',.03,1.5);};
+$('#bStartTable').onclick=()=>openTable();
+$('#bLearn').onclick=()=>closeOverlay('#learn');
+$('#bSummon').onclick=()=>{if(started&&!paused)doSummon();};
+$('#bRelease').onclick=()=>{if(started&&!paused)releaseElectron();};
+$('#bReleaseP').onclick=()=>{if(started&&!paused)releaseProton();};
+$('#bTable').onclick=()=>openTable();
+$('#bCloseTable').onclick=closeTable;
+['#bSummon','#bRelease','#bReleaseP','#bTable','#bPause'].forEach(id=>$(id).addEventListener('pointerdown',e=>e.stopPropagation()));
+
+/* ---------- Periodic table ---------- */
+let catFilter=null;
+function buildTable(){
+  const t=$('#ptable');let html='';
+  const cells=[];
+  for(let z=1;z<=118;z++){const [r,c]=pos(z);cells.push({z,r,c});}
+  cells.push({ph:'57-71',r:6,c:3},{ph:'89-103',r:7,c:3});
+  cells.sort((a,b)=>a.r-b.r||a.c-b.c);
+  let gapDone=false;
+  for(const cl of cells){
+    if(cl.r>=9&&!gapDone){html+='<div class="gap"></div>';gapDone=true;}
+    const row=cl.r>=9?cl.r:cl.r;
+    const style=`grid-column:${cl.c};grid-row:${cl.r>=9?cl.r:cl.r}`;
+    if(cl.ph){html+=`<div class="cell ph" style="${style}">${cl.ph}</div>`;continue;}
+    const e=EL[cl.z];
+    html+=`<button class="cell" data-z="${e.z}" data-cat="${e.cat}" style="${style};background:${CATS[e.cat].col}" aria-label="${e.name}, atomic number ${e.z}"><span class="z">${e.z}</span><span class="s">${e.sym}</span><span class="m">${e.mass}</span></button>`;
+  }
+  t.innerHTML=html;
+  // position gap row explicitly
+  t.querySelector('.gap').style.gridRow='8';
+  t.addEventListener('click',ev=>{const b=ev.target.closest('.cell[data-z]');if(b)showDetail(+b.dataset.z);});
+  $('#legend').innerHTML=Object.entries(CATS).map(([k,v])=>`<button class="chip" data-cat="${k}"><i style="background:${v.col}"></i>${v.name}</button>`).join('');
+  $('#legend').addEventListener('click',ev=>{const b=ev.target.closest('.chip');if(!b)return;catFilter=catFilter===b.dataset.cat?null:b.dataset.cat;refreshTable();});
+}
+function refreshTable(){
+  const here=S?S.Z:1,seen=S?S.visited:new Set();
+  document.querySelectorAll('#ptable .cell[data-z]').forEach(c=>{const z=+c.dataset.z;c.classList.toggle('here',started&&z===here);c.classList.toggle('seen',started&&seen.has(z)&&z!==here);c.classList.toggle('dim',!!catFilter&&c.dataset.cat!==catFilter);});
+  document.querySelectorAll('#legend .chip').forEach(c=>c.classList.toggle('on',c.dataset.cat===catFilter));
+}
+function bohrSVG(sh,sym){
+  const n=sh.length,size=170,c=size/2,step=n?Math.min(14,(c-26)/n):0;
+  let s=`<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" role="img" aria-label="Bohr model with shells ${sh.join(', ')}"><circle cx="${c}" cy="${c}" r="14" fill="#ff5a4e"/><text x="${c}" y="${c+4}" text-anchor="middle" font-size="11" font-family="Bungee, Impact, sans-serif" fill="#fff">${sym}</text>`;
+  sh.forEach((k,i)=>{const r=22+step*(i+1);s+=`<circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="rgba(94,227,255,.4)"/>`;for(let j=0;j<k;j++){const a=j*TAU/k-Math.PI/2+i*.3;s+=`<circle cx="${(c+Math.cos(a)*r).toFixed(1)}" cy="${(c+Math.sin(a)*r).toFixed(1)}" r="${k>18?1.6:2.4}" fill="#5ee3ff"/>`;}});
+  return s+'</svg>';
+}
+function showDetail(z){
+  const e=EL[z],[r,c]=pos(z),period=r<=7?r:r-3,group=r<=7?c:'f-block';
+  const sh=shellsOf(z,z);
+  let val;
+  if(e.cat==='ng')val=`${valenceOf(sh)} (full shell)`;
+  else if(['tm','la','ac','un'].includes(e.cat))val='Varies (inner shells join in)';
+  else val=valenceOf(sh);
+  const status=started&&S?(S.Z===z?'<p class="good">You are this element right now.</p>':S.visited.has(z)?'<p class="note">You have been this element.</p>':''):'';
+  $('#detail').innerHTML=`<div class="big"><div class="sym">${e.sym}</div><div><h3>${e.name}</h3><div class="note">${CATS[e.cat].name}</div></div></div>${status}
+  <dl><dt>Atomic number</dt><dd>${z}</dd><dt>Atomic mass</dt><dd>${e.mass}</dd><dt>Protons</dt><dd>${z}</dd><dt>Electrons (neutral)</dt><dd>${z}</dd>
+  ${z<=26?`<dt>Stable neutrons</dt><dd>${minN(z)===maxN(z)?minN(z):minN(z)+' to '+maxN(z)}</dd>`:''}
+  <dt>Group</dt><dd>${group}</dd><dt>Period</dt><dd>${period}</dd><dt>Room temp</dt><dd>${phase(z)}</dd>
+  <dt>Shells</dt><dd>${sh.join(', ')}</dd><dt>Valence e⁻</dt><dd>${val}</dd></dl>
+  ${bohrSVG(sh,e.sym)}
+  <p class="fact"><b>Where it comes from:</b> ${origin(z)}.</p>${FACTS[z]?`<p class="fact">${FACTS[z]}</p>`:''}`;
+}
+function openTable(){refreshTable();showDetail(S&&started?S.Z:1);openOverlay('#table');$('#bCloseTable').focus();}
+function closeTable(){closeOverlay('#table');}
+
+/* ---------- Ending ---------- */
+const SCENES=[
+  {title:'Into the core',text:'You sink into the star\'s core along with countless other iron atoms. Iron is where fusion stops: fusing iron uses up energy instead of releasing it. With no energy coming out, nothing holds the core up anymore.'},
+  {title:'Supernova',text:'In less than a second the core collapses, then the star explodes as a supernova. The blast throws you and trillions of other atoms out into space at thousands of kilometers per second.'},
+  {title:'Drifting',text:'For millions of years you drift through a cold cloud of gas and dust, mixed with atoms from many other dead stars.'},
+  {title:'A new Sun',text:'About 4.6 billion years ago, part of that cloud collapses. A new star forms, our Sun, and the leftover dust clumps together into planets. You end up inside a young Earth.'},
+  {title:'Iron on Earth',text:'Today you sit in a rust-red rock, bonded to oxygen as the mineral hematite (Fe₂O₃). Iron atoms just like you make up most of Earth\'s core, the steel in buildings, and the hemoglobin that carries oxygen in your blood. Every one of them was made inside a star.'}
+];
+let scene=0,endRAF=0,endStart=0;
+function startEnding(){
+  S.ended=true;scene=0;openOverlay('#ending');showScene();
+  const ec=$('#endCanvas');
+  function loop(now){endRAF=requestAnimationFrame(loop);drawScene((now-endStart)/1000,ec);}
+  cancelAnimationFrame(endRAF);endStart=performance.now();endRAF=requestAnimationFrame(loop);
+}
+function showScene(){
+  const sc=SCENES[scene];$('#eTitle').textContent=sc.title;$('#eText').textContent=sc.text;endStart=performance.now();
+  const last=scene===SCENES.length-1;
+  $('#bEndNext').style.display=last?'none':'';$('#bEndAgain').style.display=last?'':'none';
+  const st=$('#endStats');
+  if(last){const m=Math.floor(S.t/60),s=Math.round(S.t%60);const done=S.qs.filter(x=>x==='done').length;
+    st.style.display='block';st.innerHTML=`Your journey: ${S.visited.size} elements in ${m} min ${s} s, ${done} of ${QUESTS.length} bond quests completed, finished as Iron-${S.Z+S.N}.`;}
+  else st.style.display='none';
+}
+$('#bEndNext').onclick=()=>{scene++;showScene();};
+$('#bEndAgain').onclick=()=>{cancelAnimationFrame(endRAF);closeOverlay('#ending');reset();};
+
+const stars=Array.from({length:120},()=>({x:Math.random(),y:Math.random(),a:Math.random()*TAU,s:Math.random()}));
+function drawScene(t,c){
+  const d=Math.min(2,devicePixelRatio||1),w=c.clientWidth,h=c.clientHeight;
+  if(c.width!==w*d){c.width=w*d;c.height=h*d;}
+  const x=c.getContext('2d');x.setTransform(d,0,0,d,0,0);x.fillStyle='#000';x.fillRect(0,0,w,h);
+  const cxm=w/2,cym=h/2,R=Math.min(w,h);
+  if(scene===0){
+    const g=x.createRadialGradient(cxm,cym,0,cxm,cym,R*.45);g.addColorStop(0,'#fff6d0');g.addColorStop(.35,'#ffb347');g.addColorStop(1,'rgba(160,30,10,0)');x.fillStyle=g;x.fillRect(0,0,w,h);
+    const ir=R*.08+Math.min(1,t/4)*R*.07;x.fillStyle='#6d6a70';x.beginPath();x.arc(cxm,cym,ir,0,TAU);x.fill();
+    for(let i=0;i<60;i++){const a=i*2.4+t*.4,r=ir+10+(i%12)*6;x.fillStyle=i===0?'#ffc857':'rgba(210,205,215,.8)';x.beginPath();x.arc(cxm+Math.cos(a)*r,cym+Math.sin(a)*r,i===0?4:2,0,TAU);x.fill();}
+  }else if(scene===1){
+    const k=t%4.5;
+    if(k<.8){const r=R*.18*(1-k/.8)+4;x.fillStyle='#ffb347';x.beginPath();x.arc(cxm,cym,r,0,TAU);x.fill();}
+    else{const e=(k-.8);const flash=Math.max(0,1-e*1.5);x.fillStyle=`rgba(255,255,240,${flash})`;x.fillRect(0,0,w,h);
+      const rr=e*R*.35;const g=x.createRadialGradient(cxm,cym,rr*.6,cxm,cym,rr+20);g.addColorStop(0,'rgba(255,120,60,0)');g.addColorStop(.8,'rgba(255,170,90,.7)');g.addColorStop(1,'rgba(120,80,255,0)');x.fillStyle=g;x.beginPath();x.arc(cxm,cym,rr+20,0,TAU);x.fill();
+      for(let i=0;i<90;i++){const a=i*2.39996,r=rr*(.7+(i%7)/14);x.fillStyle=i===0?'#ffc857':'rgba(255,220,180,.8)';x.beginPath();x.arc(cxm+Math.cos(a)*r,cym+Math.sin(a)*r,i===0?4:1.8,0,TAU);x.fill();}}
+  }else if(scene===2){
+    for(let i=0;i<6;i++){const gx=w*(.2+.13*i)+Math.sin(t*.2+i)*20,gy=h*(.3+(i%3)*.2),g=x.createRadialGradient(gx,gy,0,gx,gy,R*.35);g.addColorStop(0,`hsla(${260+i*20},70%,55%,.35)`);g.addColorStop(1,'hsla(260,70%,40%,0)');x.fillStyle=g;x.fillRect(0,0,w,h);}
+    stars.forEach((s,i)=>{const px=(s.x*w+t*(4+s.s*6))%w,py=s.y*h;x.fillStyle=`rgba(255,255,255,${.3+s.s*.5})`;x.fillRect(px,py,1.5,1.5);});
+    const yx=(w*.3+t*10)%w,yy=h*.55+Math.sin(t)*6;x.fillStyle='#ffc857';x.beginPath();x.arc(yx,yy,4,0,TAU);x.fill();x.fillStyle='#fff4e6';x.font='600 12px Lexend, sans-serif';x.fillText('you',yx+8,yy-6);
+  }else if(scene===3){
+    stars.forEach(s=>{x.fillStyle=`rgba(255,255,255,${.2+s.s*.4})`;x.fillRect(s.x*w,s.y*h,1.2,1.2);});
+    x.save();x.translate(cxm,cym);x.scale(1,.35);const dg=x.createRadialGradient(0,0,R*.05,0,0,R*.48);dg.addColorStop(0,'rgba(255,190,120,.5)');dg.addColorStop(1,'rgba(160,100,80,0)');x.fillStyle=dg;x.beginPath();x.arc(0,0,R*.48,0,TAU);x.fill();x.restore();
+    const sg=x.createRadialGradient(cxm,cym,0,cxm,cym,R*.1);sg.addColorStop(0,'#fffbe0');sg.addColorStop(1,'rgba(255,190,60,0)');x.fillStyle=sg;x.beginPath();x.arc(cxm,cym,R*.1,0,TAU);x.fill();
+    [.12,.18,.24,.33,.42].forEach((o,i)=>{const a=t*(1.2-i*.18)+i,px=cxm+Math.cos(a)*R*o,py=cym+Math.sin(a)*R*o*.35;x.fillStyle=i===2?'#5aa7ff':['#b9a89a','#e8c28a','','#d2694b','#e0b98c'][i];x.beginPath();x.arc(px,py,i===2?5:3.5,0,TAU);x.fill();if(i===2){x.fillStyle='#ffc857';x.font='600 12px Lexend, sans-serif';x.fillText('Earth (you are in here)',px+8,py-8);}});
+  }else{
+    const sky=x.createLinearGradient(0,0,0,h);sky.addColorStop(0,'#f4a261');sky.addColorStop(1,'#e76f51');x.fillStyle=sky;x.fillRect(0,0,w,h);
+    x.fillStyle='#7a2e1f';x.beginPath();x.moveTo(0,h*.62);for(let i=0;i<=10;i++)x.lineTo(w*i/10,h*(.55+Math.sin(i*1.7)*.05));x.lineTo(w,h);x.lineTo(0,h);x.fill();
+    x.fillStyle='#5b1f16';x.beginPath();x.moveTo(0,h*.8);for(let i=0;i<=8;i++)x.lineTo(w*i/8,h*(.74+Math.cos(i*2.1)*.04));x.lineTo(w,h);x.lineTo(0,h);x.fill();
+    const hx=cxm,hy=h*.7,s=R*.12;x.save();x.translate(hx,hy);
+    for(let i=0;i<3;i++){x.save();x.rotate(-.5+i*.45);x.fillStyle=['#4a4448','#6a5f66','#8c3a32'][i];x.beginPath();for(let k=0;k<6;k++){const a=k*TAU/6;x.lineTo(Math.cos(a)*s*(1-i*.2),Math.sin(a)*s*.45*(1-i*.2)-i*s*.25);}x.closePath();x.fill();x.strokeStyle='rgba(255,255,255,.35)';x.stroke();x.restore();}
+    x.restore();
+    const gl=.5+.5*Math.sin(t*3);x.fillStyle=`rgba(255,200,87,${.5+gl*.5})`;x.beginPath();x.arc(hx+s*.2,hy-s*.3,4,0,TAU);x.fill();
+    x.fillStyle='#fff4e6';x.font='600 13px Lexend, sans-serif';x.textAlign='center';x.fillText('Hematite, Fe₂O₃',hx,hy+s*.9);x.textAlign='start';
+  }
+}
+
+/* ---------- Loop ---------- */
+buildTable();resize();
+let last=performance.now();
+function loop(now){
+  const dt=Math.min(.033,(now-last)/1000);last=now;
+  if(started&&!paused&&S&&!S.ended)update(dt);
+  draw();requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
