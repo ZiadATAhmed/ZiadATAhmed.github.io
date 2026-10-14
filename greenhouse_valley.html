@@ -1,0 +1,684 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Greenhouse Valley</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Chakra+Petch:wght@500;600;700&family=Lexend:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: a night-time planning table. HUD strip on top, gauge column pinned left (air, water, heat, the four spheres), map board in the middle, action panel on the right that drops under the map on narrow screens. Single dark theme by choice. */
+:root{
+  --bg:#10212a; --panel:#173039; --panel2:#1e3b46; --line:#2d4a55;
+  --fg:#eaf2ed; --muted:#a2b8b3; --sun:#f3c24f;
+  --atmo:#8fd3f0; --hydro:#4f9ef2; --bio:#7fcb6c; --geo:#dc9d5c;
+  --bad:#ef6f55; --good:#7fcb6c; --warn:#f3c24f;
+  --display:'Bungee','Arial Black',Impact,sans-serif;
+  --body:'Lexend',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --hud:'Chakra Petch','Trebuchet MS',ui-monospace,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--fg)}
+body{font-family:var(--body);font-size:15px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:14px 40px}
+button{font:inherit;color:inherit}
+button:focus-visible,.tile:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+.wrap{max-width:1280px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+
+/* HUD */
+.hud{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 14px}
+.brand{font-family:var(--display);font-size:22px;letter-spacing:.02em;color:var(--sun);line-height:1;margin-right:auto}
+.brand small{display:block;font-family:var(--hud);font-size:11px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;margin-top:4px}
+.stat{display:flex;flex-direction:column;min-width:0}
+.stat b{font-family:var(--hud);font-size:22px;line-height:1.05;font-variant-numeric:tabular-nums}
+.stat span{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.stat .neg{color:var(--bad)}
+.ico{display:inline-block;width:1em;height:1em;vertical-align:-.12em}
+.btn{border:0;border-radius:10px;padding:10px 16px;font-weight:600;cursor:pointer;background:var(--panel2);border:1px solid var(--line)}
+.btn:hover{background:#26475300;filter:brightness(1.15)}
+.btn.primary{background:var(--sun);color:#1b1a10;border-color:var(--sun)}
+.btn.ghost{background:transparent}
+.hud .actions{display:flex;gap:8px}
+
+/* main grid */
+.game{display:grid;grid-template-columns:176px minmax(0,1fr) 350px;gap:14px;align-items:start}
+@media (max-width:1060px){.game{grid-template-columns:160px minmax(0,1fr)}.panel{grid-column:1/-1}}
+@media (max-width:620px){.game{grid-template-columns:88px minmax(0,1fr);gap:10px}.brand{font-size:18px}.stat b{font-size:18px}}
+
+/* gauges */
+.gauges{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 10px;display:flex;flex-direction:column;gap:14px}
+@media (min-width:1061px){.gauges{position:sticky;top:env(safe-area-inset-top,0px)}}
+.gtitle{font-family:var(--hud);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.meters{display:flex;gap:8px;justify-content:space-between}
+.meter{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.tube{position:relative;width:100%;max-width:44px;height:190px;border-radius:22px;background:#0b171d;border:2px solid var(--line);overflow:hidden}
+.tube .fill{position:absolute;left:0;right:0;bottom:0;transition:height .6s ease,background .6s}
+.tube .tick{position:absolute;left:0;right:0;height:1px;background:rgba(234,242,237,.18)}
+.meter .val{font-family:var(--hud);font-weight:700;font-size:17px;font-variant-numeric:tabular-nums}
+.meter .lbl{font-size:11px;font-weight:600;text-align:center;line-height:1.15}
+.meter .word{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.co2{font-family:var(--hud);font-size:12px;color:var(--muted);text-align:center}
+.co2 b{color:var(--fg);font-size:15px}
+.sph-list{display:flex;flex-direction:column;gap:8px}
+.sbar{display:flex;flex-direction:column;gap:3px}
+.sbar .top{display:flex;justify-content:space-between;font-size:12px;font-weight:600;gap:4px}
+.sbar .top span:last-child{font-family:var(--hud);font-variant-numeric:tabular-nums}
+.sbar .track{height:8px;border-radius:6px;background:#0b171d;overflow:hidden}
+.sbar .track i{display:block;height:100%;border-radius:6px;transition:width .6s}
+@media (max-width:620px){.meter .lbl{font-size:10px}.sbar .top{font-size:10px}.gauges{padding:10px 6px;gap:10px}.meters{gap:4px}.tube{max-width:30px;height:120px;border-radius:15px}.meter .val{font-size:14px}.meter .word{font-size:9px;letter-spacing:.02em}.co2{font-size:11px}}
+
+/* map */
+.board{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.board-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.board-head h2{margin:0;font-family:var(--display);font-size:16px;font-weight:400;letter-spacing:.03em}
+.board-head p{margin:0;color:var(--muted);font-size:13px}
+.power{display:flex;flex-direction:column;gap:4px}
+.power .bar{position:relative;height:14px;border-radius:8px;background:#0b171d;overflow:hidden;border:1px solid var(--line)}
+.power .bar i{position:absolute;left:0;top:0;bottom:0;border-radius:8px;transition:width .5s}
+.power .row{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);font-family:var(--hud);font-variant-numeric:tabular-nums;gap:8px;flex-wrap:wrap}
+.mapbox{position:relative}
+.map{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px}
+.tile{position:relative;aspect-ratio:1;max-width:100%;border:0;padding:0;border-radius:9px;overflow:hidden;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)}
+.tile svg{display:block;width:100%;height:100%}
+.tile.sel{box-shadow:0 0 0 3px var(--sun),inset 0 0 0 1px rgba(0,0,0,.3)}
+.tile:hover{filter:brightness(1.12)}
+.tile .tag{position:absolute;left:4px;bottom:4px;right:4px;font-size:10px;font-weight:600;background:rgba(10,20,25,.72);border-radius:5px;padding:1px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
+.tile .badge{position:absolute;top:4px;right:4px;font-family:var(--hud);font-size:10px;font-weight:700;background:var(--sun);color:#1b1a10;border-radius:5px;padding:0 4px}
+.tile .badge.empty{background:var(--bad);color:#fff}
+@media (max-width:760px){.tile .tag{display:none}.map{gap:3px}.tile{border-radius:6px}}
+.haze{position:absolute;inset:0;border-radius:9px;pointer-events:none;transition:background .8s}
+.legend{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12px;color:var(--muted)}
+.smoke circle{animation:puff 2.6s ease-out infinite}
+.smoke circle:nth-child(2){animation-delay:1.3s}
+@keyframes puff{0%{transform:translateY(6px);opacity:.9}100%{transform:translateY(-14px);opacity:0}}
+.spin{animation:spin 3s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.smoke circle,.spin{animation:none}.tube .fill,.sbar i,.power i{transition:none}}
+
+/* panel */
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.panel h3{margin:0;font-family:var(--display);font-weight:400;font-size:18px;letter-spacing:.02em;text-wrap:balance}
+.panel .desc{margin:0;color:var(--muted);font-size:14px}
+.sph{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.04em;padding:2px 7px;border-radius:999px;color:#0f1d23;white-space:nowrap}
+.s-atmo{background:var(--atmo)}.s-hydro{background:var(--hydro)}.s-bio{background:var(--bio)}.s-geo{background:var(--geo)}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.cards{display:flex;flex-direction:column;gap:10px}
+.card{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.card .h{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.card .h b{font-size:15px;line-height:1.25}
+.kind{font-family:var(--hud);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:2px 7px;border-radius:6px;white-space:nowrap}
+.k-fast{background:rgba(239,111,85,.18);color:#ffb3a3;border:1px solid rgba(239,111,85,.5)}
+.k-slow{background:rgba(127,203,108,.15);color:#b8ecaa;border:1px solid rgba(127,203,108,.45)}
+.k-care{background:rgba(143,211,240,.14);color:#c4ebfb;border:1px solid rgba(143,211,240,.45)}
+.fx{display:flex;flex-wrap:wrap;gap:5px}
+.fx span{font-family:var(--hud);font-size:12px;font-weight:600;padding:1px 7px;border-radius:6px;background:#0f2128;font-variant-numeric:tabular-nums}
+.fx .g{color:var(--good)}.fx .b{color:#ff9c86}.fx .n{color:var(--muted)}
+.chain{font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:5px}
+.chain div{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.arrow{color:var(--fg);font-weight:700}
+.card .go{align-self:flex-start}
+.card .go[disabled]{opacity:.45;cursor:not-allowed}
+.status{background:#0f2128;border-radius:10px;padding:10px 12px;font-size:14px}
+.status b{font-family:var(--hud)}
+.hint{font-size:13px;color:var(--muted);margin:0}
+
+/* log */
+.log{display:flex;flex-direction:column;gap:8px;max-height:340px;overflow:auto;padding-right:4px}
+.log h4{margin:6px 0 0;font-family:var(--hud);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--sun)}
+.line{font-size:13px;display:flex;flex-direction:column;gap:4px;padding:8px 10px;background:#0f2128;border-radius:8px}
+.line.ev{border-left:3px solid var(--bad)}
+.line.good{border-left:3px solid var(--good)}
+
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(5,12,15,.78);display:flex;align-items:flex-start;justify-content:center;overflow:auto;z-index:20;
+  padding:max(20px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(20px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.sheet{background:var(--panel);border:1px solid var(--line);border-radius:18px;max-width:760px;width:100%;padding:22px;display:flex;flex-direction:column;gap:16px;margin-block:auto}
+.sheet h1{margin:0;font-family:var(--display);font-weight:400;font-size:clamp(28px,6vw,44px);color:var(--sun);line-height:1;text-wrap:balance}
+.sheet h2{margin:0;font-family:var(--display);font-weight:400;font-size:22px;text-wrap:balance}
+.sheet p{margin:0;max-width:65ch}
+.lead{font-size:16px}
+.spheres{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (max-width:560px){.spheres{grid-template-columns:1fr}}
+.sp{border-radius:12px;padding:12px;background:var(--panel2);border-top:4px solid;display:flex;flex-direction:column;gap:4px}
+.sp b{font-size:16px}
+.sp small{font-size:13px;color:var(--muted)}
+.rules{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;max-width:65ch}
+.money-table{width:100%;border-collapse:collapse;font-size:14px}
+.money-table td{padding:4px 0;border-bottom:1px solid var(--line)}
+.money-table td:last-child{text-align:right;font-family:var(--hud);font-variant-numeric:tabular-nums;font-weight:600}
+.money-table tr.total td{border-bottom:0;font-weight:700;font-size:15px}
+.pos{color:var(--good)}.neg{color:#ff9c86}
+.grades{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+@media (max-width:560px){.grades{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.grade{background:var(--panel2);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:2px}
+.grade span{font-size:12px;color:var(--muted)}
+.grade b{font-family:var(--hud);font-size:22px}
+.chartbox{overflow-x:auto}
+.chartbox svg{display:block;width:100%;min-width:420px;height:auto}
+.qs{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:8px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:14px;z-index:30;max-width:min(520px,calc(100% - 32px));box-shadow:0 8px 30px rgba(0,0,0,.4)}
+</style>
+
+<style>body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hud">
+    <div class="brand">Greenhouse Valley<small>Earth systems planning game</small></div>
+    <div class="stat"><b id="h-year">1/15</b><span>Year</span></div>
+    <div class="stat"><b id="h-money">$600</b><span>Money</span></div>
+    <div class="stat"><b id="h-energy">0/30</b><span>Energy / needed</span></div>
+    <div class="stat"><b id="h-temp">+0.0°C</b><span>Warming</span></div>
+    <div class="actions">
+      <button class="btn ghost" id="b-guide" type="button">Spheres guide</button>
+      <button class="btn primary" id="b-end" type="button">End year</button>
+    </div>
+  </header>
+
+  <main class="game">
+    <aside class="gauges" aria-label="Pollution meters">
+      <div class="gtitle">Pollution</div>
+      <div class="meters">
+        <div class="meter"><div class="tube" id="m-air"><i class="fill"></i></div><div class="val" id="v-air">0</div><div class="lbl">Air<br>smog</div><div class="word" id="w-air">clean</div></div>
+        <div class="meter"><div class="tube" id="m-water"><i class="fill"></i></div><div class="val" id="v-water">0</div><div class="lbl">Water<br>pollution</div><div class="word" id="w-water">clean</div></div>
+      </div>
+      <div class="co2">CO<sub>2</sub> in air<br><b id="v-co2">420</b> ppm</div>
+      <div class="gtitle">Earth's spheres</div>
+      <div class="sph-list" id="sph-list"></div>
+    </aside>
+
+    <section class="board">
+      <div class="board-head">
+        <h2>Alder Creek Valley</h2>
+        <p>Tap a square of land to see what you can do with it.</p>
+      </div>
+      <div class="power">
+        <div class="bar"><i id="pw-bar"></i></div>
+        <div class="row"><span id="pw-text">Power this year: 0 of 30 needed</span><span id="pw-note"></span></div>
+      </div>
+      <div class="mapbox"><div class="map" id="map"></div><div class="haze" id="haze"></div></div>
+      <div class="legend"><span>Sphere colors:</span><span class="sph s-atmo">Atmosphere</span><span class="sph s-hydro">Hydrosphere</span><span class="sph s-bio">Biosphere</span><span class="sph s-geo">Geosphere</span></div>
+    </section>
+
+    <section class="panel" id="panel" aria-live="polite"></section>
+  </main>
+</div>
+
+<div class="modal" id="modal" hidden><div class="sheet" id="sheet"></div></div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const YEARS = 15;
+const SPH = {
+  atmo:{n:'Atmosphere', short:'Atmo', k:'the air', c:'var(--atmo)', d:'The layer of gases around Earth. It holds the oxygen we breathe and greenhouse gases like CO2 that trap heat.'},
+  hydro:{n:'Hydrosphere', short:'Hydro', k:'the water', c:'var(--hydro)', d:'All of Earth\'s water: rivers, oceans, groundwater, ice, and clouds.'},
+  bio:{n:'Biosphere', short:'Bio', k:'living things', c:'var(--bio)', d:'Every living thing: plants, animals, fungi, bacteria, and people.'},
+  geo:{n:'Geosphere', short:'Geo', k:'rock and soil', c:'var(--geo)', d:'The solid Earth: rocks, soil, minerals, and fuels like coal, oil, and gas buried underground.'}
+};
+const chip = s => `<span class="sph s-${s}">${SPH[s].n}</span>`;
+const BOLT = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z" fill="#f3c24f"/></svg>';
+
+const TER = {
+  forest:{n:'Forest', s:['bio'], c:'#2c5c34', d:'Trees pull CO2 out of the air and store the carbon in wood and soil. Animals live here.'},
+  river:{n:'River', s:['hydro'], c:'#2b6ea8', d:'Flowing water slowly carries pollution away and gives fish a home.'},
+  coal:{n:'Coal Hills', s:['geo'], c:'#5b5149', d:'Under these hills is coal: plants buried millions of years ago and pressed into rock. Once it is dug up, it is gone.'},
+  ridge:{n:'Windy Ridge', s:['atmo'], c:'#5d7d71', d:'The Sun heats the air unevenly, so air rushes over this ridge as steady wind.'},
+  plain:{n:'Sunny Plain', s:['atmo','geo'], c:'#a68d41', d:'Lots of sunshine above. Oil and natural gas trapped in rock below.'},
+  spring:{n:'Hot Springs', s:['geo','hydro'], c:'#5b6f84', d:'Heat from deep inside the Earth warms underground water until it steams.'},
+  field:{n:'Open Field', s:['bio','geo'], c:'#728d3e', d:'Grass on healthy soil. Good for farms or solar panels.'},
+  bare:{n:'Cleared Land', s:['geo'], c:'#86684a', d:'Bare soil with nothing growing. Rain washes it away a little every year.'}
+};
+
+const LAYOUT = [
+  'ridge ridge forest forest coal coal',
+  'plain field forest river coal spring',
+  'plain plain river forest forest spring',
+  'river river field plain forest ridge'
+].join(' ').split(' ');
+
+// e=energy/yr, inc=$/yr, up=upkeep, upg=upkeep added per year of age, res=years of fuel
+const BLD = {
+  coal:{n:'Coal Power Plant', e:40, up:14, upg:2, air:5, water:2, co2:6, geo:-2, res:9, fossil:1},
+  gas:{n:'Gas Power Plant', e:30, up:12, upg:3, air:2, co2:4, geo:-1, fossil:1},
+  oil:{n:'Oil and Gas Wells', e:15, inc:40, up:8, upg:1, air:1, water:4, co2:4, geo:-2, res:8, fossil:1},
+  factory:{n:'Riverside Factory', inc:50, air:1, water:6, bio:-2},
+  ranch:{n:'Cattle Ranch', inc:35, water:2, co2:3, bio:-1},
+  farm:{n:'Organic Farm', inc:28, bio:1, geo:1},
+  wind:{n:'Wind Farm', e:18, up:4},
+  solar:{n:'Solar Farm', e:22, up:3},
+  dam:{n:'Hydro Dam', e:32, up:4, bio:-1},
+  geo:{n:'Geothermal Plant', e:26, up:4},
+  reserve:{n:'Protected Forest', co2:-2, bio:1},
+  sapling:{n:'Young Forest'}
+};
+
+const ACT = [
+  {id:'clearcut', on:['forest'], n:'Clear-cut for lumber', kind:'fast', cost:0, once:{money:150, co2:10, bio:-6, geo:-2}, to:'bare',
+    chain:[['bio','atmo','Cut and burned wood releases the carbon it stored as CO2.'],['bio','geo','With no roots holding it, soil washes away in the rain.']]},
+  {id:'protect', on:['forest'], n:'Protect the forest', kind:'care', cost:40, b:'reserve',
+    chain:[['atmo','bio','Trees take in CO2 for photosynthesis and lock the carbon in wood.']]},
+  {id:'coal', on:['coal'], n:'Coal mine and power plant', kind:'fast', cost:100, b:'coal',
+    chain:[['geo','atmo','Coal is ancient carbon stored in rock. Burning it puts CO2 and smoke into the air.'],['atmo','hydro','Smoke mixes with rain and falls as acid rain into rivers.']]},
+  {id:'geo', on:['spring'], n:'Geothermal power plant', kind:'slow', cost:280, build:2, renew:1, b:'geo',
+    chain:[['geo','hydro','Earth\'s inner heat turns underground water into steam that spins a turbine.']]},
+  {id:'gas', on:['ridge'], n:'Natural gas power plant', kind:'fast', cost:90, b:'gas',
+    chain:[['geo','atmo','Natural gas is ancient carbon too. It burns cleaner than coal but still adds CO2.']]},
+  {id:'wind', on:['ridge'], n:'Wind farm', kind:'slow', cost:220, build:1, renew:1, b:'wind',
+    chain:[['atmo',null,'The Sun heats air unevenly and makes wind. Turbines turn moving air into electricity with no smoke.']]},
+  {id:'oil', on:['plain'], n:'Drill oil and gas wells', kind:'fast', cost:70, b:'oil',
+    chain:[['geo','atmo','Pumping fuel out of rock and burning it adds CO2.'],['geo','hydro','Drilling fluids can leak into groundwater.']]},
+  {id:'solar', on:['plain','field','bare'], n:'Solar farm', kind:'slow', cost:240, build:2, renew:1, b:'solar',
+    chain:[['atmo',null,'Sunlight passes through the atmosphere and panels turn it straight into electricity.']]},
+  {id:'ranch', on:['field','bare'], n:'Cattle ranch', kind:'fast', cost:50, b:'ranch',
+    chain:[['bio','atmo','Cows burp methane, a greenhouse gas that traps even more heat than CO2.'],['bio','hydro','Manure washes into streams when it rains.']]},
+  {id:'farm', on:['field','bare'], n:'Organic farm', kind:'slow', cost:80, build:1, b:'farm',
+    chain:[['bio','geo','Rotating crops and skipping chemical sprays keeps soil full of life.']]},
+  {id:'replant', on:['bare'], n:'Replant trees', kind:'care', cost:60, build:3, b:'sapling',
+    chain:[['atmo','bio','In a few years the new trees will start pulling CO2 back out of the air.']]},
+  {id:'factory', on:['river'], n:'Factory that dumps waste in the river', kind:'fast', cost:80, b:'factory',
+    chain:[['hydro','bio','Waste in the water poisons fish and the animals that eat them.']]},
+  {id:'dam', on:['river'], n:'Hydroelectric dam', kind:'slow', cost:300, build:2, renew:1, b:'dam',
+    chain:[['hydro',null,'Falling water spins turbines. Clean power with no smoke.'],['hydro','bio','The dam blocks fish from swimming upstream.']]}
+];
+const KIND = {fast:'Fast and cheap', slow:'Slow to build', care:'Protects nature'};
+
+let S;
+const $ = id => document.getElementById(id);
+const clamp = (v,a=0,b=100) => Math.max(a, Math.min(b, v));
+const r1 = v => Math.round(v*10)/10;
+const temp = () => Math.max(0, (S.co2-420)*0.022);
+const atmoH = () => clamp(100 - S.air*0.6 - Math.max(0,S.co2-420)*0.45);
+const hydroH = () => clamp(100 - S.water*0.85 - temp()*7);
+const sph = () => ({atmo:atmoH(), hydro:hydroH(), bio:clamp(S.bio), geo:clamp(S.geo)});
+const demandFor = y => 30 + 6*(y-1);
+const priceOf = a => a.renew ? Math.round(a.cost*Math.pow(0.94, S.year-1)) : a.cost;
+const fmt$ = v => (v<0?'-$':'$') + Math.abs(Math.round(v)).toLocaleString();
+
+function newGame(){
+  S = {year:1, money:600, air:8, water:10, co2:420, bio:85, geo:90,
+    tiles: LAYOUT.map(t => ({t, b:null, bt:0, age:0, res:null})),
+    sel:null, log:[], hist:[], delivered:0, demanded:0, over:false, carbonFee:false};
+  S.hist.push(snap(0));
+}
+function snap(y){ return {y, air:S.air, water:S.water, temp:temp(), money:S.money, ...sph()}; }
+
+function active(t){ return t.b && t.bt===0; }
+function powerNow(){
+  let e=0;
+  S.tiles.forEach(t => { if(!active(t)) return; const d=BLD[t.b]; if(!d.e) return; if(d.res && t.res<=0) return; e+=d.e; });
+  return e;
+}
+
+/* ---------- drawing ---------- */
+function mix(a,b,t){
+  const p=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+  const A=p(a),B=p(b);
+  return '#'+A.map((v,i)=>Math.round(v+(B[i]-v)*t).toString(16).padStart(2,'0')).join('');
+}
+function terrSVG(t,i){
+  const o=(i*37)%11;
+  switch(t){
+    case 'forest': {
+      const pts=[[24,50],[56,36],[78,58],[40,74],[66,82]];
+      return pts.map(([x,y],k)=>`<rect x="${x-2}" y="${y+4}" width="4" height="8" fill="#5a3d24"/><polygon points="${x},${y-20+((k+o)%3)*2} ${x-13},${y+6} ${x+13},${y+6}" fill="${k%2?'#1d4726':'#245a2f'}"/>`).join('');
+    }
+    case 'river': return [30,52,74].map(y=>`<path d="M-5 ${y} Q20 ${y-8} 45 ${y} T105 ${y}" stroke="rgba(255,255,255,.32)" stroke-width="3" fill="none"/>`).join('');
+    case 'coal': return `<path d="M0 82 Q22 30 50 66 Q74 26 100 70 L100 100 L0 100Z" fill="#433a33"/>`+[[30,74],[42,82],[66,70],[78,80],[56,88]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="3" fill="#111"/>`).join('');
+    case 'ridge': return `<path d="M0 86 Q30 46 60 70 Q80 54 100 64 L100 100 L0 100Z" fill="#4b675d"/><path d="M14 28 q14 -8 28 0 t28 0" stroke="rgba(255,255,255,.55)" stroke-width="3" fill="none"/><path d="M30 44 q12 -7 24 0 t24 0" stroke="rgba(255,255,255,.4)" stroke-width="3" fill="none"/>`;
+    case 'plain': return `<circle cx="76" cy="24" r="11" fill="#f6d55c"/>${[0,45,90,135,180,225,270,315].map(a=>{const r=a*Math.PI/180;return `<line x1="${76+Math.cos(r)*15}" y1="${24+Math.sin(r)*15}" x2="${76+Math.cos(r)*20}" y2="${24+Math.sin(r)*20}" stroke="#f6d55c" stroke-width="2.5"/>`}).join('')}`+[[16,78],[36,66],[54,84],[28,90],[70,72]].map(([x,y])=>`<path d="M${x} ${y} l3 -8 l3 8" stroke="#7a6a2c" stroke-width="2" fill="none"/>`).join('');
+    case 'spring': return `<ellipse cx="50" cy="66" rx="30" ry="15" fill="#86c7d8" stroke="#3f5566" stroke-width="3"/><path d="M38 46 q-6 -8 0 -16 t0 -16" stroke="rgba(255,255,255,.7)" stroke-width="3" fill="none"/><path d="M56 44 q-6 -8 0 -16 t0 -16" stroke="rgba(255,255,255,.55)" stroke-width="3" fill="none"/>`;
+    case 'field': return [[18,30],[44,22],[70,38],[26,62],[56,56],[80,72],[38,84]].map(([x,y])=>`<path d="M${x} ${y} l3 -9 l3 9 M${x+6} ${y} l2 -6" stroke="#a9c96a" stroke-width="2.4" fill="none"/>`).join('');
+    case 'bare': return `<path d="M10 30 l14 8 l-4 12 M60 20 l8 14 l14 2 M30 70 l16 -4 l8 12 M70 64 l10 14" stroke="#5e4630" stroke-width="2.5" fill="none"/>`;
+  }
+  return '';
+}
+function bldSVG(t){
+  const b=t.b, empty=BLD[b]&&BLD[b].res&&t.res<=0;
+  const smoke=(cx,cy,c)=> empty?'':`<g class="smoke" fill="${c}"><circle cx="${cx}" cy="${cy}" r="6"/><circle cx="${cx+4}" cy="${cy-4}" r="8"/></g>`;
+  switch(b){
+    case 'coal': return `<rect x="24" y="52" width="44" height="30" fill="#36363a"/><rect x="60" y="24" width="10" height="30" fill="#4a4a4f"/><rect x="60" y="28" width="10" height="4" fill="#ef6f55"/><rect x="32" y="60" width="8" height="8" fill="#f3c24f" opacity="${empty?.2:.9}"/>`+smoke(65,16,'#8b8b8b');
+    case 'gas': return `<rect x="26" y="56" width="46" height="26" fill="#55606a"/><rect x="58" y="34" width="8" height="24" fill="#6c7782"/><polygon points="62,22 57,34 67,34" fill="#ff9a3c"/>`+smoke(63,14,'#a7a7a7');
+    case 'oil': return `<polygon points="44,84 52,52 60,84" fill="#2b2b2b"/><line x1="24" y1="56" x2="78" y2="44" stroke="#1d1d1d" stroke-width="6"/><rect x="18" y="52" width="12" height="16" rx="3" fill="#ef6f55"/><line x1="24" y1="66" x2="24" y2="86" stroke="#1d1d1d" stroke-width="3"/><ellipse cx="72" cy="88" rx="12" ry="4" fill="#1a1a1a" opacity=".7"/>`;
+    case 'factory': return `<polygon points="18,58 30,46 30,58 42,46 42,58 54,46 54,58 66,58 66,82 18,82" fill="#7a5a4a"/><rect x="58" y="30" width="8" height="28" fill="#5d4639"/><path d="M66 74 h14 v12" stroke="#6b5b3a" stroke-width="5" fill="none"/><ellipse cx="80" cy="90" rx="14" ry="5" fill="#6d6a2f"/>`+smoke(62,22,'#9a9080');
+    case 'ranch': return `<polygon points="30,56 50,40 70,56 70,82 30,82" fill="#b23b2e"/><rect x="44" y="64" width="12" height="18" fill="#f3e4c8"/><line x1="44" y1="64" x2="56" y2="82" stroke="#b23b2e" stroke-width="2"/><ellipse cx="80" cy="84" rx="7" ry="5" fill="#f1f1f1"/><circle cx="85" cy="80" r="3" fill="#f1f1f1"/>`;
+    case 'farm': return [30,44,58,72].map(y=>`<rect x="14" y="${y}" width="72" height="7" rx="3" fill="#4f8a2f"/><rect x="14" y="${y+7}" width="72" height="3" fill="#6d4f2f"/>`).join('');
+    case 'wind': return `<line x1="50" y1="34" x2="50" y2="90" stroke="#eef2f0" stroke-width="4"/><g class="spin" style="transform-origin:50px 34px">${[0,120,240].map(a=>`<line x1="50" y1="34" x2="${50+Math.cos((a-90)*Math.PI/180)*24}" y2="${34+Math.sin((a-90)*Math.PI/180)*24}" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/>`).join('')}</g><circle cx="50" cy="34" r="4" fill="#cfd8d4"/>`;
+    case 'solar': return [[16,44],[16,66],[52,44],[52,66]].map(([x,y])=>`<polygon points="${x+6},${y} ${x+34},${y} ${x+28},${y+16} ${x},${y+16}" fill="#22406b" stroke="#a9c3e8" stroke-width="1.5"/><line x1="${x+17}" y1="${y}" x2="${x+14}" y2="${y+16}" stroke="#a9c3e8" stroke-width="1"/>`).join('');
+    case 'dam': return `<polygon points="10,40 90,40 82,78 18,78" fill="#9aa3a8"/><rect x="10" y="36" width="80" height="6" fill="#c5ccd0"/><path d="M30 78 v10 M50 78 v12 M70 78 v10" stroke="#d8f0ff" stroke-width="4"/>`;
+    case 'geo': return `<path d="M24 82 Q24 52 50 52 Q76 52 76 82Z" fill="#d8dde0"/><rect x="14" y="70" width="12" height="5" fill="#8b949a"/><rect x="74" y="70" width="14" height="5" fill="#8b949a"/><path d="M44 46 q-6 -8 0 -16 t0 -14 M58 46 q-6 -8 0 -16 t0 -14" stroke="#ffffff" stroke-width="3" fill="none" opacity=".8"/>`;
+    case 'reserve': return `<rect x="5" y="5" width="90" height="90" rx="8" fill="none" stroke="#c8f59e" stroke-width="4" stroke-dasharray="9 6"/>`;
+    case 'sapling': return [[28,70],[50,60],[72,74],[40,84],[64,86]].map(([x,y])=>`<line x1="${x}" y1="${y}" x2="${x}" y2="${y-10}" stroke="#6b4a2a" stroke-width="2"/><circle cx="${x}" cy="${y-12}" r="5" fill="#7fcb6c"/>`).join('');
+  }
+  return '';
+}
+
+/* ---------- render ---------- */
+function word(v){ return v<20?'clean':v<40?'hazy':v<65?'bad':'toxic'; }
+function tubeColor(kind,v){
+  if(kind==='air') return `linear-gradient(to top, ${mix('#8fd3f0','#8c6a3c',v/100)}, ${mix('#bfe8f8','#5f4a2c',v/100)})`;
+  return `linear-gradient(to top, ${mix('#4f9ef2','#5d6a2a',v/100)}, ${mix('#8fc4ff','#7a7a35',v/100)})`;
+}
+function renderGauges(){
+  [['air',S.air],['water',S.water]].forEach(([k,v])=>{
+    const tube=$('m-'+k);
+    if(!tube.querySelector('.tick')) tube.insertAdjacentHTML('afterbegin',[25,50,75].map(p=>`<span class="tick" style="bottom:${p}%"></span>`).join(''));
+    const f=tube.querySelector('.fill'); f.style.height=Math.max(3,clamp(v))+'%'; f.style.background=tubeColor(k,v);
+    $('v-'+k).textContent=Math.round(v); $('w-'+k).textContent=word(v);
+  });
+  $('v-co2').textContent=Math.round(S.co2);
+  const H=sph();
+  $('sph-list').innerHTML=Object.keys(SPH).map(k=>`<div class="sbar"><div class="top"><span style="color:${SPH[k].c}">${innerWidth<620?SPH[k].short:SPH[k].n}</span><span>${Math.round(H[k])}</span></div><div class="track"><i style="width:${H[k]}%;background:${SPH[k].c}"></i></div></div>`).join('');
+}
+function renderHUD(){
+  $('h-year').textContent=`${Math.min(S.year,YEARS)}/${YEARS}`;
+  const m=$('h-money'); m.textContent=fmt$(S.money); m.className=S.money<0?'neg':'';
+  const p=powerNow(), d=demandFor(S.year);
+  $('h-energy').innerHTML=`${p}/${d}`;
+  $('h-temp').textContent=`+${r1(temp()).toFixed(1)}°C`;
+  const pct=clamp(p/d*100);
+  $('pw-bar').style.width=pct+'%';
+  $('pw-bar').style.background=p>=d?'var(--good)':p>=d*.6?'var(--warn)':'var(--bad)';
+  $('pw-text').innerHTML=`${BOLT} Power this year: ${p} of ${d} needed`;
+  $('pw-note').textContent=p>=d?(p>d?`Extra ${p-d} sells for $1 each`:'Town fully powered'):`Short ${d-p}: blackouts cost $2 each`;
+}
+function renderMap(){
+  const map=$('map');
+  map.innerHTML=S.tiles.map((t,i)=>{
+    const T=TER[t.t];
+    const bg=t.t==='river'?mix(T.c,'#6a6a2c',S.water/100):T.c;
+    const building=t.b?BLD[t.b]:null;
+    const empty=building&&building.res&&t.res<=0;
+    const label=building?building.n:T.n;
+    const badge=t.bt>0?`<span class="badge">${t.bt} yr</span>`:empty?'<span class="badge empty">Empty</span>':'';
+    return `<button type="button" class="tile${S.sel===i?' sel':''}" data-i="${i}" style="background:${bg}" aria-label="${label}${t.bt>0?', building, '+t.bt+' years left':''}"><svg viewBox="0 0 100 100" aria-hidden="true">${terrSVG(t.t,i)}<g opacity="${t.bt>0?.45:1}">${bldSVG(t)}</g></svg>${badge}<span class="tag">${label}</span></button>`;
+  }).join('');
+  $('haze').style.background=`rgba(120,92,52,${clamp(S.air)/100*0.5})`;
+}
+function fxChips(a){
+  const out=[]; const add=(c,txt)=>out.push(`<span class="${c}">${txt}</span>`);
+  const d=a.b?BLD[a.b]:null;
+  if(a.once){
+    if(a.once.money) add('g',`+$${a.once.money} now`);
+    if(a.once.co2) add('b',`+${a.once.co2} CO2 now`);
+    if(a.once.bio) add('b',`Biosphere ${a.once.bio}`);
+    if(a.once.geo) add('b',`Geosphere ${a.once.geo}`);
+    add('b','Loses CO2 soaking');
+  }
+  if(d){
+    if(d.e) add('g',`+${d.e} energy/yr`);
+    if(d.inc) add('g',`+$${d.inc}/yr`);
+    if(d.up) add('n',`upkeep $${d.up}/yr${d.upg?' and rising':''}`);
+    if(d.res) add('b',`fuel runs out in ${d.res} yrs`);
+    if(d.air) add('b',`+${d.air} smog/yr`);
+    if(d.water) add('b',`+${d.water} water pollution/yr`);
+    if(d.co2>0) add('b',`+${d.co2} CO2/yr`);
+    if(d.co2<0) add('g',`${d.co2} CO2/yr`);
+    if(d.bio>0) add('g',`Biosphere +${d.bio}/yr`);
+    if(d.bio<0) add('b',`Biosphere ${d.bio}/yr`);
+    if(d.geo>0) add('g',`Geosphere +${d.geo}/yr`);
+    if(d.geo<0) add('b',`Geosphere ${d.geo}/yr`);
+    if(a.id==='replant') add('g','becomes forest');
+    if(!d.air&&!d.water&&!(d.co2>0)&&d.e) add('g','no pollution');
+  }
+  return out.join('');
+}
+function chainHTML(chain){
+  return `<div class="chain">${chain.map(([f,t,txt])=>`<div>${chip(f)}${t?`<span class="arrow">→</span>${chip(t)}`:''}</div><div>${txt}</div>`).join('')}</div>`;
+}
+function renderPanel(){
+  const P=$('panel');
+  if(S.sel===null){
+    P.innerHTML=`<h3>Your job</h3>
+      <p class="desc">Alder Creek needs more electricity every year. Pick land on the map and decide what to build. Some choices make money fast. Others take longer but keep the air, water, and land healthy. Watch the meters on the left.</p>
+      <div class="status">Need this year: <b>${demandFor(S.year)}</b> energy. Next year: <b>${demandFor(S.year+1)}</b>.<br>Solar, wind, geothermal, and dams get <b>6% cheaper</b> every year.</div>
+      ${logHTML()}`;
+    return;
+  }
+  const t=S.tiles[S.sel], T=TER[t.t], d=t.b?BLD[t.b]:null;
+  let head=`<div class="chips">${T.s.map(chip).join('')}</div><h3>${d?d.n:T.n}</h3><p class="desc">${T.d}</p>`;
+  let body='';
+  if(t.bt>0){
+    body=`<div class="status">Under construction. Ready in <b>${t.bt}</b> year${t.bt>1?'s':''}.</div>`;
+  } else if(d){
+    const empty=d.res&&t.res<=0;
+    const lines=[];
+    if(d.e) lines.push(`${BOLT} ${empty?0:d.e} energy per year`);
+    if(d.inc) lines.push(`$${d.inc} income per year`);
+    if(d.up) lines.push(`Upkeep now $${d.up+(d.upg||0)*t.age} per year`);
+    if(d.res) lines.push(empty?'<b style="color:var(--bad)">Out of fuel.</b> The rock holds no more.':`Fuel left: <b>${t.res}</b> years`);
+    body=`<div class="status">${lines.join('<br>')||'Working.'}</div>`;
+    if(t.b!=='sapling'){
+      body+=`<div class="card"><div class="h"><b>Tear it down</b><span class="kind k-care">Undo</span></div><div class="fx"><span class="n">costs $30</span></div><p class="hint">${t.b==='reserve'?'Ends protection. The forest stays.':empty?'The empty mine leaves the land scarred and bare.':d.res?'The fuel left underground stays there if you build again later.':'Frees the land for something else.'}</p><button class="btn go" type="button" data-remove="1" ${S.money<30?'disabled':''}>Tear down for $30</button></div>`;
+    }
+  } else {
+    const acts=ACT.filter(a=>a.on.includes(t.t));
+    body=`<div class="cards">${acts.map(a=>{
+      const c=priceOf(a); const can=S.money>=c;
+      return `<div class="card"><div class="h"><b>${a.n}</b><span class="kind k-${a.kind}">${KIND[a.kind]}</span></div>
+        <div class="fx"><span class="n">${c?'cost $'+c:'free'}${a.renew&&S.year>1?' (was $'+a.cost+')':''}</span><span class="n">${a.build?'ready in '+a.build+' yr':'works right away'}</span>${fxChips(a)}</div>
+        ${chainHTML(a.chain)}
+        <button class="btn go ${a.kind==='fast'?'':'primary'}" type="button" data-act="${a.id}" ${can?'':'disabled'}>${can?(c?'Build for $'+c:'Do it'):'Need $'+(c-Math.floor(S.money))+' more'}</button></div>`;
+    }).join('')}</div>`;
+  }
+  P.innerHTML=head+body+`<button class="btn ghost" type="button" data-close="1">Back to valley news</button>`;
+}
+function logHTML(){
+  if(!S.log.length) return `<p class="hint">After you end a year, the valley news shows up here.</p>`;
+  return `<div class="log">${S.log.slice().reverse().map(y=>`<h4>Year ${y.year}</h4>${y.lines.map(lineHTML).join('')}`).join('')}</div>`;
+}
+function lineHTML(l){
+  return `<div class="line ${l.kind||''}">${l.chain?`<div class="chips">${chip(l.chain[0])}${l.chain[1]?`<span class="arrow">→</span>${chip(l.chain[1])}`:''}</div>`:''}<div>${l.text}</div></div>`;
+}
+function render(){ renderHUD(); renderGauges(); renderMap(); renderPanel(); }
+
+/* ---------- actions ---------- */
+function toast(msg){
+  const el=$('toast'); el.innerHTML=msg; el.hidden=false;
+  clearTimeout(toast.t); toast.t=setTimeout(()=>el.hidden=true,3200);
+}
+function doAction(id){
+  const a=ACT.find(x=>x.id===id), t=S.tiles[S.sel]; const c=priceOf(a);
+  if(S.money<c) return;
+  S.money-=c;
+  if(a.once){
+    S.money+=a.once.money||0; S.co2+=a.once.co2||0; S.bio=clamp(S.bio+(a.once.bio||0)); S.geo=clamp(S.geo+(a.once.geo||0));
+    toast(`Lumber sold for $${a.once.money}. The forest's carbon went into the air.`);
+  }
+  if(a.to){ t.t=a.to; t.b=null; t.bt=0; t.age=0; }
+  if(a.b){ t.b=a.b; t.bt=a.build||0; t.age=0; if(BLD[a.b].res && t.res==null) t.res=BLD[a.b].res; }
+  render();
+}
+function doRemove(){
+  const t=S.tiles[S.sel]; if(S.money<30) return; S.money-=30;
+  const d=BLD[t.b];
+  if((t.b==='coal'||t.b==='oil') && t.res<=0) t.t='bare';
+  if(t.b==='dam') S.bio=clamp(S.bio+2);
+  t.b=null; t.bt=0; t.age=0;
+  toast(`${d.n} torn down.`);
+  render();
+}
+
+/* ---------- year end ---------- */
+function endYear(){
+  if(S.over) return;
+  const L=[]; const before=sph();
+  const T=temp(); let demand=demandFor(S.year); let drought=false;
+  const pick=arr=>arr[Math.floor(Math.random()*arr.length)];
+
+  // climate events: more likely as CO2 warms the valley
+  if(S.year>=3 && Math.random()<Math.min(0.8,T*0.35)){
+    const pool=['heat'];
+    const forests=S.tiles.filter(t=>t.t==='forest'&&t.b!=='sapling');
+    if(forests.length) pool.push('fire','fire');
+    if(S.tiles.some(t=>['dam','farm','ranch'].includes(t.b))) pool.push('drought');
+    const flooded=S.tiles.filter(t=>t.t==='river'&&t.b);
+    if(flooded.length) pool.push('flood');
+    const e=pick(pool);
+    if(e==='fire'){ const f=pick(forests); f.t='bare'; f.b=null; S.co2+=8; S.bio=clamp(S.bio-5);
+      L.push({kind:'ev',chain:['atmo','bio'],text:'<b>Wildfire!</b> Hotter, drier air dried out the trees and a forest burned down.'});
+      L.push({kind:'ev',chain:['bio','atmo'],text:'The burning wood released its carbon. CO2 went up by 8.'}); }
+    if(e==='heat'){ demand+=12; L.push({kind:'ev',chain:['atmo','bio'],text:'<b>Heat wave!</b> People ran air conditioners all summer. The town needed 12 extra energy.'}); }
+    if(e==='drought'){ drought=true; L.push({kind:'ev',chain:['atmo','hydro'],text:'<b>Drought!</b> A warmer atmosphere means less rain here. Dams made half power and farms earned half.'}); }
+    if(e==='flood'){ const f=pick(flooded); S.money-=70; S.geo=clamp(S.geo-2); L.push({kind:'ev',chain:['hydro','geo'],text:`<b>Flood!</b> Warmer air holds more water, so storms dumped heavy rain. Repairs to the ${BLD[f.b].n} cost $70 and soil washed away.`}); }
+  }
+
+  let prod=0, inc=0, upkeep=0, air=0, water=0, co2=0, bio=0, geo=0, emptied=[];
+  S.tiles.forEach(t=>{
+    if(t.t==='forest') co2-=1.2;
+    if(t.t==='river'&&!t.b) water-=1.5;
+    if(t.t==='bare') geo-=0.5;
+    if(!t.b) return;
+    if(t.bt>0) return;
+    const d=BLD[t.b];
+    if(d.res){ if(t.res<=0) return; t.res--; if(t.res===0) emptied.push(d.n); }
+    let e=d.e||0, i=d.inc||0;
+    if(drought&&t.b==='dam') e/=2;
+    if(drought&&(t.b==='farm'||t.b==='ranch')) i/=2;
+    prod+=e; inc+=i; upkeep+=(d.up||0)+(d.upg||0)*t.age;
+    air+=d.air||0; water+=d.water||0; co2+=d.co2||0; bio+=d.bio||0; geo+=d.geo||0;
+    t.age++;
+  });
+  // finish construction
+  S.tiles.forEach(t=>{ if(t.b&&t.bt>0){ t.bt--; if(t.bt===0){
+    if(t.b==='sapling'){ t.t='forest'; t.b=null; L.push({kind:'good',chain:['atmo','bio'],text:'Your young trees grew into a forest. It now pulls CO2 out of the air.'}); }
+    else L.push({kind:'good',text:`Your ${BLD[t.b].n} is finished and starts working next year.`});
+  }}});
+  emptied.forEach(n=>L.push({kind:'ev',chain:['geo',null],text:`Your ${n} ran out of fuel. Coal, oil, and gas took millions of years to form, so they do not come back.`}));
+
+  const sold=Math.min(prod,demand), extra=Math.max(0,prod-demand), short=demand-sold;
+  const sales=sold*4+extra, black=short*2;
+  const emitted=Math.max(0,co2);
+  const fee=S.carbonFee?Math.round(emitted*3):0;
+
+  // pollution moves between spheres
+  const acid=S.air*0.06;
+  S.air=clamp(S.air*0.8+air);
+  S.water=clamp(S.water*0.9+water+acid);
+  S.co2=Math.max(400, S.co2+co2-1);
+  const Tn=temp();
+  S.bio=clamp(S.bio+bio-Tn*0.8-Math.max(0,S.water-50)*0.08+((S.water<30&&S.air<30)?0.6:0));
+  S.geo=clamp(S.geo+geo+(geo>=0?0.3:0));
+
+  const airCost=Math.round(Math.max(0,S.air-30)*2), waterCost=Math.round(Math.max(0,S.water-30)*2);
+  let bonus=0;
+  if(S.water<20&&S.bio>75&&Math.random()<0.4){ bonus=60; L.push({kind:'good',chain:['hydro','bio'],text:'Clean rivers full of fish brought in campers and anglers. Tourists spent $60.'}); }
+
+  const net=sales+inc+bonus-upkeep-black-airCost-waterCost-fee;
+  S.money+=net;
+  S.delivered+=sold; S.demanded+=demand;
+
+  if(acid>1) L.push({chain:['atmo','hydro'],text:`Some smog fell as acid rain and moved pollution into the water.`});
+  if(co2>0) L.push({chain:['geo','atmo'],text:`Your valley added ${r1(co2)} CO2 this year. More CO2 traps more heat. Warming is now +${r1(Tn).toFixed(1)}°C.`});
+  else L.push({kind:'good',chain:['atmo','bio'],text:`Your forests soaked up more CO2 than you released this year.`});
+  if(airCost) L.push({kind:'ev',chain:['atmo','bio'],text:`Smog made people sick. Hospital bills cost $${airCost}.`});
+  if(waterCost) L.push({kind:'ev',chain:['hydro','bio'],text:`Dirty water killed fish and needed cleanup. That cost $${waterCost}.`});
+  if(short>0) L.push({kind:'ev',text:`The town was ${short} energy short. Blackouts cost $${black}.`});
+  if(S.year===6) L.push({kind:'ev',text:'<b>News:</b> The state just passed a carbon fee. Starting next year you pay $3 for every unit of CO2 your valley releases.'});
+  if(S.year===6) S.carbonFee=true;
+
+  const after=sph();
+  S.log.push({year:S.year, lines:L});
+  showReport({year:S.year, sales, inc, bonus, upkeep, black, airCost, waterCost, fee, net, prod, demand, before, after, lines:L});
+  S.hist.push(snap(S.year));
+  S.year++;
+  S.sel=null;
+  if(S.year>YEARS||S.money<-400){ S.over=true; }
+  render();
+}
+
+function showReport(R){
+  const rows=[['Power sold to town',R.sales],['Business income',R.inc],['Tourism',R.bonus],['Fuel and upkeep',-R.upkeep],['Blackouts',-R.black],['Smog health bills',-R.airCost],['Water cleanup',-R.waterCost],['Carbon fee',-R.fee]].filter(r=>r[1]);
+  const sp=Object.keys(SPH).map(k=>{const d=Math.round(R.after[k]-R.before[k]);return `<div class="grade" style="border-top:3px solid ${SPH[k].c}"><span>${SPH[k].n}</span><b>${Math.round(R.after[k])} <small class="${d<0?'neg':d>0?'pos':''}" style="font-size:13px">${d>0?'+':''}${d||'±0'}</small></b></div>`}).join('');
+  openModal(`<h2>Year ${R.year} report</h2>
+    <p>You made ${R.prod} energy. The town needed ${R.demand}.</p>
+    <table class="money-table">${rows.map(([n,v])=>`<tr><td>${n}</td><td class="${v<0?'neg':'pos'}">${v<0?'-':'+'}$${Math.abs(Math.round(v))}</td></tr>`).join('')}<tr class="total"><td>Change this year</td><td class="${R.net<0?'neg':'pos'}">${R.net<0?'-':'+'}$${Math.abs(Math.round(R.net))}</td></tr></table>
+    <div class="grades">${sp}</div>
+    <div style="display:flex;flex-direction:column;gap:6px">${R.lines.map(lineHTML).join('')}</div>
+    <button class="btn primary" type="button" id="b-next">${S.year>=YEARS||S.money<-400?'See final results':'Start year '+(R.year+1)}</button>`);
+  $('b-next').onclick=()=>{ closeModal(); if(S.over) showEnd(); };
+}
+
+function chartSVG(){
+  const H=S.hist, W=560, Ht=210, pl=34, pr=40, pt=14, pb=28;
+  const x=y=>pl+(W-pl-pr)*y/YEARS, y=v=>pt+(Ht-pt-pb)*(1-v/100), yt=v=>pt+(Ht-pt-pb)*(1-v/4);
+  const line=(k,c,f=y)=>`<polyline fill="none" stroke="${c}" stroke-width="3" stroke-linejoin="round" points="${H.map(h=>`${x(h.y)},${f(h[k])}`).join(' ')}"/>`;
+  const grid=[0,25,50,75,100].map(v=>`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="#2d4a55"/><text x="${pl-6}" y="${y(v)+4}" fill="#a2b8b3" font-size="11" text-anchor="end">${v}</text>`).join('');
+  const tl=[0,1,2,3,4].map(v=>`<text x="${W-pr+6}" y="${yt(v)+4}" fill="#ef6f55" font-size="11">${v}°</text>`).join('');
+  const xs=[0,5,10,15].map(v=>`<text x="${x(v)}" y="${Ht-8}" fill="#a2b8b3" font-size="11" text-anchor="middle">Yr ${v}</text>`).join('');
+  return `<svg viewBox="0 0 ${W} ${Ht}" role="img" aria-label="Air pollution, water pollution and warming over the game">${grid}${tl}${xs}${line('air','#8fd3f0')}${line('water','#4f9ef2')}<polyline fill="none" stroke="#ef6f55" stroke-width="3" stroke-dasharray="6 4" points="${H.map(h=>`${x(h.y)},${yt(h.temp)}`).join(' ')}"/></svg>
+  <div class="legend" style="margin-top:6px"><span style="color:#8fd3f0">Air smog (0 to 100)</span><span style="color:#4f9ef2">Water pollution (0 to 100)</span><span style="color:#ef6f55">Warming °C (right side)</span></div>`;
+}
+function showEnd(){
+  const H=sph(); const avg=(H.atmo+H.hydro+H.bio+H.geo)/4;
+  const rel=S.demanded?S.delivered/S.demanded*100:0;
+  let title, text;
+  if(S.money<-400){ title='The Valley Went Broke'; text='The town ran out of money before the 15 years were up. Pollution bills, blackouts, and disasters piled up faster than income.'; }
+  else if(avg>=70&&rel>=85&&S.money>=0){ title='A Thriving Valley'; text='You kept the lights on and kept all four spheres healthy. Your early investments in slow, clean power paid off.'; }
+  else if(avg<55&&S.money>=300){ title='Rich but Choking'; text='The town has plenty of money, but the air, water, and living things paid the price. Future players in this valley inherit the damage.'; }
+  else if(avg>=70&&rel<85){ title='Green but in the Dark'; text='Nature is in great shape, but the town spent a lot of time without enough power. People need energy too.'; }
+  else { title='A Valley in Trouble'; text='Some choices helped and some hurt. Look at the chart to see when things started to change.'; }
+  openModal(`<h1>${title}</h1><p class="lead">${text}</p>
+    <div class="grades">
+      <div class="grade"><span>Money</span><b>${fmt$(S.money)}</b></div>
+      <div class="grade"><span>Power delivered</span><b>${Math.round(rel)}%</b></div>
+      <div class="grade"><span>Warming</span><b>+${r1(temp()).toFixed(1)}°C</b></div>
+      ${Object.keys(SPH).map(k=>`<div class="grade" style="border-top:3px solid ${SPH[k].c}"><span>${SPH[k].n}</span><b>${Math.round(H[k])}</b></div>`).join('')}
+    </div>
+    <div class="chartbox">${chartSVG()}</div>
+    <h2>Think about it</h2>
+    <ol class="qs">
+      <li>Which choice gave you money the fastest? What did it do to the other spheres later in the game?</li>
+      <li>Trace one path carbon took in your valley. Where did it start (which sphere), where did it go, and what happened because of it?</li>
+      <li>Look at the chart. In what year did pollution or warming start to change the most? What did you build around then?</li>
+      <li>If you played again, what would you build in Year 1, and why?</li>
+    </ol>
+    <button class="btn primary" type="button" id="b-again">Play again</button>`);
+  $('b-again').onclick=()=>{ closeModal(); newGame(); render(); showIntro(); };
+}
+
+function showIntro(){
+  openModal(`<h1>Greenhouse Valley</h1>
+    <p class="lead">You are the new planner for Alder Creek. The town needs more electricity every year, and you have 15 years and $600 to make it work.</p>
+    <p>Everything in the valley belongs to one of Earth's four spheres. They are connected, so a choice that changes one sphere ends up changing the others.</p>
+    <div class="spheres">${Object.keys(SPH).map(k=>`<div class="sp" style="border-color:${SPH[k].c}"><b style="color:${SPH[k].c}">${SPH[k].n}</b><small>${SPH[k].k}</small><span>${SPH[k].d}</span></div>`).join('')}</div>
+    <h2>How to play</h2>
+    <ul class="rules">
+      <li>Tap a square of land to see what you can build there.</li>
+      <li>You earn money by selling energy ${BOLT} to the town. If you make too little, blackouts cost you.</li>
+      <li>Some choices are <b>fast and cheap</b>. Others are <b>slow to build</b> and cost more up front.</li>
+      <li>Watch the meters on the left. Smog and dirty water cost money, and CO2 warms the valley.</li>
+      <li>Press <b>End year</b> when you are done building for that year.</li>
+    </ul>
+    <button class="btn primary" type="button" id="b-start">Start year 1</button>`);
+  $('b-start').onclick=closeModal;
+}
+function openModal(html){ $('sheet').innerHTML=html; $('modal').hidden=false; $('modal').scrollTop=0; const b=$('sheet').querySelector('button'); if(b) setTimeout(()=>b.focus({preventScroll:true}),30); }
+function closeModal(){ $('modal').hidden=true; }
+
+/* ---------- events ---------- */
+$('map').addEventListener('click',e=>{
+  const b=e.target.closest('.tile'); if(!b||S.over) return;
+  S.sel=+b.dataset.i; render();
+  if(innerWidth<1060) $('panel').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
+});
+$('panel').addEventListener('click',e=>{
+  const a=e.target.closest('[data-act]'); if(a){ doAction(a.dataset.act); return; }
+  if(e.target.closest('[data-remove]')){ doRemove(); return; }
+  if(e.target.closest('[data-close]')){ S.sel=null; render(); }
+});
+$('b-end').onclick=()=>{ if(S.over) showEnd(); else endYear(); };
+$('b-guide').onclick=()=>{
+  openModal(`<h2>Earth's four spheres</h2><div class="spheres">${Object.keys(SPH).map(k=>`<div class="sp" style="border-color:${SPH[k].c}"><b style="color:${SPH[k].c}">${SPH[k].n}</b><small>${SPH[k].k}</small><span>${SPH[k].d}</span></div>`).join('')}</div>
+  <p>In this game, matter and energy keep moving between spheres. Carbon in coal (geosphere) becomes CO2 in the air (atmosphere). Smog falls as acid rain (hydrosphere). Dirty water harms fish (biosphere). Forests (biosphere) pull CO2 back out of the air.</p>
+  <button class="btn primary" type="button" id="b-close">Back to the game</button>`);
+  $('b-close').onclick=closeModal;
+};
+addEventListener('resize',()=>renderGauges());
+
+newGame(); render(); showIntro();
+</script>
+
+</body>
+</html>
