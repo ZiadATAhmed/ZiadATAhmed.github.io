@@ -1,0 +1,1195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Carbon Garden</title>
+<style>
+:root{
+  --bg:#f4eee1; --card:#fffdf8; --ink:#2b2924; --muted:#6c6457; --line:#e1d6c0;
+  --leaf:#3d8b4a; --leaf-d:#2a6834; --leaf-l:#e1f1dc;
+  --sun:#f0b429; --sun-l:#fdf1cc; --soil:#8b5d3d;
+  --red:#c9473a; --red-l:#fbe2dd; --blue:#3a76b0; --blue-l:#ddebf7; --tag:#e59a00;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:17px;line-height:1.5}
+button,select,input{font-family:inherit}
+.bar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:14px;justify-content:space-between;padding:9px 18px;background:var(--leaf-d);color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+.brand{display:flex;align-items:center;gap:8px;font-weight:800;font-size:20px}
+.who{font-size:15px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.pill{background:rgba(255,255,255,.17);padding:3px 11px;border-radius:999px;white-space:nowrap}
+main{max-width:1080px;margin:0 auto;padding:14px 16px 70px}
+h1{font-size:32px;margin:6px 0 4px}
+h2{font-size:23px;margin:2px 0 4px}
+h3{font-size:19px;margin:4px 0}
+p{margin:6px 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:14px 0;box-shadow:0 2px 0 rgba(60,40,10,.05)}
+.btn{display:inline-flex;align-items:center;gap:8px;background:var(--leaf);color:#fff;border:0;border-radius:11px;padding:11px 20px;font-size:16.5px;font-weight:700;cursor:pointer;box-shadow:0 3px 0 var(--leaf-d);transition:transform .08s}
+.btn:hover{filter:brightness(1.07)}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--leaf-d)}
+.btn:disabled{background:#bdb6a8;box-shadow:0 3px 0 #9d9688;cursor:not-allowed;filter:none}
+.btn.alt{background:#fff;color:var(--ink);border:2px solid var(--line);box-shadow:0 3px 0 var(--line)}
+.btn.sun{background:var(--sun);color:#3b2a00;box-shadow:0 3px 0 #b9860f}
+.btn.small{padding:6px 12px;font-size:14.5px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.row.end{justify-content:flex-end;margin-top:12px}
+.muted{color:var(--muted)}
+.small{font-size:14px}
+.center{text-align:center}
+
+/* guide */
+.guide{display:flex;gap:12px;align-items:flex-start;margin:14px 0}
+.ava{flex:0 0 52px;height:52px;border-radius:50%;background:var(--leaf-l);display:grid;place-items:center;border:2px solid var(--leaf)}
+.bubble{background:var(--card);border:1px solid var(--line);border-radius:4px 14px 14px 14px;padding:12px 16px;flex:1}
+
+/* questions */
+.qtext{font-weight:700;font-size:18px;margin:0 0 8px}
+.opt{display:block;width:100%;text-align:left;background:#fff;border:2px solid var(--line);border-radius:10px;padding:10px 14px;margin:8px 0;font-size:16.5px;cursor:pointer;color:var(--ink)}
+.opt:hover:not(:disabled){border-color:var(--leaf)}
+.opt.right{background:var(--leaf-l);border-color:var(--leaf);font-weight:600}
+.opt.wrong{background:var(--red-l);border-color:var(--red);opacity:.85}
+.opt.chosen{background:var(--blue-l);border-color:var(--blue);font-weight:600}
+.opt:disabled{cursor:default}
+.fb{margin-top:8px;padding:10px 13px;border-radius:10px}
+.fb.good{background:var(--leaf-l)}
+.fb.bad{background:var(--red-l)}
+.fb.info{background:var(--sun-l)}
+.pts{display:inline-block;background:var(--sun);color:#3b2a00;font-weight:800;border-radius:999px;padding:0 9px;margin-left:6px;font-size:14px}
+.tag{display:inline-block;background:var(--blue-l);color:var(--blue);font-weight:700;font-size:13px;border-radius:999px;padding:2px 10px;margin-bottom:6px}
+
+/* sorting + ordering */
+.tray{display:flex;flex-wrap:wrap;gap:8px;min-height:48px;padding:10px;border:2px dashed var(--line);border-radius:12px;margin:8px 0 12px;background:#fbf8f1}
+.chip{background:#fff;border:2px solid var(--line);border-radius:10px;padding:8px 12px;font-size:15.5px;cursor:pointer;text-align:left;color:var(--ink)}
+.chip:hover{border-color:var(--blue)}
+.chip.sel{border-color:var(--blue);background:var(--blue-l);box-shadow:0 0 0 3px rgba(58,118,176,.25)}
+.chip.placed{border-color:var(--leaf);background:var(--leaf-l);cursor:default;font-size:14px}
+.chip.placed.late{border-color:#d29b2c;background:var(--sun-l)}
+.bins{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.bin{border:2px solid var(--line);border-radius:12px;padding:10px;min-height:110px;background:#fbf8f1;cursor:pointer;transition:background .15s}
+.bin.ready{border-color:var(--blue);background:#f1f6fc}
+.binh{font-weight:800}
+.binsub{font-size:13px;color:var(--muted)}
+.binbody{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.slots{list-style:none;padding:0;margin:6px 0;display:flex;flex-direction:column;gap:6px}
+.slot{display:flex;gap:10px;align-items:center;border:2px dashed var(--line);border-radius:10px;padding:7px 10px;background:#fff}
+.slot.filled{border-style:solid;border-color:var(--leaf);background:var(--leaf-l)}
+.sn{flex:0 0 28px;height:28px;border-radius:50%;background:var(--leaf-d);color:#fff;display:grid;place-items:center;font-weight:800;font-size:14px}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+.shake{animation:shake .25s 2}
+
+/* equations */
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:14.5px;margin:4px 0 10px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.ld{width:15px;height:15px;border-radius:50%;border:1.2px solid #333;display:inline-block}
+.eq{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;padding:12px;background:#fbf8f1;border-radius:12px;border:1px solid var(--line)}
+.term{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px;border-radius:10px;background:#fff;border:1px solid var(--line);min-width:96px}
+.stepper{display:flex;align-items:center;gap:6px}
+.stepper button{width:36px;height:36px;border-radius:9px;border:2px solid var(--line);background:#fff;font-size:20px;font-weight:800;cursor:pointer;color:var(--ink)}
+.stepper button:hover{border-color:var(--leaf)}
+.coef{font-size:26px;font-weight:800;min-width:30px;text-align:center}
+.coef.fixed{color:var(--muted)}
+.pics{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:2px;max-width:180px;min-height:36px}
+.flab{font-weight:800;font-size:19px}
+.arrow{font-size:30px;font-weight:800;color:var(--leaf-d);text-align:center;line-height:1}
+.arrow small{display:block;font-size:12px;font-weight:700;color:#b07d00}
+.plus{font-size:26px;font-weight:800;color:var(--muted)}
+.energy{background:var(--sun-l);border:2px solid var(--sun);border-radius:10px;padding:8px 10px;font-weight:800;color:#7a5600}
+.tally{border-collapse:collapse;margin:12px auto;font-size:16px}
+.tally td,.tally th{border:1px solid var(--line);padding:6px 14px;text-align:center;background:#fff}
+.tally th{background:#f6f1e5}
+.ok{color:var(--leaf-d);font-weight:800}
+.no{color:var(--red);font-weight:800}
+.audit input{width:64px;font-size:20px;text-align:center;padding:4px;border-radius:8px;border:2px solid var(--line)}
+.audit input.good{border-color:var(--leaf);background:var(--leaf-l)}
+.audit input.bad{border-color:var(--red);background:var(--red-l)}
+.bigeq{font-size:22px;font-weight:800;text-align:center;padding:10px;background:var(--leaf-l);border-radius:12px;margin:8px 0}
+
+/* hub */
+.gsvg{width:100%;height:auto;display:block;border-radius:12px}
+.gcap{text-align:center;font-weight:700;margin-top:8px}
+.stages{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.scard{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.scard.locked{opacity:.5}
+.sic{font-size:30px;line-height:1;flex:0 0 40px;text-align:center}
+.scard h3{margin:0}
+.status{font-size:13px;font-weight:700;border-radius:999px;padding:2px 9px;display:inline-block;margin:4px 0}
+.st-done{background:var(--leaf-l);color:var(--leaf-d)}
+.st-go{background:var(--sun-l);color:#7a5600}
+.st-lock{background:#eee;color:#888}
+.shead{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.dots{display:flex;gap:6px;margin-left:auto}
+.d{width:13px;height:13px;border-radius:50%;background:#ddd3bf}
+.d.done{background:var(--leaf)}
+.d.now{background:var(--sun);box-shadow:0 0 0 3px rgba(240,180,41,.3)}
+.form label{display:block;font-weight:700;margin:10px 0 4px}
+.form input,.form select{font-size:18px;padding:8px 10px;border-radius:9px;border:2px solid var(--line);width:100%;max-width:340px}
+
+/* jar sim */
+.jarwrap{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start}
+.jar{width:220px;height:auto}
+.jarside{flex:1;min-width:260px}
+.seg{display:inline-flex;border:2px solid var(--line);border-radius:10px;overflow:hidden;margin:4px 0 10px}
+.seg button{border:0;background:#fff;padding:7px 13px;font-size:15px;cursor:pointer;border-right:1px solid var(--line);color:var(--ink)}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--leaf);color:#fff;font-weight:700}
+.meter{font-size:18px;margin-top:10px}
+.chart{width:100%;height:auto;margin-top:10px}
+.todo{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.todo span{border:2px solid var(--line);border-radius:999px;padding:3px 11px;font-size:14px;background:#fff}
+.todo span.yes{border-color:var(--leaf);background:var(--leaf-l);font-weight:700}
+.log{margin:6px 0;padding-left:20px;font-size:15px}
+
+/* labs */
+.lab{display:grid;grid-template-columns:1fr 150px 1fr;gap:10px;align-items:center;margin-top:12px;min-height:200px}
+.lab .col{background:#fbf8f1;border:1px solid var(--line);border-radius:12px;padding:10px;min-height:190px}
+.lab .col h4{margin:0 0 6px;font-size:15px}
+.fade{transition:opacity .7s, transform .7s}
+.gone{opacity:.35;transform:translateX(20px)}
+.det{margin-top:8px;font-size:14.5px}
+.detbar{height:12px;background:#eee;border-radius:6px;overflow:hidden;margin-top:3px}
+.detbar i{display:block;height:100%;width:0;background:var(--tag);transition:width .8s}
+.leafglow{filter:drop-shadow(0 0 10px #ffd84d)}
+.results{margin-top:10px}
+.results table{border-collapse:collapse;width:100%;font-size:15px}
+.results td,.results th{border:1px solid var(--line);padding:6px 10px;background:#fff;text-align:left}
+.scene{width:100%;height:auto;border-radius:12px;display:block}
+.scene .hot{filter:drop-shadow(0 0 4px #ffae00) drop-shadow(0 0 9px #ffae00)}
+.beep{font-weight:800;color:#a46a00}
+.iso{display:flex;gap:30px;justify-content:center;flex-wrap:wrap;text-align:center}
+
+/* seeds */
+.designs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:10px}
+.design{border:2px solid var(--line);background:#fff;border-radius:12px;padding:8px;cursor:pointer;text-align:center;color:var(--ink)}
+.design:hover:not(:disabled){border-color:var(--blue)}
+.design.on{border-color:var(--blue);background:var(--blue-l)}
+.design b{display:block;font-size:15px}
+.design span{font-size:13px;color:var(--muted)}
+.envsvg{width:100%;height:auto;border-radius:12px;display:block;margin-top:8px}
+.bars{margin-top:8px}
+.brow{display:grid;grid-template-columns:150px 1fr 70px;gap:8px;align-items:center;font-size:14.5px;margin:3px 0}
+.brow .bt{height:14px;background:#eee;border-radius:7px;overflow:hidden}
+.brow .bt i{display:block;height:100%;background:var(--leaf)}
+.brow.me{font-weight:800}
+.brow.me .bt i{background:var(--blue)}
+
+/* plots */
+.plots{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.plot{border:1px solid var(--line);border-radius:12px;background:#fbf8f1;padding:8px}
+.plot h4{margin:0;text-align:center}
+.plot svg{width:100%;height:auto;max-height:230px;display:block}
+.plot label{display:block;font-size:13px;color:var(--muted);margin-top:4px}
+.plot select{width:100%;font-size:14.5px;padding:4px;border-radius:7px;border:1px solid var(--line);background:#fff}
+.pres{text-align:center;font-weight:700;font-size:15px;min-height:24px}
+.mission{border-left:6px solid var(--sun)}
+@keyframes grow{from{transform:scaleY(.05)}to{transform:scaleY(1)}}
+.growing{animation:grow 1.2s ease-out}
+.report td,.report th{border:1px solid var(--line);padding:7px 12px;text-align:left;background:#fff}
+.report{border-collapse:collapse;margin:10px 0;width:100%;max-width:560px}
+
+@media (max-width:820px){
+  .plots{grid-template-columns:repeat(2,1fr)}
+  .lab{grid-template-columns:1fr}
+  .brow{grid-template-columns:110px 1fr 60px}
+  h1{font-size:26px}
+}
+</style>
+</head>
+<body>
+<div class="bar"><div class="brand"><span aria-hidden="true">🌱</span> Carbon Garden</div><div class="who" id="who"></div></div>
+<main id="main"></main>
+
+<script>
+"use strict";
+/* =====================================================================
+   TEACHER SETUP
+   Paste your Google Apps Script web app URL between the quotes below.
+   If you leave it empty, the game still works. Scores just won't be sent.
+   ===================================================================== */
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbydo067MQWrVTH-rGt0_Dvu6ZJ9a-J5bDZfUi202gGLxwNaZGPsUXelZ3L_jisVVOsW/exec";
+/* ===================================================================== */
+
+const SAVE_KEY = "carbonGarden.v1";
+const NS = "http://www.w3.org/2000/svg";
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const shuffle = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const pick = a => a[Math.floor(Math.random() * a.length)];
+
+/* ---------------- state ---------------- */
+let S = null;
+function blank(name, period) { return { name, period, sid: Math.random().toString(36).slice(2, 8), stages: {} }; }
+function load() { try { const r = localStorage.getItem(SAVE_KEY); return r ? JSON.parse(r) : null; } catch (e) { return null; } }
+function save() { try { if (S) localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) {} }
+function totals() { let pts = 0, max = 0; for (const s of STAGES) { const r = S.stages[s.id]; if (r) { pts += r.pts; max += r.max; } } return { pts, max }; }
+function updateBar() {
+  if (!S) { $("#who").innerHTML = ""; return; }
+  const t = totals();
+  $("#who").innerHTML = `<span class="pill">${esc(S.name)}</span><span class="pill">Period ${esc(S.period)}</span><span class="pill">☀ ${t.pts} sugar points</span>`;
+}
+
+/* ---------------- score sheet ---------------- */
+function sendRow(stage, score, max) {
+  if (!SHEET_URL) return;
+  try {
+    const t = totals();
+    const data = { name: S.name, period: S.period, stage, score, max, total: t.pts, totalMax: t.max, device: S.sid };
+    const nm = "sink" + Date.now() + Math.floor(Math.random() * 1000);
+    const ifr = document.createElement("iframe");
+    ifr.name = nm; ifr.style.display = "none"; document.body.appendChild(ifr);
+    const f = document.createElement("form");
+    f.method = "POST"; f.action = SHEET_URL; f.target = nm; f.style.display = "none";
+    for (const k in data) { const i = document.createElement("input"); i.type = "hidden"; i.name = k; i.value = data[k]; f.appendChild(i); }
+    document.body.appendChild(f); f.submit();
+    setTimeout(() => { f.remove(); ifr.remove(); }, 20000);
+  } catch (e) {}
+}
+
+/* ---------------- molecule drawings ---------------- */
+const AC = { C: "#333333", O: "#d9473a", H: "#ffffff" };
+const NAMES = { C: "Carbon", H: "Hydrogen", O: "Oxygen" };
+function A(x, y, e, r, tag) { return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}" fill="${AC[e]}" stroke="${tag ? "#e59a00" : "#333"}" stroke-width="${tag ? 3.2 : 1.2}"/>`; }
+function B(x1, y1, x2, y2) { return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#666" stroke-width="2.5"/>`; }
+function mol(k, tag = "") {
+  const t = e => tag === e;
+  if (k === "CO2") return `<svg class="mol" viewBox="0 0 58 26" width="54" height="24" aria-label="CO2">${B(13, 13, 45, 13)}${A(13, 13, "O", 8, t("O"))}${A(29, 13, "C", 8)}${A(45, 13, "O", 8, t("O"))}</svg>`;
+  if (k === "H2O") return `<svg class="mol" viewBox="0 0 46 34" width="42" height="31" aria-label="H2O">${B(23, 13, 10, 25)}${B(23, 13, 36, 25)}${A(23, 13, "O", 9, t("O"))}${A(10, 25, "H", 6)}${A(36, 25, "H", 6)}</svg>`;
+  if (k === "O2") return `<svg class="mol" viewBox="0 0 42 26" width="38" height="24" aria-label="O2">${B(13, 13, 29, 13)}${A(13, 13, "O", 8, t("O"))}${A(29, 13, "O", 8, t("O"))}</svg>`;
+  if (k === "GLU") return gluSVG(t("O"));
+  return "";
+}
+function gluSVG(tagO) {
+  const cx = 56, cy = 56, R = 17;
+  const P = (r, deg) => [cx + r * Math.cos(deg * Math.PI / 180), cy + r * Math.sin(deg * Math.PI / 180)];
+  let bonds = "", atoms = "";
+  const ring = []; for (let k = 0; k < 6; k++) ring.push(P(R, -90 + 60 * k));
+  for (let k = 0; k < 6; k++) { const a = ring[k], b = ring[(k + 1) % 6]; bonds += B(a[0], a[1], b[0], b[1]); }
+  const hs = [];
+  for (let k = 1; k <= 5; k++) {
+    const ang = -90 + 60 * k;
+    hs.push(P(R + 11, ang + 24));
+    if (k < 5) {
+      const o = P(R + 14, ang - 14); bonds += B(ring[k][0], ring[k][1], o[0], o[1]);
+      atoms += A(o[0], o[1], "O", 6, tagO); hs.push(P(R + 22, ang - 24));
+    } else {
+      const c6 = P(R + 15, ang - 6); bonds += B(ring[k][0], ring[k][1], c6[0], c6[1]);
+      const o6 = P(R + 29, ang - 16); bonds += B(c6[0], c6[1], o6[0], o6[1]);
+      atoms += A(c6[0], c6[1], "C", 7) + A(o6[0], o6[1], "O", 6, tagO);
+      hs.push(P(R + 18, ang + 12), P(R + 24, ang + 2), P(R + 37, ang - 22));
+    }
+  }
+  ring.forEach((p, k) => { atoms += k === 0 ? A(p[0], p[1], "O", 7, tagO) : A(p[0], p[1], "C", 7); });
+  hs.forEach(p => { atoms += A(p[0], p[1], "H", 3.6); });
+  return `<svg class="mol" viewBox="0 0 112 112" width="66" height="66" aria-label="glucose">${bonds}${atoms}</svg>`;
+}
+const LEGEND = `<div class="legend"><span><i class="ld" style="background:${AC.C}"></i>Carbon (C)</span><span><i class="ld" style="background:${AC.O}"></i>Oxygen (O)</span><span><i class="ld" style="background:${AC.H}"></i>Hydrogen (H)</span></div>`;
+const ATOMS = { CO2: { C: 1, O: 2 }, H2O: { H: 2, O: 1 }, GLU: { C: 6, H: 12, O: 6 }, O2: { O: 2 } };
+const LAB = { CO2: "CO₂", H2O: "H₂O", GLU: "C₆H₁₂O₆", O2: "O₂" };
+
+/* ---------------- generic UI pieces ---------------- */
+const SPROUT = `<svg viewBox="0 0 40 40" width="38" height="38" aria-hidden="true"><path d="M20 36 V18" stroke="#2a6834" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M20 23 C10 23 6 15 7 9 C14 9 20 14 20 23Z" fill="#3d8b4a"/><path d="M20 20 C28 20 33 13 33 7 C26 7 20 11 20 20Z" fill="#62b05c"/><ellipse cx="20" cy="36" rx="9" ry="3" fill="#8b5d3d"/></svg>`;
+function guide(html) { return `<div class="guide"><div class="ava">${SPROUT}</div><div class="bubble">${html}</div></div>`; }
+function addHTML(box, html) { const d = document.createElement("div"); d.innerHTML = html; box.appendChild(d); return d; }
+function scrollIn(el) { setTimeout(() => { if (el.isConnected) el.scrollIntoView({ behavior: "smooth", block: "nearest" }); }, 40); }
+function waitBtn(box, label = "Next →") {
+  return new Promise(res => {
+    const d = addHTML(box, `<div class="row end"><button class="btn">${label}</button></div>`);
+    const b = $("button", d); scrollIn(d);
+    b.onclick = () => { d.remove(); res(); };
+  });
+}
+function shakeEl(el) { el.classList.remove("shake"); void el.offsetWidth; el.classList.add("shake"); }
+function sum(arr) { return arr.reduce((a, r) => ({ pts: a.pts + r.pts, max: a.max + r.max }), { pts: 0, max: 0 }); }
+
+/* multiple choice: full points first try, half on second, then reveal */
+function mcq(box, q) {
+  const pts = q.pts ?? 10;
+  return new Promise(res => {
+    const order = q.keep ? q.opts.map((_, i) => i) : shuffle(q.opts.map((_, i) => i));
+    const txt = o => typeof o === "string" ? o : o.t;
+    const d = addHTML(box, `<div class="card q">${q.label ? `<div class="tag">${q.label}</div>` : ""}<p class="qtext">${q.q}</p>${q.extra || ""}<div class="opts">${order.map(i => `<button class="opt" data-i="${i}">${txt(q.opts[i])}</button>`).join("")}</div><div class="fbwrap"></div></div>`);
+    scrollIn(d);
+    let tries = 0, over = false;
+    const fbw = $(".fbwrap", d);
+    $$(".opt", d).forEach(b => b.onclick = () => {
+      if (over) return;
+      const i = +b.dataset.i; tries++;
+      if (i === q.ans) {
+        over = true; b.classList.add("right");
+        const got = tries === 1 ? pts : tries === 2 ? Math.ceil(pts / 2) : 0;
+        $$(".opt", d).forEach(x => x.disabled = true);
+        fbw.innerHTML = `<div class="fb good"><b>${tries === 1 ? pick(["Nice!", "Exactly.", "Yes!", "Spot on."]) : "Got it."}</b> ${q.why || ""}<span class="pts">+${got}</span></div>`;
+        waitBtn(d, "Continue →").then(() => res({ pts: got, max: pts }));
+      } else {
+        b.classList.add("wrong"); b.disabled = true;
+        const o = q.opts[i], ofb = typeof o === "object" && o.fb ? o.fb : "";
+        if (tries >= 2) {
+          over = true;
+          $$(".opt", d).forEach(x => { x.disabled = true; if (+x.dataset.i === q.ans) x.classList.add("right"); });
+          fbw.innerHTML = `<div class="fb bad">${ofb ? ofb + " " : ""}The right answer is highlighted. ${q.why || ""}</div>`;
+          waitBtn(d, "Continue →").then(() => res({ pts: 0, max: pts }));
+        } else {
+          fbw.innerHTML = `<div class="fb bad">${ofb || "Not quite."} Try once more.</div>`;
+        }
+      }
+    });
+  });
+}
+function predict(box, { q, opts }) {
+  return new Promise(res => {
+    const d = addHTML(box, `<div class="card q"><div class="tag">Prediction: no points, just your best guess</div><p class="qtext">${q}</p><div class="opts">${opts.map((o, i) => `<button class="opt" data-i="${i}">${o}</button>`).join("")}</div></div>`);
+    scrollIn(d);
+    $$(".opt", d).forEach(b => b.onclick = () => {
+      $$(".opt", d).forEach(x => x.disabled = true); b.classList.add("chosen");
+      waitBtn(d.firstChild, "Let's find out →").then(() => res(+b.dataset.i));
+    });
+  });
+}
+async function quizSeq(box, qs) { const out = []; for (const q of qs) out.push(await mcq(box, q)); return sum(out); }
+
+/* sort items into bins */
+function sortTask(box, cfg) {
+  return new Promise(res => {
+    const n = cfg.items.length, max = n * 2; let pts = 0, placed = 0, sel = null;
+    const miss = new Array(n).fill(0);
+    const d = addHTML(box, `<div class="card"><p class="qtext">${cfg.q}</p><div class="tray">${shuffle(cfg.items.map((_, i) => i)).map(i => `<button class="chip" data-i="${i}">${cfg.items[i].t}</button>`).join("")}</div><div class="bins">${cfg.bins.map(b => `<div class="bin" data-b="${b.id}" tabindex="0" role="button"><div class="binh">${b.label}</div>${b.sub ? `<div class="binsub">${b.sub}</div>` : ""}<div class="binbody"></div></div>`).join("")}</div><div class="fbwrap"></div></div>`);
+    const fb = $(".fbwrap", d);
+    scrollIn(d);
+    $$(".chip", d).forEach(c => c.onclick = e => {
+      e.stopPropagation();
+      if (c.classList.contains("placed")) return;
+      $$(".chip", d).forEach(x => x.classList.remove("sel"));
+      c.classList.add("sel"); sel = +c.dataset.i;
+      $$(".bin", d).forEach(b => b.classList.add("ready"));
+    });
+    const binLabel = id => cfg.bins.find(b => b.id === id).label;
+    function place(chip, bin, it, got, ok) {
+      pts += got; chip.classList.remove("sel"); chip.classList.add("placed"); if (!ok) chip.classList.add("late");
+      $(".binbody", bin).appendChild(chip); placed++; sel = null;
+      $$(".bin", d).forEach(b => b.classList.remove("ready"));
+      fb.innerHTML = `<div class="fb ${ok ? "good" : "bad"}">${ok ? "<b>Yes!</b> " : `<b>That one goes in "${binLabel(it.bin)}".</b> `}${it.why}</div>`;
+      if (placed === n) {
+        fb.innerHTML += `<div class="fb info">All sorted! You earned <b>${pts} of ${max}</b> points.</div>`;
+        waitBtn(d.firstChild).then(() => res({ pts, max }));
+      }
+    }
+    function drop(bin) {
+      if (sel === null) { fb.innerHTML = `<div class="fb info">First tap an item, then tap a bin.</div>`; return; }
+      const it = cfg.items[sel], chip = $(`.chip[data-i="${sel}"]`, d);
+      if (bin.dataset.b === it.bin) place(chip, bin, it, miss[sel] === 0 ? 2 : miss[sel] === 1 ? 1 : 0, true);
+      else {
+        miss[sel]++; shakeEl(bin);
+        if (miss[sel] >= 2) place(chip, $(`.bin[data-b="${it.bin}"]`, d), it, 0, false);
+        else fb.innerHTML = `<div class="fb bad">${it.hint || "Not that bin."} Try another bin.</div>`;
+      }
+    }
+    $$(".bin", d).forEach(b => { b.onclick = () => drop(b); b.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); drop(b); } }; });
+  });
+}
+
+/* put steps in order */
+function orderTask(box, cfg) {
+  return new Promise(res => {
+    const n = cfg.items.length, max = n * 2; let pts = 0, step = 0, miss = 0;
+    const d = addHTML(box, `<div class="card"><p class="qtext">${cfg.q}</p><ol class="slots">${cfg.items.map((_, i) => `<li class="slot" data-s="${i}"><span class="sn">${i + 1}</span><span class="st muted">?</span></li>`).join("")}</ol><p class="muted small">Tap the step that comes next:</p><div class="tray">${shuffle(cfg.items.map((_, i) => i)).map(i => `<button class="chip" data-i="${i}">${cfg.items[i].t}</button>`).join("")}</div><div class="fbwrap"></div></div>`);
+    scrollIn(d);
+    const fb = $(".fbwrap", d);
+    function handle(c) {
+      const i = +c.dataset.i;
+      if (i === step) {
+        const got = miss === 0 ? 2 : miss === 1 ? 1 : 0; pts += got;
+        const slot = $(`.slot[data-s="${i}"]`, d); slot.classList.add("filled");
+        const st = $(".st", slot); st.textContent = cfg.items[i].t; st.classList.remove("muted");
+        c.remove(); step++; miss = 0;
+        fb.innerHTML = `<div class="fb good">${cfg.items[i].why || "Yes!"}</div>`;
+        if (step === n) { fb.innerHTML += `<div class="fb info">Chain complete! <b>${pts} of ${max}</b> points.</div>`; waitBtn(d.firstChild).then(() => res({ pts, max })); }
+      } else {
+        miss++; shakeEl(c);
+        if (miss >= 3) { fb.innerHTML = ""; handle($(`.chip[data-i="${step}"]`, d)); return; }
+        fb.innerHTML = `<div class="fb bad">Not yet. ${cfg.items[step].hint}</div>`;
+      }
+    }
+    $$(".chip", d).forEach(c => c.onclick = () => handle(c));
+  });
+}
+
+/* count atoms in the unbalanced equation */
+function eqStatic(keys, arrowNote, extraRight) {
+  const term = k => `<div class="term"><div class="pics">${mol(k)}</div><div class="flab">${LAB[k]}</div></div>`;
+  const [l, r] = keys;
+  return `<div class="eq">${l.map(term).join('<div class="plus">+</div>')}<div class="arrow">→${arrowNote ? `<small>${arrowNote}</small>` : ""}</div>${r.map(term).join('<div class="plus">+</div>')}${extraRight ? `<div class="plus">+</div><div class="energy">${extraRight}</div>` : ""}</div>`;
+}
+function atomAudit(box) {
+  addHTML(box, guide(`Scientists write this reaction with <b>chemical formulas</b>. Each capital letter is a kind of atom, and the small number after it tells how many. So <b>CO₂</b> is 1 carbon + 2 oxygen, and <b>H₂O</b> is 2 hydrogen + 1 oxygen.`));
+  addHTML(box, `<div class="card">${LEGEND}${eqStatic([["CO2", "H2O"], ["GLU", "O2"]], "light energy")}</div>`);
+  return new Promise(res => {
+    const ans = { LC: 1, LH: 2, LO: 3, RC: 6, RH: 12, RO: 8 };
+    const d = addHTML(box, `<div class="card"><p class="qtext">Count the atoms on each side. (There is just one of each molecule.)</p>
+      <table class="tally audit"><tr><th></th><th>Left side<br><span class="small muted">CO₂ + H₂O</span></th><th>Right side<br><span class="small muted">C₆H₁₂O₆ + O₂</span></th></tr>
+      ${["C", "H", "O"].map(e => `<tr><th>${NAMES[e]} (${e})</th><td><input inputmode="numeric" maxlength="2" data-k="L${e}" aria-label="${NAMES[e]} left"></td><td><input inputmode="numeric" maxlength="2" data-k="R${e}" aria-label="${NAMES[e]} right"></td></tr>`).join("")}</table>
+      <div class="row end"><button class="btn" id="chk">Check my counts</button></div><div class="fbwrap"></div></div>`);
+    scrollIn(d);
+    let first = true, pts = 0;
+    $("#chk", d).onclick = () => {
+      const inputs = $$("input", d), fb = $(".fbwrap", d);
+      if (inputs.some(i => i.value.trim() === "")) { fb.innerHTML = `<div class="fb info">Fill in all six boxes first.</div>`; return; }
+      let all = true;
+      inputs.forEach(inp => { const ok = +inp.value === ans[inp.dataset.k]; inp.classList.toggle("good", ok); inp.classList.toggle("bad", !ok); if (!ok) all = false; if (ok && first) pts += 2; });
+      first = false;
+      if (!all) { fb.innerHTML = `<div class="fb bad">Some counts are off (red boxes). Tip: the oxygen on the right is in TWO places, inside the sugar AND in O₂. Add them together.</div>`; return; }
+      $("#chk", d).disabled = true; inputs.forEach(i => i.disabled = true);
+      fb.innerHTML = `<div class="fb good"><b>Counted!</b> <span class="pts">+${pts}</span><br>Left: 1 C, 2 H, 3 O. Right: 6 C, 12 H, 8 O. <b>They don't match!</b> But atoms can't appear out of nowhere or vanish. In a reaction they only get <b>rearranged</b>. So the leaf must use <b>more</b> CO₂ and H₂O molecules than this. Let's figure out how many.</div>`;
+      waitBtn(d.firstChild).then(() => res({ pts, max: 12 }));
+    };
+  });
+}
+
+/* balance an equation with steppers */
+function balancer(box, cfg) {
+  return new Promise(res => {
+    const terms = [...cfg.left.map(t => ({ ...t, side: "L" })), ...cfg.right.map(t => ({ ...t, side: "R" }))];
+    terms.forEach(t => { t.c = 1; t.atoms = ATOMS[t.k]; });
+    let wrong = 0, done = false;
+    const d = addHTML(box, `<div class="card"><p class="qtext">${cfg.q}</p>${LEGEND}<div class="eq" id="eqrow"></div><table class="tally" id="tal"></table><div class="row end"><button class="btn" id="bchk">Check balance</button></div><div class="fbwrap"></div></div>`);
+    scrollIn(d);
+    const count = side => { const c = { C: 0, H: 0, O: 0 }; terms.filter(t => t.side === side).forEach(t => { for (const e in t.atoms) c[e] += t.atoms[e] * t.c; }); return c; };
+    function termHTML(t, idx) {
+      const pics = Array.from({ length: Math.min(t.c, 8) }, () => mol(t.k)).join("") + (t.c > 8 ? `<b>+${t.c - 8}</b>` : "");
+      const st = t.fixed ? `<span class="coef fixed" title="kept at 1">${t.c}</span>` : `<button data-i="${idx}" data-d="-1" aria-label="fewer ${LAB[t.k]}">−</button><span class="coef">${t.c}</span><button data-i="${idx}" data-d="1" aria-label="more ${LAB[t.k]}">+</button>`;
+      return `<div class="term"><div class="stepper">${st}</div><div class="pics">${pics}</div><div class="flab">${LAB[t.k]}</div></div>`;
+    }
+    function render() {
+      const L = terms.map((t, i) => [t, i]).filter(([t]) => t.side === "L"), R = terms.map((t, i) => [t, i]).filter(([t]) => t.side === "R");
+      $("#eqrow", d).innerHTML = L.map(([t, i]) => termHTML(t, i)).join('<div class="plus">+</div>') + `<div class="arrow">→${cfg.arrowNote ? `<small>${cfg.arrowNote}</small>` : ""}</div>` + R.map(([t, i]) => termHTML(t, i)).join('<div class="plus">+</div>') + (cfg.extraRight ? `<div class="plus">+</div><div class="energy">${cfg.extraRight}</div>` : "");
+      const l = count("L"), r = count("R");
+      $("#tal", d).innerHTML = `<tr><th>Atom</th><th>Left side</th><th>Right side</th><th></th></tr>` + ["C", "H", "O"].map(e => `<tr><td>${NAMES[e]}</td><td>${l[e]}</td><td>${r[e]}</td><td class="${l[e] === r[e] ? "ok" : "no"}">${l[e] === r[e] ? "equal ✓" : "not equal"}</td></tr>`).join("");
+      $$(".stepper button", d).forEach(b => b.onclick = () => { if (done) return; const t = terms[+b.dataset.i]; t.c = Math.max(1, Math.min(12, t.c + +b.dataset.d)); render(); });
+    }
+    render();
+    $("#bchk", d).onclick = () => {
+      const l = count("L"), r = count("R"), fb = $(".fbwrap", d);
+      const bad = ["C", "H", "O"].filter(e => l[e] !== r[e]);
+      if (!bad.length) {
+        done = true; $("#bchk", d).disabled = true; $$(".stepper button", d).forEach(b => b.disabled = true);
+        const got = Math.max(8, 20 - 4 * wrong);
+        fb.innerHTML = `<div class="fb good"><b>Balanced!</b> Every atom on the left shows up on the right. <span class="pts">+${got}</span></div><div class="bigeq">${cfg.final}</div>`;
+        waitBtn(d.firstChild).then(() => res({ pts: got, max: 20 }));
+      } else {
+        wrong++;
+        fb.innerHTML = `<div class="fb bad">Not balanced yet: <b>${bad.map(e => NAMES[e].toLowerCase()).join(" and ")}</b> ${bad.length > 1 ? "don't" : "doesn't"} match. ${cfg.hints[Math.min(wrong - 1, cfg.hints.length - 1)]}</div>`;
+      }
+    };
+  });
+}
+
+/* ---------------- garden drawing ---------------- */
+function leafPath(x, y, len, ang, col) {
+  return `<g transform="translate(${x} ${y}) rotate(${ang})"><path d="M0 0 C ${len * .3} ${-len * .28} ${len * .75} ${-len * .25} ${len} 0 C ${len * .75} ${len * .25} ${len * .3} ${len * .28} 0 0Z" fill="${col}" stroke="#2a6834" stroke-width="1"/></g>`;
+}
+function gardenSVG(l) {
+  const skies = ["#d6ecf8", "#d6ecf8", "#cfe5f6", "#d9edf5", "#e2f0f2", "#f2ead4", "#f5e4c6", "#f3dab7"];
+  const H = [0, 28, 66, 100, 128, 146, 156, 160][l];
+  const nL = [0, 2, 4, 6, 8, 10, 12, 12][l];
+  const gx = 300, gy = 212;
+  let s = `<svg viewBox="0 0 600 260" class="gsvg" role="img" aria-label="Your garden plot"><rect width="600" height="260" fill="${skies[l]}"/>`;
+  s += `<g fill="#f6c443"><circle cx="530" cy="52" r="24"/>${[0, 45, 90, 135, 180, 225, 270, 315].map(a => { const r = a * Math.PI / 180; return `<line x1="${530 + 30 * Math.cos(r)}" y1="${52 + 30 * Math.sin(r)}" x2="${530 + 40 * Math.cos(r)}" y2="${52 + 40 * Math.sin(r)}" stroke="#f6c443" stroke-width="4" stroke-linecap="round"/>`; }).join("")}</g>`;
+  s += `<path d="M0 150 Q 150 120 300 150 T 600 145 V260 H0Z" fill="#b9d89a" opacity=".6"/>`;
+  s += `<g stroke="#a98458" stroke-width="5">${[30, 90, 150, 450, 510, 570].map(x => `<line x1="${x}" y1="${gy}" x2="${x}" y2="${gy - 45}"/>`).join("")}<line x1="20" y1="${gy - 32}" x2="160" y2="${gy - 32}"/><line x1="440" y1="${gy - 32}" x2="580" y2="${gy - 32}"/></g>`;
+  s += `<rect y="${gy}" width="600" height="${260 - gy}" fill="#8b5d3d"/><rect y="${gy}" width="600" height="7" fill="#6f9e4f"/>`;
+  if (l === 0) s += `<ellipse cx="${gx}" cy="${gy + 24}" rx="10" ry="6.5" fill="#d9c08a" stroke="#7a5a2a" stroke-width="1.5"/><path d="M${gx} ${gy + 30} q 3 8 -2 14" stroke="#e8dcc0" stroke-width="2" fill="none"/>`;
+  if (l >= 1) {
+    const rd = Math.min(36, 10 + l * 5);
+    s += `<g stroke="#e8dcc0" stroke-width="2" fill="none"><path d="M${gx} ${gy} q -4 ${rd * .5} -14 ${rd}"/><path d="M${gx} ${gy} q 3 ${rd * .6} 12 ${rd * .9}"/><path d="M${gx} ${gy} q 0 ${rd * .6} -2 ${rd * 1.1}"/></g>`;
+    s += `<path d="M${gx} ${gy} C ${gx - 5} ${gy - H * .4} ${gx + 5} ${gy - H * .7} ${gx} ${gy - H}" stroke="#2f7a3a" stroke-width="${3 + l * .6}" fill="none" stroke-linecap="round"/>`;
+    if (l === 1) s += leafPath(gx, gy - H, 20, -150, "#7cc46f") + leafPath(gx, gy - H, 20, -30, "#7cc46f");
+    for (let i = 0; i < nL && l > 1; i++) {
+      const y = gy - H * (0.22 + 0.72 * (i / Math.max(nL - 1, 1)));
+      const right = i % 2 === 0;
+      s += leafPath(gx, y, 30 + (l * 2) - i, right ? -25 - (i % 3) * 6 : -155 + (i % 3) * 6, i % 3 === 0 ? "#4f9e4f" : "#62b05c");
+    }
+    if (l >= 2) s += leafPath(gx, gy - H, 22, -100, "#7cc46f") + leafPath(gx, gy - H, 22, -80, "#62b05c");
+    if (l >= 4) [0.45, 0.65, 0.85].forEach((f, k) => { const x = gx + (k % 2 ? -26 : 26), y = gy - H * f; s += `<g><circle cx="${x}" cy="${y}" r="5" fill="#fff" stroke="#b07cc6" stroke-width="2"/><circle cx="${x}" cy="${y}" r="2" fill="#f0b429"/></g>`; });
+    if (l >= 5) { const np = l === 5 ? 4 : 8; for (let k = 0; k < np; k++) { const f = 0.3 + 0.6 * (k / np), x = gx + (k % 2 ? -14 : 14), y = gy - H * f; s += `<path d="M${x} ${y} q ${k % 2 ? -4 : 4} 16 ${k % 2 ? -2 : 2} 30" stroke="#3c8a3c" stroke-width="5" fill="none" stroke-linecap="round"/>`; } }
+    if (l >= 5) [100, 190, 500, 560].slice(0, l === 5 ? 2 : 4).forEach(x => { s += `<path d="M${x} ${gy} v -14" stroke="#2f7a3a" stroke-width="2.5"/>${leafPath(x, gy - 14, 11, -150, "#7cc46f")}${leafPath(x, gy - 14, 11, -30, "#7cc46f")}`; });
+    if (l >= 7) s += `<g transform="translate(385 ${gy - 30})"><path d="M0 0 h70 l-8 32 h-54z" fill="#b5823f" stroke="#7a5426" stroke-width="2"/><path d="M8 8 h54 M6 18 h58" stroke="#7a5426" stroke-width="1.5"/>${[10, 22, 34, 46, 58].map(x => `<path d="M${x} 2 q 4 -12 10 -16" stroke="#3c8a3c" stroke-width="5" stroke-linecap="round" fill="none"/>`).join("")}</g>`;
+  }
+  return s + "</svg>";
+}
+
+/* ---------------- stages ---------------- */
+const STAGES = [
+  { id: "leaf", n: 1, icon: "☀️", title: "The Leaf Factory", sub: "Photosynthesis: inputs, outputs, and balancing the equation" },
+  { id: "night", n: 2, icon: "🌙", title: "Day and Night", sub: "Cellular respiration and how energy flows" },
+  { id: "carbon", n: 3, icon: "🔄", title: "Follow the Carbon", sub: "Tracing atoms as matter cycles" },
+  { id: "iso", n: 4, icon: "🔬", title: "Isotope Detectives", sub: "Using tagged atoms to see where matter goes" },
+  { id: "seeds", n: 5, icon: "🌬️", title: "Seed Launch", sub: "How plants send their seeds away" },
+  { id: "plots", n: 6, icon: "🌱", title: "Test Plots", sub: "Why plants don't all grow the same" },
+  { id: "final", n: 7, icon: "🧺", title: "Harvest Report", sub: "Show what you learned" }
+];
+const CAPTIONS = ["Your bean seed is planted. Time to wake it up!", "Your seedling is making its own food.", "Your plant works day and night.", "Carbon atoms are cycling through your garden.", "Your plant is flowering. You tracked atoms like a real scientist!", "Seeds are spreading, and new sprouts are popping up.", "Your plant is loaded with beans.", "Harvest complete! Great work, scientist."];
+const PARTS = {};
+
+/* ===== Season 1: Leaf Factory ===== */
+PARTS.leaf = [
+  async box => {
+    addHTML(box, guide(`Your bean seed sprouted and opened its first leaves. A leaf is a tiny <b>sugar factory</b>. Before it can make anything, figure out what goes <b>into</b> the factory and what comes <b>out</b>.`));
+    return sortTask(box, {
+      q: "Tap an item, then tap the bin where it belongs.",
+      bins: [{ id: "in", label: "Goes IN", sub: "inputs" }, { id: "out", label: "Comes OUT", sub: "outputs" }, { id: "no", label: "Not an ingredient", sub: "a helper, or not part of it" }],
+      items: [
+        { t: "Carbon dioxide (CO₂) from the air", bin: "in", why: "Leaves take in CO₂ through tiny pores called <b>stomata</b>.", hint: "This gas floats in the air all around the leaf." },
+        { t: "Water (H₂O) from the roots", bin: "in", why: "Roots pull water up through the stem to the leaves.", hint: "The plant has to get this from somewhere to use it." },
+        { t: "Light energy from the Sun", bin: "in", why: "Light powers the factory. It's <b>energy</b>, not matter, so it has no atoms.", hint: "No factory runs without a power source." },
+        { t: "Sugar (glucose)", bin: "out", why: "Sugar is the food the plant makes. Energy is stored in it.", hint: "This is the product the factory makes." },
+        { t: "Oxygen gas (O₂)", bin: "out", why: "Oxygen leaves through the stomata into the air. You're breathing it right now!", hint: "The plant releases this into the air." },
+        { t: "Soil", bin: "no", why: "Soil holds water and a few minerals, but plants don't eat soil to make sugar.", hint: "Lots of people think this, but it's not part of the reaction." },
+        { t: "Chlorophyll (green pigment)", bin: "no", why: "Chlorophyll captures light. It helps, but it isn't used up, so it's not an ingredient.", hint: "This helps the reaction happen but doesn't get used up." }
+      ]
+    });
+  },
+  async box => atomAudit(box),
+  async box => {
+    addHTML(box, guide(`Now balance it. Use the <b>+</b> and <b>−</b> buttons to change how many molecules of each kind there are. We'll keep the sugar at 1 molecule. Your goal: the same number of each atom on both sides.`));
+    const r1 = await balancer(box, {
+      q: "Balance the photosynthesis equation.",
+      left: [{ k: "CO2" }, { k: "H2O" }], right: [{ k: "GLU", fixed: true }, { k: "O2" }], arrowNote: "light energy",
+      hints: ["Start with carbon. The sugar has 6 carbons. How many CO₂ molecules give you 6 carbons?", "Next, hydrogen. The sugar has 12 hydrogens, and each H₂O has 2.", "Last, oxygen. Count every oxygen on the left, then subtract the 6 inside the sugar. Each O₂ holds 2."],
+      final: "6CO₂ + 6H₂O + light energy → C₆H₁₂O₆ + 6O₂"
+    });
+    const r2 = await quizSeq(box, [
+      { q: "Before the reaction there were 18 oxygen atoms on the left. How many oxygen atoms are on the right?", opts: ["18", { t: "12", fb: "That's only the oxygen in 6 O₂. Don't forget the oxygen inside the sugar." }, { t: "6", fb: "That's only the oxygen inside the sugar." }, "24"], ans: 0, why: "6 in the sugar + 12 in the six O₂ molecules = 18. Same atoms, new arrangement. This is <b>conservation of matter</b>." },
+      { q: "Where does the energy stored in the sugar come from?", opts: ["Light energy captured by the leaf", { t: "The soil", fb: "Soil doesn't provide energy to the reaction." }, { t: "The oxygen", fb: "Oxygen is a product here, not the energy source." }, { t: "Atoms get turned into energy", fb: "Atoms are never turned into energy here. They just get rearranged." }], ans: 0, why: "Light energy gets stored as <b>chemical energy</b> in the way the sugar's atoms are joined together." }
+    ]);
+    return sum([r1, r2]);
+  }
+];
+
+/* ===== Season 2: Day and Night ===== */
+PARTS.night = [
+  async box => {
+    addHTML(box, guide(`Night falls on your garden. No light means no photosynthesis. But your plant's cells still need energy every second to stay alive and grow. They get it by breaking sugar apart with oxygen. This is <b>cellular respiration</b>, and it happens in <b>plants and animals</b>.`));
+    const r1 = await balancer(box, {
+      q: "Balance the cellular respiration equation.",
+      left: [{ k: "GLU", fixed: true }, { k: "O2" }], right: [{ k: "CO2" }, { k: "H2O" }], extraRight: "energy",
+      hints: ["Start with carbon. 6 carbons in the sugar have to end up in CO₂ molecules.", "Hydrogen: 12 hydrogens in the sugar end up in water. Each H₂O holds 2.", "Oxygen: count all the oxygen on the right, then subtract the 6 already in the sugar."],
+      final: "C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O + energy"
+    });
+    const r2 = await mcq(box, { q: "Compare the two equations. What do you notice?", extra: `<div class="bigeq" style="font-size:17px">Photosynthesis: 6CO₂ + 6H₂O + light energy → C₆H₁₂O₆ + 6O₂<br>Respiration: C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O + energy</div>`, opts: ["The products of one are the starting materials of the other", { t: "They use completely different molecules", fb: "Look again. The same four molecules show up in both." }, { t: "Respiration makes brand new atoms", fb: "Atoms are never created. Count them: both sides match." }], ans: 0, why: "Photosynthesis stores energy in sugar, and respiration releases it. The same atoms go back and forth between them." });
+    return sum([r1, r2]);
+  },
+  async box => jarSim(box),
+  async box => {
+    addHTML(box, guide(`Let's follow the <b>energy</b> from the Sun all the way through your plant.`));
+    const r1 = await orderTask(box, {
+      q: "Put the energy steps in order.",
+      items: [
+        { t: "Sunlight shines on the leaf (light energy)", hint: "Where does ALL the energy in your garden start?" },
+        { t: "Photosynthesis stores the energy in sugar (chemical energy)", hint: "What does the leaf do with the light it captures?" },
+        { t: "Sugar travels to cells that need energy", hint: "The sugar is made in leaves, but roots and stems need energy too." },
+        { t: "Cellular respiration breaks the sugar apart and releases the energy", hint: "How does a cell get the energy back out of sugar?" },
+        { t: "The cell uses the energy to grow and repair", hint: "What does the cell DO with the energy?" },
+        { t: "Some energy escapes as heat", hint: "No energy transfer is perfect. Where does the leftover go?" }
+      ]
+    });
+    const r2 = await mcq(box, { q: "The atoms in your garden get used over and over. Can your plant reuse the heat it gives off to make new sugar?", opts: ["No. Energy flows one way and leaves as heat, so plants need new sunlight every day", { t: "Yes, energy cycles just like atoms do", fb: "Atoms cycle, but energy doesn't. Heat spreads out into the environment." }, { t: "Yes, but only at night", fb: "Plants can't make sugar from heat, day or night." }], ans: 0, why: "Big idea: <b>matter cycles, energy flows</b>. The atoms stay on Earth and get reused. The energy comes in as sunlight and leaves as heat." });
+    return sum([r1, r2]);
+  }
+];
+
+function jarSVG(org, light, co2) {
+  let s = `<svg viewBox="0 0 220 230" class="jar" role="img" aria-label="sealed jar">`;
+  s += `<g opacity="${light ? 1 : .35}"><path d="M152 12 h50 l-10 22 h-30z" fill="#555"/><circle cx="177" cy="40" r="9" fill="${light ? "#ffd84d" : "#bbb"}"/>${light ? `<path d="M177 54 L150 95 M177 54 L177 100 M177 54 L200 95" stroke="#ffd84d" stroke-width="3" opacity=".75"/>` : ""}</g>`;
+  s += `<rect x="30" y="60" width="120" height="152" rx="16" fill="${light ? "#eef8ff" : "#aeb9c6"}" stroke="#7a8a99" stroke-width="3"/><rect x="40" y="48" width="100" height="16" rx="4" fill="#8a7a66"/>`;
+  s += `<rect x="34" y="182" width="112" height="26" rx="6" fill="#8b5d3d"/>`;
+  const n = Math.max(1, Math.min(24, Math.round(co2 / 35)));
+  for (let i = 0; i < n; i++) s += `<circle cx="${42 + (i * 37) % 96}" cy="${72 + (i * 53) % 100}" r="3.6" fill="#5d6b78" opacity=".55"/>`;
+  if (org !== "snail") s += `<path d="M78 184 C 76 160 80 140 78 118" stroke="#2f7a3a" stroke-width="4" fill="none"/>${leafPath(78, 165, 26, -25, "#4f9e4f")}${leafPath(78, 150, 26, -155, "#62b05c")}${leafPath(78, 132, 24, -30, "#62b05c")}${leafPath(78, 120, 18, -100, "#7cc46f")}`;
+  if (org !== "plant") s += `<g transform="translate(112 170)"><ellipse cx="0" cy="10" rx="20" ry="5" fill="#9b8a6e"/><circle cx="4" cy="2" r="10" fill="#c58b4a" stroke="#7a5426" stroke-width="2"/><path d="M4 2 m-5 0 a5 5 0 1 0 10 0 a3 3 0 1 0 -6 0" stroke="#7a5426" fill="none" stroke-width="1.5"/><path d="M-16 8 l-4 -9 M-13 8 l-1 -9" stroke="#9b8a6e" stroke-width="2"/></g>`;
+  s += `<rect x="126" y="112" width="20" height="34" rx="3" fill="#333"/><text x="136" y="132" fill="#7CFC00" font-size="7.5" text-anchor="middle" font-family="monospace">CO₂</text>`;
+  return s + "</svg>";
+}
+function chartSVG(series) {
+  const X = t => 50 + t * (570 / 60), Y = c => 190 - c * (175 / 800);
+  let s = `<rect x="50" y="15" width="570" height="175" fill="#fff" stroke="#ccc"/>`;
+  for (let i = 1; i < series.length; i++) { const a = series[i - 1], b = series[i]; s += `<rect x="${X(a.t)}" y="15" width="${X(b.t) - X(a.t) + .4}" height="175" fill="${b.light ? "#fff1bd" : "#d9e0ea"}"/>`; }
+  [0, 200, 400, 600, 800].forEach(v => { s += `<line x1="50" x2="620" y1="${Y(v)}" y2="${Y(v)}" stroke="#e5e5e5"/><text x="44" y="${Y(v) + 4}" font-size="11" text-anchor="end" fill="#666">${v}</text>`; });
+  [0, 10, 20, 30, 40, 50, 60].forEach(t => { s += `<text x="${X(t)}" y="206" font-size="11" text-anchor="middle" fill="#666">${t}</text>`; });
+  s += `<text x="335" y="219" font-size="12" text-anchor="middle" fill="#444">minutes</text><text x="14" y="104" font-size="12" text-anchor="middle" fill="#444" transform="rotate(-90 14 104)">CO₂ level</text>`;
+  if (series.length > 1) s += `<polyline points="${series.map(p => `${X(p.t)},${Y(p.c)}`).join(" ")}" fill="none" stroke="#2a6834" stroke-width="3" stroke-linejoin="round"/>`;
+  const last = series[series.length - 1]; s += `<circle cx="${X(last.t)}" cy="${Y(last.c)}" r="4.5" fill="#2a6834"/>`;
+  s += `<rect x="470" y="22" width="12" height="12" fill="#fff1bd" stroke="#ccc"/><text x="486" y="32" font-size="11">light on</text><rect x="540" y="22" width="12" height="12" fill="#d9e0ea" stroke="#ccc"/><text x="556" y="32" font-size="11">dark</text>`;
+  return s;
+}
+async function jarSim(box) {
+  addHTML(box, guide(`Time for an experiment. Scientists seal a living thing in a jar with a <b>CO₂ sensor</b>. If the CO₂ goes <b>down</b>, something is using it up (photosynthesis). If it goes <b>up</b>, something is releasing it (respiration).`));
+  const p = await predict(box, { q: "A bean plant is sealed in a jar and kept in the <b>dark</b>. What will happen to the CO₂ level?", opts: ["It goes up", "It goes down", "It stays the same"] });
+  await new Promise(res => {
+    const d = addHTML(box, `<div class="card"><p class="qtext">Run the jar experiment</p><div class="jarwrap"><div id="jarPic"></div><div class="jarside">
+      <div><b>In the jar:</b><br><div class="seg" id="org"><button data-v="plant" class="on">Bean plant</button><button data-v="snail">Snail</button><button data-v="both">Plant + snail</button></div></div>
+      <div><b>Light:</b><br><div class="seg" id="lit"><button data-v="1" class="on">On</button><button data-v="0">Off</button></div></div>
+      <div class="row"><button class="btn" id="run">Run 10 minutes</button><button class="btn alt small" id="reset">Reset jar</button></div>
+      <div class="meter">CO₂ level: <b id="co2v">400</b></div></div></div>
+      <svg id="chart" viewBox="0 0 640 225" class="chart"></svg>
+      <p class="small muted" style="margin-bottom:2px">You need these runs before the questions unlock:</p>
+      <div class="todo" id="todo"></div><ul class="log" id="log"></ul><div class="fbwrap"></div></div>`);
+    scrollIn(d);
+    const st = { org: "plant", light: 1, t: 0, co2: 400, series: [{ t: 0, c: 400, light: 1 }], runs: new Set(), busy: false };
+    const need = [["plant1", "Plant, light ON"], ["plant0", "Plant, light OFF"], ["snail", "Snail (light on or off)"]];
+    const rate = (o, l) => (o !== "snail" ? (l ? -26 + 6 : 6) : 0) + (o !== "plant" ? 8 : 0);
+    const orgName = { plant: "Bean plant", snail: "Snail", both: "Plant + snail" };
+    function draw() {
+      $("#jarPic", d).innerHTML = jarSVG(st.org, st.light, st.co2);
+      $("#chart", d).innerHTML = chartSVG(st.series);
+      $("#co2v", d).textContent = Math.round(st.co2);
+      $("#todo", d).innerHTML = need.map(([k, lab]) => `<span class="${st.runs.has(k) ? "yes" : ""}">${st.runs.has(k) ? "✓ " : ""}${lab}</span>`).join("");
+    }
+    function reset() { st.t = 0; st.co2 = 400; st.series = [{ t: 0, c: 400, light: st.light }]; draw(); }
+    $$("#org button", d).forEach(b => b.onclick = () => { if (st.busy) return; $$("#org button", d).forEach(x => x.classList.remove("on")); b.classList.add("on"); st.org = b.dataset.v; reset(); });
+    $$("#lit button", d).forEach(b => b.onclick = () => { if (st.busy) return; $$("#lit button", d).forEach(x => x.classList.remove("on")); b.classList.add("on"); st.light = +b.dataset.v; draw(); });
+    $("#reset", d).onclick = () => { if (!st.busy) reset(); };
+    $("#run", d).onclick = async () => {
+      if (st.busy) return;
+      if (st.t >= 60) { $(".fbwrap", d).innerHTML = `<div class="fb info">This jar has an hour of data. Press <b>Reset jar</b> to start a new one.</div>`; return; }
+      st.busy = true; $("#run", d).disabled = true; $(".fbwrap", d).innerHTML = "";
+      const a = st.co2;
+      for (let k = 0; k < 10; k++) {
+        await sleep(110); if (!d.isConnected) return;
+        st.t++; st.co2 = Math.max(40, st.co2 + rate(st.org, st.light)); st.series.push({ t: st.t, c: st.co2, light: st.light }); draw();
+      }
+      const b = st.co2, diff = Math.round(b - a);
+      $("#log", d).insertAdjacentHTML("beforeend", `<li>${orgName[st.org]}, light ${st.light ? "on" : "off"}: ${Math.round(a)} → ${Math.round(b)} <b>(${diff > 0 ? "up " + diff : diff < 0 ? "down " + -diff : "no change"})</b></li>`);
+      if (st.org === "plant") st.runs.add("plant" + st.light);
+      if (st.org === "snail") st.runs.add("snail");
+      st.busy = false; $("#run", d).disabled = false; draw();
+      if (need.every(([k]) => st.runs.has(k)) && !$("#ready", d)) {
+        const w = addHTML(d.firstChild, `<div class="row end"><button class="btn sun" id="ready">I have my data. Show me the questions →</button></div>`);
+        scrollIn(w);
+        $("#ready", d).onclick = () => { $$("button", d).forEach(x => x.disabled = true); res(); };
+      }
+    };
+    draw();
+  });
+  const predTxt = ["it would go up", "it would go down", "it would stay the same"][p];
+  addHTML(box, guide(`You predicted that in the dark ${predTxt}. Your data showed it <b>went up</b>. ${p === 0 ? "Great prediction!" : "That's surprising to a lot of people. Let's figure out why."}`));
+  return quizSeq(box, [
+    { q: "In the dark, the plant jar's CO₂ went up. What process caused that?", opts: ["Cellular respiration", { t: "Photosynthesis", fb: "Photosynthesis USES CO₂, and it can't happen without light." }, { t: "The plant was breathing in CO₂", fb: "If the plant took CO₂ in, the level would go down." }], ans: 0, why: "Without light, only respiration happens. It releases CO₂, just like the snail did." },
+    { q: "In the light, the plant jar's CO₂ went down. Is the plant still doing respiration in the light?", opts: ["Yes. Respiration never stops, but photosynthesis uses CO₂ faster than respiration makes it", { t: "No, plants only do respiration at night", fb: "Plant cells need energy every second, day and night." }, { t: "No, plants never do respiration", fb: "Your dark-jar data shows plants DO release CO₂." }], ans: 0, why: "Both processes run in the daytime. Photosynthesis is just faster, so the jar loses CO₂ overall." },
+    { q: "Plant + snail in the light: what happens to the CO₂? (Try it if you're not sure!)", opts: ["It goes down, because the plant uses more CO₂ than both of them release", { t: "It goes up, because two living things are breathing", fb: "Run it and check. Photosynthesis is fast!" }, { t: "It stays exactly the same", fb: "The rates don't cancel out exactly. Run it to see." }], ans: 0, why: "In light, the plant's photosynthesis uses up more CO₂ than the snail and the plant release. This is why plants and animals depend on each other." }
+  ]);
+}
+
+/* ===== Season 3: Follow the Carbon ===== */
+const CYC = [["Air", "CO₂ in the air"], ["Leaf", "enters the leaf"], ["Sugar", "built into sugar"], ["Seed", "stored in a seed"], ["Rabbit", "eats the seed"], ["Rabbit cell", "respiration"]];
+function cycleSVG(done) {
+  const cx = 320, cy = 150, rx = 235, ry = 108;
+  const P = k => { const a = (-90 + 60 * k) * Math.PI / 180; return [cx + rx * Math.cos(a), cy + ry * Math.sin(a)]; };
+  let s = `<svg viewBox="0 0 640 300" class="scene" role="img" aria-label="carbon cycle"><defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="context-stroke"/></marker></defs><rect width="640" height="300" fill="#f4f9f1"/>`;
+  s += `<text x="320" y="146" text-anchor="middle" font-size="17" font-weight="800" fill="#2a6834">Matter cycles</text><text x="320" y="166" text-anchor="middle" font-size="13" fill="#6c6457">follow one carbon atom</text>`;
+  for (let k = 0; k < 6; k++) {
+    const a = P(k), b = P((k + 1) % 6);
+    const sx = a[0] + (b[0] - a[0]) * .3, sy = a[1] + (b[1] - a[1]) * .3, ex = a[0] + (b[0] - a[0]) * .7, ey = a[1] + (b[1] - a[1]) * .7;
+    const mx = (sx + ex) / 2, my = (sy + ey) / 2, qx = cx + (mx - cx) * 1.12, qy = cy + (my - cy) * 1.12;
+    const on = k < done;
+    s += `<path d="M${sx} ${sy} Q ${qx} ${qy} ${ex} ${ey}" fill="none" stroke="${on ? "#3d8b4a" : "#c9bfa9"}" stroke-width="${on ? 4 : 2.5}" ${on ? "" : 'stroke-dasharray="6 6"'} marker-end="url(#ah)"/>`;
+  }
+  for (let k = 0; k < 6; k++) {
+    const [x, y] = P(k); const cur = (done % 6) === k; const vis = k <= done;
+    s += `<g><rect x="${x - 62}" y="${y - 24}" width="124" height="48" rx="12" fill="${cur ? "#fdf1cc" : vis ? "#e1f1dc" : "#fff"}" stroke="${cur ? "#f0b429" : vis ? "#3d8b4a" : "#d8ccb4"}" stroke-width="${cur ? 3 : 2}"/><text x="${x}" y="${y - 3}" text-anchor="middle" font-size="15" font-weight="800" fill="#2b2924">${CYC[k][0]}</text><text x="${x}" y="${y + 14}" text-anchor="middle" font-size="11.5" fill="#6c6457">${CYC[k][1]}</text></g>`;
+    if (cur) s += `<g><circle cx="${x + 54}" cy="${y - 22}" r="12" fill="#333" stroke="#f0b429" stroke-width="3"/><text x="${x + 54}" y="${y - 17.5}" text-anchor="middle" font-size="13" font-weight="800" fill="#fff">C</text></g>`;
+  }
+  return s + "</svg>";
+}
+PARTS.carbon = [
+  async box => {
+    addHTML(box, guide(`For this season, <b>you are a carbon atom</b>. Follow your own path through the garden. Make the right choice at each step to keep moving.`));
+    const dia = addHTML(box, `<div class="card">${cycleSVG(0)}</div>`);
+    const qa = document.createElement("div"); box.appendChild(qa);
+    const steps = [
+      { q: "You're one carbon atom inside a CO₂ molecule drifting over the garden. How do you get into the plant?", opts: ["Through tiny pores on the leaf called stomata", { t: "Up through the roots, from the soil", fb: "Roots take in water and minerals. CO₂ is a gas in the air." }, { t: "Through the petals of a flower", fb: "Flowers are for making seeds. Gases go in and out through stomata on leaves." }], why: "Stomata open to let CO₂ in and O₂ out." },
+      { q: "You're inside a chloroplast in the leaf, and light is shining. What happens to you?", opts: ["Light energy is used to join me with other atoms into a sugar molecule", { t: "I get turned into energy", fb: "Atoms don't turn into energy. Light energy gets stored in the sugar you become part of." }, { t: "I change into an oxygen atom", fb: "Atoms never change into a different element in living things. Carbon stays carbon." }], why: "You're now one of the 6 carbons in C₆H₁₂O₆." },
+      { q: "The plant made more sugar than it needs right now. Where could you end up?", opts: ["Stored in a seed as food for the baby plant", { t: "Deleted, since the plant doesn't need it", fb: "Matter can't be destroyed. Extra sugar gets stored or used to build the plant." }, { t: "Pushed out of the roots as waste", fb: "Plants save their extra sugar. It took energy to make!" }], why: "Plants store extra sugar as starch in seeds, fruits, and roots. They also use it to build stems and leaves." },
+      { q: "A rabbit eats the seed. Your sugar molecule is digested and carried by the blood to a muscle cell. What does the cell do with it?", opts: ["Breaks it apart with oxygen to release energy (cellular respiration)", { t: "Turns it into sunlight", fb: "Cells can't make sunlight. They release the chemical energy stored in the sugar." }, { t: "Keeps it there forever", fb: "Some carbon does get built into the rabbit's body, but this sugar is being used for energy." }], why: "The rabbit runs on the same reaction your plant uses at night." },
+      { q: "Respiration is done. How do you leave the rabbit?", opts: ["As part of CO₂ when the rabbit breathes out", { t: "As oxygen gas", fb: "You're a carbon atom, and carbon stays carbon. Respiration puts carbon into CO₂." }, { t: "As heat", fb: "Heat is energy, not matter. You're an atom, so you leave inside a molecule." }], why: "You're back in the air as CO₂!" }
+    ];
+    const out = [];
+    for (let i = 0; i < steps.length; i++) {
+      qa.innerHTML = "";
+      out.push(await mcq(qa, { ...steps[i], ans: 0, label: `Step ${i + 1} of 5` }));
+      dia.innerHTML = `<div class="card">${cycleSVG(i + 1)}</div>`;
+    }
+    qa.innerHTML = "";
+    addHTML(qa, guide(`You made it all the way around! You ended up <b>exactly where you started</b>: in the air as CO₂. Atoms cycle again and again. You might have been in a dinosaur once! But the <b>energy</b> that moved you around didn't cycle. It came from the Sun and left as heat.`));
+    await waitBtn(qa);
+    return sum(out);
+  },
+  async box => {
+    addHTML(box, guide(`Here's a famous puzzle. Around the year 1640, a scientist named <b>Jan van Helmont</b> planted a small willow tree in a pot of dry soil. He gave it only water for 5 years. Then he weighed everything again.`));
+    const X = v => 60 + v * 5;
+    const chart = `<svg viewBox="0 0 640 170" class="scene" role="img" aria-label="van Helmont data"><rect width="640" height="170" fill="#fff"/>
+      <text x="10" y="35" font-size="14" font-weight="700">Tree, before</text><rect x="${X(0)}" y="22" width="${2.3 * 5}" height="20" fill="#9bcf8f"/><text x="${X(2.3) + 8}" y="37" font-size="14">2.3 kg</text>
+      <text x="10" y="70" font-size="14" font-weight="700">Tree, after</text><rect x="${X(0)}" y="57" width="${76.7 * 5}" height="20" fill="#3d8b4a"/><text x="${X(76.7) + 8}" y="72" font-size="14">76.7 kg</text>
+      <text x="10" y="115" font-size="14" font-weight="700">Soil, before</text><rect x="${X(0)}" y="102" width="${90.7 * 5}" height="20" fill="#b38a63"/><text x="${X(90.7) + 8}" y="117" font-size="14">90.7 kg</text>
+      <text x="10" y="150" font-size="14" font-weight="700">Soil, after</text><rect x="${X(0)}" y="137" width="${90.64 * 5}" height="20" fill="#8b5d3d"/><text x="${X(90.64) + 8}" y="152" font-size="14">90.64 kg</text></svg>`;
+    return quizSeq(box, [
+      { q: "Look at the data. How did the tree and the soil change?", extra: chart, opts: ["The tree gained about 74 kg, and the soil lost only about 0.06 kg (60 grams)", { t: "The tree gained about 74 kg, and the soil lost about 74 kg", fb: "Check the soil bars again. They're almost the same." }, { t: "The tree gained about 2 kg", fb: "Subtract: 76.7 minus 2.3." }], ans: 0, why: "The soil barely changed at all!" },
+      { q: "So where did most of the tree's new mass come from?", opts: ["Carbon dioxide from the air and water, joined together by photosynthesis", { t: "The soil", fb: "The soil lost about 60 grams. That can't explain 74 kilograms." }, { t: "Sunlight", fb: "Sunlight is energy. It has no atoms, so it has no mass to add. It powers the building." }, { t: "Only the water", fb: "Water adds hydrogen and oxygen. But wood is full of carbon. Where does that come from?" }], ans: 0, why: "Wood is mostly carbon, hydrogen, and oxygen. The carbon comes from CO₂ in the air. Van Helmont guessed it was all water, because nobody knew about CO₂ yet!" },
+      { q: "Which ingredient in the photosynthesis equation brings in the carbon atoms?", opts: ["CO₂", { t: "H₂O", fb: "Look at the formula: H₂O has no C." }, { t: "Light energy", fb: "Light is energy, not atoms." }, { t: "O₂", fb: "O₂ is a product, and it only contains oxygen." }], ans: 0, why: "A tree is basically built out of air (plus water), powered by sunlight." }
+    ]);
+  }
+];
+
+/* ===== Season 4: Isotope Detectives ===== */
+function nucleus(cx, cy, p, n) {
+  let s = ""; let pc = 0, nc = 0; const tot = p + n;
+  for (let i = 0; i < tot; i++) {
+    const isP = (i % 2 === 0 && pc < p) || nc >= n; if (isP) pc++; else nc++;
+    const r = 6.3 * Math.sqrt(i), th = i * 2.39996;
+    s += `<circle cx="${(cx + r * Math.cos(th)).toFixed(1)}" cy="${(cy + r * Math.sin(th)).toFixed(1)}" r="6.5" fill="${isP ? "#d9473a" : "#9aa3ad"}" stroke="#444" stroke-width="1"/>`;
+  }
+  return s;
+}
+PARTS.iso = [
+  async box => {
+    addHTML(box, guide(`Atoms are way too small to see. So how can scientists know where an atom goes inside a plant? They use <b>isotopes</b>.`));
+    addHTML(box, `<div class="card"><div class="iso">
+      <div><svg viewBox="0 0 120 120" width="150" height="150">${nucleus(60, 60, 8, 8)}</svg><p><b>Oxygen-16</b><br>8 protons + 8 neutrons<br><span class="muted small">almost all oxygen</span></p></div>
+      <div><svg viewBox="0 0 120 120" width="150" height="150">${nucleus(60, 60, 8, 10)}<circle cx="60" cy="60" r="34" fill="none" stroke="#e59a00" stroke-width="4" stroke-dasharray="5 4"/></svg><p><b>Oxygen-18</b><br>8 protons + 10 neutrons<br><span class="muted small">rare, a little heavier</span></p></div></div>
+      <p class="center small"><span style="color:#d9473a">●</span> proton &nbsp; <span style="color:#9aa3ad">●</span> neutron</p>
+      <p>Both are still oxygen, because both have <b>8 protons</b>. Plants use them in exactly the same way. But oxygen-18 is slightly heavier, so a machine can tell them apart. It's like putting a <b>tracking tag</b> on an atom. In this game, a <b style="color:#b07d00">gold ring</b> marks a tagged atom.</p></div>`);
+    return quizSeq(box, [
+      { q: "Why do isotopes work as tracking tags?", opts: ["They act the same in reactions, but scientists can detect them", { t: "They glow in the dark so you can see them", fb: "Most isotopes don't glow. Scientists use machines that sort atoms by weight, or that detect radiation from some isotopes." }, { t: "Plants grow faster with them", fb: "Plants treat them like normal atoms. That's the whole point." }], ans: 0, why: "A good tag doesn't change what the atom does. It just lets you find it later." },
+      { q: "An atom has 8 protons and 10 neutrons. What element is it?", opts: ["Oxygen", { t: "Neon", fb: "The number of PROTONS decides the element, not the total." }, { t: "Fluorine", fb: "The number of PROTONS decides the element. Fluorine has 9." }], ans: 0, why: "8 protons means oxygen, every time. Extra neutrons just make it a heavier isotope." }
+    ]);
+  },
+  async box => o18Lab(box),
+  async box => c14Track(box)
+];
+function o18Lab(box) {
+  addHTML(box, guide(`<b>The big question:</b> plants give off oxygen gas (O₂). But <b>both</b> CO₂ and H₂O contain oxygen atoms. Which one does the O₂ come from? Let's use oxygen-18 to find out.`));
+  return predict(box, { q: "Your prediction: where does the oxygen gas come from?", opts: ["From the CO₂", "From the H₂O", "Half from each"] }).then(p => new Promise(res => {
+    const d = addHTML(box, `<div class="card"><p class="qtext">Run both experiments. Watch where the gold-ringed oxygen-18 atoms end up.</p>
+      <div class="row"><button class="btn" data-x="water">Experiment A: tag the oxygen in WATER</button><button class="btn" data-x="co2">Experiment B: tag the oxygen in CO₂</button></div>
+      <div class="lab" id="lab"></div><div class="results" id="res"></div><div class="fbwrap"></div></div>`);
+    scrollIn(d);
+    const done = {};
+    function labHTML(x, phase) {
+      const tw = x === "water", tc = x === "co2";
+      const ins = `<div class="col"><h4>Fed to the plant</h4><div class="pics fade ${phase >= 1 ? "gone" : ""}" style="max-width:none">${Array(6).fill(mol("CO2", tc ? "O" : "")).join("")}${Array(6).fill(mol("H2O", tw ? "O" : "")).join("")}</div><p class="small muted">${tw ? "Water has the tag" : "CO₂ has the tag"}</p></div>`;
+      const leaf = `<div class="center"><svg viewBox="0 0 120 90" width="140" class="${phase === 1 ? "leafglow" : ""}">${leafPath(10, 45, 100, 0, "#4f9e4f")}<path d="M10 45 H105" stroke="#2a6834" stroke-width="2"/></svg><div class="small muted">${phase === 1 ? "making sugar..." : phase >= 2 ? "done" : "leaf"}</div></div>`;
+      const sugT = tc && phase >= 3, o2T = tw && phase >= 3;
+      const outs = `<div class="col"><h4>Products</h4>${phase >= 2 ? `<div class="pics" style="max-width:none">${mol("GLU", tc ? "O" : "")}</div><div class="det">Sugar: tag detector<div class="detbar"><i style="width:${phase >= 3 ? (sugT ? 96 : 2) : 0}%"></i></div></div><div class="pics" style="max-width:none;margin-top:8px">${Array(6).fill(mol("O2", tw ? "O" : "")).join("")}</div><div class="det">Oxygen gas: tag detector<div class="detbar"><i style="width:${phase >= 3 ? (o2T ? 96 : 2) : 0}%"></i></div></div>` : `<p class="muted small">waiting...</p>`}</div>`;
+      return ins + leaf + outs;
+    }
+    function results() {
+      const rows = [["water", "A: tagged water"], ["co2", "B: tagged CO₂"]].map(([k, lab]) => `<tr><td>${lab}</td><td>${done[k] ? (k === "water" ? "<b>YES, tagged</b>" : "no tag") : "?"}</td><td>${done[k] ? (k === "co2" ? "<b>YES, tagged</b>" : "no tag") : "?"}</td></tr>`).join("");
+      $("#res", d).innerHTML = `<table><tr><th>Experiment</th><th>Tag found in O₂ gas?</th><th>Tag found in sugar?</th></tr>${rows}</table>`;
+    }
+    results();
+    $$("button[data-x]", d).forEach(b => b.onclick = async () => {
+      $$("button[data-x]", d).forEach(x => x.disabled = true);
+      const x = b.dataset.x, lab = $("#lab", d);
+      lab.innerHTML = labHTML(x, 0); await sleep(500);
+      $(".col .pics", lab).classList.add("gone");
+      $("svg", lab.children[1]).classList.add("leafglow");
+      $(".small", lab.children[1]).textContent = "making sugar...";
+      await sleep(1100);
+      for (const ph of [2, 3]) {
+        if (!d.isConnected) return;
+        lab.innerHTML = labHTML(x, ph);
+        await sleep(800);
+      }
+      done[x] = true; results();
+      $$("button[data-x]", d).forEach(y => y.disabled = false);
+      if (done.water && done.co2 && !$("#go2", d)) {
+        const w = addHTML(d.firstChild, `<div class="row end"><button class="btn sun" id="go2">I've run both. Show me the questions →</button></div>`);
+        scrollIn(w);
+        $("#go2", d).onclick = () => { $$("button", d).forEach(z => z.disabled = true); res(p); };
+      }
+    });
+  })).then(p => {
+    addHTML(box, guide(`You predicted ${["the CO₂", "the water", "half from each"][p]}. ${p === 1 ? "Your data backs you up!" : "Let's see what your data says."}`));
+    return quizSeq(box, [
+      { q: "Based on your experiments, where does the oxygen gas come from?", opts: ["From the water. When the water was tagged, the O₂ was tagged", { t: "From the CO₂", fb: "When the CO₂ was tagged, the O₂ had no tag. Check the results table." }, { t: "Half from each", fb: "If that were true, BOTH experiments would show tagged O₂." }], ans: 0, why: "The plant splits water apart, releases its oxygen as O₂, and uses the hydrogen to help build sugar. Scientists Samuel Ruben and Martin Kamen did a real experiment like this in 1941." },
+      { q: "In Experiment B, where did the tagged oxygen from CO₂ end up?", opts: ["In the sugar", { t: "In the oxygen gas", fb: "Look at the O₂ detector for Experiment B." }, { t: "It disappeared", fb: "Atoms can't disappear. The detector found them somewhere!" }], ans: 0, why: "The oxygen atoms from CO₂ get built into the sugar along with the carbon." }
+    ]);
+  });
+}
+function c14Scene() {
+  return `<svg viewBox="0 0 640 290" class="scene" role="img" aria-label="plant and rabbit"><rect width="640" height="290" fill="#e3f1ec"/><rect y="215" width="640" height="75" fill="#8b5d3d"/><rect y="215" width="640" height="7" fill="#6f9e4f"/><circle cx="58" cy="46" r="24" fill="#f6c443"/>
+  <g id="z-air"><text x="96" y="40" font-size="13" font-weight="700" fill="#555">CO₂ with carbon-14</text>${[0, 1, 2, 3].map(k => `<g transform="translate(${110 + k * 34} ${52 + (k % 2) * 14}) scale(.55)">${mol("CO2").replace('class="mol"', "")}</g>`).join("")}</g>
+  <g id="z-roots" stroke="#e8dcc0" stroke-width="3" fill="none"><path d="M240 215 q -6 22 -22 36"/><path d="M240 215 q 6 26 20 40"/><path d="M240 215 q 0 30 -3 52"/></g>
+  <g id="z-stem"><path d="M240 215 C 236 170 244 130 240 90" stroke="#2f7a3a" stroke-width="7" fill="none"/></g>
+  <g id="z-leaves">${leafPath(240, 180, 46, -20, "#4f9e4f")}${leafPath(240, 160, 46, -160, "#62b05c")}${leafPath(240, 130, 42, -25, "#62b05c")}${leafPath(240, 112, 40, -155, "#4f9e4f")}${leafPath(240, 92, 30, -95, "#7cc46f")}</g>
+  <g id="z-seeds">${[[262, 150], [218, 140], [266, 118]].map(([x, y], k) => `<path d="M${x} ${y} q ${k === 1 ? -5 : 5} 18 ${k === 1 ? -2 : 2} 34" stroke="#3c8a3c" stroke-width="7" fill="none" stroke-linecap="round"/>`).join("")}</g>
+  <g id="z-rabbit" transform="translate(470 178)"><ellipse cx="0" cy="12" rx="40" ry="26" fill="#cbb79c" stroke="#8a7458" stroke-width="2"/><circle cx="40" cy="-8" r="17" fill="#cbb79c" stroke="#8a7458" stroke-width="2"/><ellipse cx="34" cy="-36" rx="5" ry="18" fill="#cbb79c" stroke="#8a7458" stroke-width="2"/><ellipse cx="46" cy="-36" rx="5" ry="18" fill="#cbb79c" stroke="#8a7458" stroke-width="2"/><circle cx="46" cy="-11" r="2.5" fill="#333"/><circle cx="-40" cy="8" r="7" fill="#fff" stroke="#8a7458"/></g>
+  <g id="z-breath" opacity="0"><circle cx="545" cy="160" r="8" fill="#fff" opacity=".8"/><circle cx="562" cy="150" r="11" fill="#fff" opacity=".8"/><text x="582" y="146" font-size="13" font-weight="700" fill="#555">CO₂</text></g>
+  <text x="240" y="282" text-anchor="middle" font-size="12" fill="#f4eee1">roots</text><text x="470" y="242" text-anchor="middle" font-size="12" fill="#2b2924">rabbit</text></svg>`;
+}
+async function c14Track(box) {
+  addHTML(box, guide(`New case. <b>Carbon-14</b> is a carbon isotope that gives off tiny bits of radiation. A detector can find it, like a metal detector beeping. We'll give your plant CO₂ made with carbon-14 for one hour, then follow it.`));
+  const sc = addHTML(box, `<div class="card">${c14Scene()}<p class="center beep" id="beep">Detector: waiting...</p></div>`);
+  const hot = ids => { $$("#z-air,#z-leaves,#z-stem,#z-roots,#z-seeds,#z-rabbit,#z-breath", sc).forEach(g => g.classList.remove("hot")); ids.forEach(id => { const g = $("#z-" + id, sc); g.classList.add("hot"); if (id === "breath") g.setAttribute("opacity", "1"); }); };
+  hot(["air"]);
+  const qa = document.createElement("div"); box.appendChild(qa);
+  const steps = [
+    { q: "1 hour later: where is the detector beeping loudest?", opts: ["In the leaves, inside new sugar", { t: "In the roots", fb: "Later, maybe! But sugar gets made in the leaves first." }, { t: "In the soil", fb: "The CO₂ went into the leaves, not the soil." }], why: "The carbon-14 entered through the stomata and got built into sugar.", show: ["leaves"], beep: "Detector: BEEP BEEP in the leaves" },
+    { q: "2 weeks later: where else will the detector beep now?", opts: ["In the stem, roots, and bean pods the plant built", { t: "Nowhere, because it got used up", fb: "Atoms don't get used up. They move." }, { t: "Still only in the leaves", fb: "Sugar travels through the plant to wherever it's needed." }], why: "Sugar moved from the leaves to build the rest of the plant, and some got stored in the seeds.", show: ["leaves", "stem", "roots", "seeds"], beep: "Detector: beeping all over the plant" },
+    { q: "A rabbit eats the bean pods. Later, scientists test the air the rabbit breathes out. What do they find?", opts: ["Carbon-14 in the CO₂ the rabbit exhales", { t: "Carbon-14 in the oxygen the rabbit exhales", fb: "Carbon can't become part of O₂. Carbon leaves inside CO₂." }, { t: "No carbon-14, because the rabbit destroyed it", fb: "Animals can't destroy atoms either." }], why: "The rabbit's cells used the sugar for respiration and breathed out the carbon as CO₂. The atom is back in the air!", show: ["rabbit", "breath"], beep: "Detector: BEEP BEEP in the rabbit's breath" },
+    { q: "A farmer wants to know if her tomato plants send sugar from their leaves into the tomatoes. Which experiment would work?", opts: ["Give the leaves CO₂ made with carbon-14, then test the tomatoes", { t: "Tag the water in the soil, then test the oxygen in the air", fb: "That tracks where water's oxygen goes, not where sugar goes." }, { t: "Shine extra light and weigh the tomatoes", fb: "That shows growth, but it can't prove the sugar MOVED from the leaves." }], why: "Tag it where it starts, then check where it ends up. That's isotope tracing!", show: [], beep: "Detector: case closed" }
+  ];
+  const out = [];
+  for (const s of steps) {
+    qa.innerHTML = "";
+    out.push(await mcq(qa, { ...s, ans: 0 }));
+    if (s.show.length) hot(s.show);
+    $("#beep", sc).textContent = s.beep;
+  }
+  return sum(out);
+}
+
+/* ===== Season 5: Seed Launch ===== */
+const DESIGNS = [
+  { id: "fluff", name: "Fluffy parachute", cost: 4, note: "super light, rides the wind" },
+  { id: "wing", name: "Spinning wing", cost: 6, note: "helicopter wing, glides on wind" },
+  { id: "husk", name: "Floating husk", cost: 24, note: "big, waterproof, full of air" },
+  { id: "hook", name: "Hooks", cost: 8, note: "sticks to animal fur" },
+  { id: "fruit", name: "Sweet fruit", cost: 12, note: "tasty, animals eat it" },
+  { id: "plain", name: "Plain heavy seed", cost: 3, note: "cheapest, just drops" }
+];
+const BUDGET = 120;
+function seedIcon(id, sz = 38) {
+  const w = `<svg viewBox="0 0 40 40" width="${sz}" height="${sz}" aria-hidden="true">`;
+  if (id === "fluff") return w + `<line x1="20" y1="31" x2="20" y2="15" stroke="#998"/>${[...Array(9)].map((_, k) => { const a = (-170 + k * 20) * Math.PI / 180; return `<line x1="20" y1="15" x2="${(20 + 13 * Math.cos(a)).toFixed(1)}" y2="${(15 + 13 * Math.sin(a)).toFixed(1)}" stroke="#aaa" stroke-width="1.5"/>`; }).join("")}<ellipse cx="20" cy="33" rx="2.5" ry="4.5" fill="#7a5a2a"/></svg>`;
+  if (id === "wing") return w + `<path d="M12 30 C 14 14 26 6 34 6 C 32 16 22 26 12 30Z" fill="#d8b77a" stroke="#9a7a42"/><ellipse cx="11" cy="31" rx="5" ry="4" fill="#9a6a32"/></svg>`;
+  if (id === "husk") return w + `<ellipse cx="20" cy="21" rx="15" ry="13" fill="#8a5f34" stroke="#5c3c20" stroke-width="1.5"/><path d="M9 16 Q20 10 31 16 M7 22 Q20 16 33 22 M9 28 Q20 23 31 28" stroke="#6b4626" fill="none"/></svg>`;
+  if (id === "hook") return w + `<circle cx="20" cy="20" r="8" fill="#8a6a3a"/>${[...Array(10)].map((_, k) => { const a = k * 36 * Math.PI / 180; const x1 = 20 + 8 * Math.cos(a), y1 = 20 + 8 * Math.sin(a), x2 = 20 + 15 * Math.cos(a), y2 = 20 + 15 * Math.sin(a); return `<path d="M${x1.toFixed(1)} ${y1.toFixed(1)} L${x2.toFixed(1)} ${y2.toFixed(1)} q 2 -2 1 -4" stroke="#6b4626" stroke-width="1.6" fill="none"/>`; }).join("")}</svg>`;
+  if (id === "fruit") return w + `<path d="M20 12 q 2 -6 6 -8" stroke="#5a3" stroke-width="2" fill="none"/><path d="M22 7 q 7 -2 9 3 q -6 2 -9 -3" fill="#5a3"/><circle cx="20" cy="24" r="12" fill="#c9473a"/><circle cx="16" cy="20" r="3" fill="#fff" opacity=".45"/></svg>`;
+  return w + `<ellipse cx="20" cy="24" rx="7" ry="6" fill="#7a5a2a" stroke="#4e3618"/></svg>`;
+}
+const ENVS = [
+  { name: "Round 1: Windy Meadow", desc: "Open grassland with strong breezes all day. Few animals live here. Sunny open spots are scattered far across the field.", parent: [90, 205],
+    good: [[215, 214, 105, 24], [380, 226, 110, 22], [520, 212, 100, 26]], bad: [[50, 210, 90, 26], [300, 240, 55, 16]],
+    p: { fluff: .55, wing: .5, husk: .02, hook: .12, fruit: .18, plain: .03 },
+    why: "Strong wind carries light seeds far. Parachutes are cheap, so the plant can make lots of them, and many reach sunny spots. Heavy husks and fruits mostly drop near the parent, since few animals visit." },
+  { name: "Round 2: Riverbank", desc: "Your plant grows right at the edge of a river. Tall trees block most of the wind. The river flows toward sunny sandbars downstream.", parent: [80, 152],
+    good: [[440, 146, 120, 12], [500, 222, 110, 12]], bad: [[150, 172, 260, 34], [110, 70, 280, 40], [50, 142, 70, 12]],
+    p: { fluff: .06, wing: .08, husk: .9, hook: .1, fruit: .25, plain: .03 },
+    why: "The river is the best delivery truck here. A floating husk is expensive, but almost every one rides the current to a sunny sandbar. Light seeds get stuck in the trees, and there's no wind to carry them." },
+  { name: "Round 3: Forest Edge", desc: "Your plant lives under a shady forest canopy. Birds and deer pass through on their way to a sunny clearing.", parent: [130, 212],
+    good: [[390, 214, 110, 26], [520, 222, 100, 24]], bad: [[40, 214, 260, 30], [30, 50, 280, 60]],
+    p: { fluff: .05, wing: .1, husk: .02, hook: .35, fruit: .65, plain: .02 },
+    why: "No wind or river here, but lots of animals. Birds eat sweet fruit and drop the seeds in the sunny clearing. Hooked seeds hitch rides on deer fur. Wind seeds get caught in the branches." }
+];
+function envSVG(i) {
+  const e = ENVS[i]; const [px, py] = e.parent;
+  let s = `<svg viewBox="0 0 640 280" class="envsvg" role="img" aria-label="${e.name}">`;
+  if (i === 0) {
+    s += `<rect width="640" height="280" fill="#d8eef9"/><circle cx="590" cy="44" r="22" fill="#f6c443"/>${[[110, 60], [250, 90], [400, 55], [300, 140]].map(([x, y]) => `<path d="M${x} ${y} q 30 -12 60 0 t 60 0" stroke="#fff" stroke-width="3" fill="none" opacity=".9"/>`).join("")}<text x="470" y="110" font-size="13" fill="#5b7f99">wind →</text><rect y="205" width="640" height="75" fill="#88b85a"/>`;
+    s += `<ellipse cx="320" cy="248" rx="30" ry="9" fill="#9a9a9a"/><ellipse cx="338" cy="244" rx="14" ry="7" fill="#b3b3b3"/>`;
+  } else if (i === 1) {
+    s += `<rect width="640" height="280" fill="#dbeef6"/>${[...Array(9)].map((_, k) => `<circle cx="${100 + k * 34}" cy="${78 + (k % 2) * 12}" r="26" fill="#3f7a44"/>`).join("")}<rect y="118" width="640" height="44" fill="#9cc56d"/><rect y="160" width="640" height="56" fill="#6aaad8"/>${[160, 300, 440].map(x => `<path d="M${x} 188 h40 m-8 -6 l8 6 l-8 6" stroke="#fff" stroke-width="2.5" fill="none"/>`).join("")}<rect y="214" width="640" height="66" fill="#9cc56d"/>`;
+    s += `<ellipse cx="500" cy="153" rx="70" ry="9" fill="#e9d59a"/><ellipse cx="555" cy="227" rx="65" ry="9" fill="#e9d59a"/><text x="500" y="140" font-size="12" text-anchor="middle" fill="#7a6326">sunny sandbar</text>`;
+  } else {
+    s += `<rect width="640" height="280" fill="#d6ead2"/><rect x="0" y="0" width="340" height="280" fill="#3d5c3b"/>${[...Array(8)].map((_, k) => `<circle cx="${20 + k * 44}" cy="${60 + (k % 3) * 18}" r="40" fill="#2e4a2c"/>`).join("")}<rect y="212" width="640" height="68" fill="#4c6b3a"/><rect x="350" y="212" width="290" height="68" fill="#8dbf5c"/><circle cx="590" cy="40" r="20" fill="#f6c443"/><text x="495" y="200" font-size="12" text-anchor="middle" fill="#3b5d24">sunny clearing</text>`;
+    s += `<g transform="translate(330 188)"><ellipse cx="0" cy="0" rx="22" ry="11" fill="#a87a4a"/><path d="M-14 8 v18 M-6 8 v18 M8 8 v18 M15 8 v18" stroke="#8a5f34" stroke-width="3"/><circle cx="24" cy="-10" r="7" fill="#a87a4a"/><path d="M24 -16 l-4 -10 M28 -16 l4 -10" stroke="#6b4626" stroke-width="2"/></g><g transform="translate(300 120)"><path d="M0 0 q 10 -8 20 0 q 10 -8 20 0" stroke="#222" stroke-width="2.5" fill="none"/></g>`;
+  }
+  e.good.forEach(([x, y, w, h]) => { s += `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="#fff7b0" opacity=".45" stroke="#c9a400" stroke-dasharray="4 4"/>`; });
+  s += `<g><path d="M${px} ${py} v -60" stroke="#2f7a3a" stroke-width="5"/>${leafPath(px, py - 20, 26, -25, "#4f9e4f")}${leafPath(px, py - 32, 26, -155, "#62b05c")}${leafPath(px, py - 48, 22, -40, "#62b05c")}<circle cx="${px}" cy="${py - 62}" r="7" fill="#f0b429"/><text x="${px}" y="${py + 16}" font-size="11" text-anchor="middle" fill="#fff">parent</text></g>`;
+  s += `<g id="seedlayer"></g></svg>`;
+  return s;
+}
+function animateSeeds(svg, env, design, n, p) {
+  return new Promise(res => {
+    const layer = $("#seedlayer", svg); const [px, py] = env.parent;
+    const col = design === "fruit" ? "#c9473a" : design === "fluff" ? "#f4f4f4" : design === "husk" ? "#8a5f34" : "#7a5a2a";
+    const r = design === "husk" ? 6 : design === "fruit" ? 4.5 : 3.2;
+    const seeds = []; let sprouted = 0;
+    for (let i = 0; i < n; i++) {
+      const ok = Math.random() < p; if (ok) sprouted++;
+      const z = ok ? pick(env.good) : (design === "plain" ? [px - 40, py, 80, 12] : pick(env.bad));
+      const c = document.createElementNS(NS, "circle"); c.setAttribute("r", r); c.setAttribute("fill", col); c.setAttribute("stroke", "#333"); c.setAttribute("stroke-width", ".8"); c.setAttribute("cx", px); c.setAttribute("cy", py - 62); layer.appendChild(c);
+      seeds.push({ c, ok, tx: z[0] + Math.random() * z[2], ty: z[1] + Math.random() * z[3], delay: Math.random() * 500, arc: design === "plain" ? 8 : 40 + Math.random() * 70 });
+    }
+    const t0 = performance.now(), dur = 1300;
+    function frame(now) {
+      let alive = false;
+      for (const s of seeds) {
+        let t = (now - t0 - s.delay) / dur; if (t < 1) alive = true; t = Math.max(0, Math.min(1, t));
+        const x = px + (s.tx - px) * t, y = (py - 62) + (s.ty - (py - 62)) * t - Math.sin(Math.PI * t) * s.arc;
+        s.c.setAttribute("cx", x.toFixed(1)); s.c.setAttribute("cy", y.toFixed(1));
+      }
+      if (alive && svg.isConnected) requestAnimationFrame(frame);
+      else {
+        for (const s of seeds) {
+          if (s.ok) { const g = document.createElementNS(NS, "g"); g.innerHTML = `<path d="M${s.tx} ${s.ty} v -10" stroke="#2f7a3a" stroke-width="2.2"/>${leafPath(s.tx, s.ty - 10, 8, -150, "#4fbf4f")}${leafPath(s.tx, s.ty - 10, 8, -30, "#4fbf4f")}`; layer.appendChild(g); s.c.remove(); }
+          else { s.c.setAttribute("fill", "#888"); s.c.setAttribute("opacity", ".45"); }
+        }
+        res(sprouted);
+      }
+    }
+    requestAnimationFrame(frame);
+  });
+}
+async function launchRound(box, i) {
+  const e = ENVS[i];
+  const exp = d => Math.floor(BUDGET / d.cost) * e.p[d.id];
+  const best = Math.max(...DESIGNS.map(exp));
+  return new Promise(res => {
+    const d = addHTML(box, `<div class="card"><h3>${e.name}</h3><p>${e.desc}</p>${envSVG(i)}<p class="small muted" style="margin:6px 0 0">Dashed yellow boxes = good sunny spots, far from the parent. Your plant has <b>${BUDGET} units of sugar</b> (made by photosynthesis!) to spend on seeds.</p>
+      <div class="designs">${DESIGNS.map(x => `<button class="design" data-d="${x.id}">${seedIcon(x.id)}<b>${x.name}</b><span>${x.note}</span><br><span>${x.cost} sugar each → <b>${Math.floor(BUDGET / x.cost)} seeds</b></span></button>`).join("")}</div>
+      <div class="row end"><button class="btn sun" id="launch" disabled>Pick a seed design</button></div><div class="fbwrap"></div></div>`);
+    scrollIn(d);
+    let choice = null;
+    $$(".design", d).forEach(b => b.onclick = () => { $$(".design", d).forEach(x => x.classList.remove("on")); b.classList.add("on"); choice = DESIGNS.find(x => x.id === b.dataset.d); const L = $("#launch", d); L.disabled = false; L.textContent = `Launch ${Math.floor(BUDGET / choice.cost)} seeds!`; });
+    $("#launch", d).onclick = async () => {
+      $("#launch", d).disabled = true; $$(".design", d).forEach(x => x.disabled = true);
+      const n = Math.floor(BUDGET / choice.cost);
+      const sprouted = await animateSeeds($(".envsvg", d), e, choice.id, n, e.p[choice.id]);
+      if (!d.isConnected) return;
+      const pts = Math.round(10 * exp(choice) / best);
+      const bars = DESIGNS.map(x => { const v = exp(x); return `<div class="brow ${x.id === choice.id ? "me" : ""}"><span>${x.name}${x.id === choice.id ? " (you)" : ""}</span><span class="bt"><i style="width:${(100 * v / best).toFixed(0)}%"></i></span><span>≈ ${v < 1 ? v.toFixed(1) : Math.round(v)}</span></div>`; }).join("");
+      $(".fbwrap", d).innerHTML = `<div class="fb ${pts >= 8 ? "good" : pts >= 4 ? "info" : "bad"}"><b>${sprouted} of ${n} seeds sprouted</b> in good spots. <span class="pts">+${pts}</span><br>${e.why}</div><div class="fb info"><b>Average sprouts per launch</b> for each design here (from many test runs):<div class="bars">${bars}</div></div>`;
+      waitBtn(d.firstChild, i < 2 ? "Next round →" : "Continue →").then(() => res({ pts, max: 10 }));
+    };
+  });
+}
+PARTS.seeds = [
+  async box => {
+    addHTML(box, guide(`Your plant made seeds! But if every seed drops right under the parent, the babies fight the parent (and each other) for <b>light, water, and space</b>. Plants have clever ways to send seeds away. Some even get animals to do it for them.`));
+    const r1 = await sortTask(box, {
+      q: "How does each seed travel? Tap a seed, then tap how it moves.",
+      bins: [{ id: "wind", label: "Wind" }, { id: "water", label: "Water" }, { id: "fur", label: "Animal fur", sub: "hitchhiker" }, { id: "eat", label: "Animal eats it" }, { id: "bury", label: "Animal buries it" }, { id: "pop", label: "Pops open", sub: "launches itself" }],
+      items: [
+        { t: "Dandelion: light fluffy parachute", bin: "wind", why: "Each seed floats on a tiny parachute and can ride the wind for kilometers.", hint: "Something this light floats." },
+        { t: "Maple: papery spinning wing", bin: "wind", why: "The wing makes it spin like a helicopter and glide away from the tree.", hint: "Think helicopters." },
+        { t: "Coconut: big waterproof husk full of air", bin: "water", why: "Coconuts float across oceans to new beaches.", hint: "It floats, but not in the air." },
+        { t: "Burdock: covered in tiny hooks", bin: "fur", why: "The hooks grab fur (and socks!). Velcro was invented by copying this.", hint: "What would hooks grab onto?" },
+        { t: "Cherry: sweet fruit around a hard seed", bin: "eat", why: "Birds eat the fruit and drop the seed somewhere else, with a little fertilizer.", hint: "Why would a plant spend energy making it tasty?" },
+        { t: "Acorn: nut packed with stored food", bin: "bury", why: "Squirrels and jays bury acorns to eat later, and forget some. Those can sprout!", hint: "Squirrels save these for winter." },
+        { t: "Touch-me-not: pod that bursts when touched", bin: "pop", why: "The pod snaps open and flings the seeds away from the parent.", hint: "Its name is a clue." }
+      ]
+    });
+    const r2 = await mcq(box, { q: "Why is it usually better for a seed to land far from its parent plant?", opts: ["Less competition for light, water, and space", { t: "Seeds grow faster in the dark", fb: "Young plants need light to make their own sugar." }, { t: "The parent plant would eat it", fb: "Plants don't eat seeds! But they do compete with them." }], ans: 0, why: "A seed that lands under a big parent is stuck in its shade, fighting for water." });
+    return sum([r1, r2]);
+  },
+  async box => {
+    addHTML(box, guide(`<b>Seed Launch!</b> You'll design seeds for three different places. Every design costs sugar. Cheap seeds mean you can make lots of them. Expensive seeds mean fewer, but they might travel better. Choose wisely for each place.`));
+    const out = [];
+    for (let i = 0; i < 3; i++) out.push(await launchRound(box, i));
+    out.push(await mcq(box, { q: "With the same sugar, a plant could make 30 fluffy seeds or 10 sweet fruits. Why would a plant ever \"choose\" fewer, more expensive seeds?", opts: ["In places with lots of animals, fruit seeds get carried to good spots, so more of them survive", { t: "Expensive seeds always grow taller", fb: "Seed cost is about getting carried away, not about the adult plant's height." }, { t: "It's random. Plants can't do anything about it", fb: "Over many generations, plants with designs that work best in their home leave the most offspring." }], ans: 0, why: "There's no single best design. The best one depends on the environment, just like in your three rounds." }));
+    return sum(out);
+  }
+];
+
+/* ===== Season 6: Test Plots ===== */
+const POPTS = {
+  v: { label: "Seed", o: [["giant", "Sun Giant"], ["bush", "Bush Pal"]] },
+  light: { label: "Light", o: [["shade", "Shade"], ["part", "Part sun"], ["full", "Full sun"]] },
+  water: { label: "Water", o: [["low", "Low"], ["med", "Medium"], ["high", "High"], ["flood", "Flooded"]] },
+  fert: { label: "Compost", o: [["none", "None"], ["compost", "Added"]] },
+  space: { label: "Spacing", o: [["crowded", "Crowded"], ["spread", "Spread out"]] }
+};
+const PF = { light: { shade: .3, part: .65, full: 1 }, water: { low: .45, med: 1, high: .8, flood: .25 }, fert: { none: .75, compost: 1 }, space: { crowded: .55, spread: 1 } };
+const PV = { giant: { h: 110, b: 80 }, bush: { h: 45, b: 55 } };
+function growPlot(p) {
+  const f = PF.light[p.light] * PF.water[p.water] * PF.fert[p.fert] * PF.space[p.space];
+  const nz = () => 0.94 + Math.random() * 0.12;
+  return { h: Math.round(PV[p.v].h * (0.25 + 0.75 * f) * nz()), b: Math.round(PV[p.v].b * f * nz()) };
+}
+function plotSVG(p, anim) {
+  const gy = 176;
+  let s = `<svg viewBox="0 0 200 190" role="img" aria-label="plot"><rect width="200" height="190" fill="${p.light === "shade" ? "#b9c3c9" : p.light === "part" ? "#d7e9f3" : "#e8f5fc"}"/>`;
+  if (p.light === "full") s += `<circle cx="180" cy="18" r="12" fill="#f6c443"/>`;
+  if (p.light === "part") s += `<circle cx="180" cy="18" r="11" fill="#f6c443" opacity=".55"/><ellipse cx="170" cy="21" rx="18" ry="8" fill="#fff"/>`;
+  s += `<rect y="${gy}" width="200" height="14" fill="${p.fert === "compost" ? "#5c3c26" : "#8b5d3d"}"/>`;
+  if (p.water === "flood") s += `<rect y="${gy - 6}" width="200" height="10" fill="#6aaad8" opacity=".8"/>`;
+  s += `<g transform="translate(40 0)">`;
+  if (p.water === "low") s += `<path d="M10 ${gy + 6} l8 4 l6 -3 M70 ${gy + 8} l10 3 l5 -4" stroke="#5a3a20" fill="none"/>`;
+  if (!p.res) {
+    s += `<path d="M60 ${gy} v -10" stroke="#2f7a3a" stroke-width="2.5"/>${leafPath(60, gy - 10, 9, -150, "#7cc46f")}${leafPath(60, gy - 10, 9, -30, "#7cc46f")}`;
+  } else {
+    const H = Math.min(158, p.res.h * 1.35), nl = Math.max(2, Math.round(p.res.h / 11)), np = Math.round(p.res.b / 9);
+    s += `<g class="${anim ? "growing" : ""}" style="transform-box:view-box;transform-origin:60px ${gy}px">`;
+    s += `<path d="M60 ${gy} C 57 ${gy - H * .4} 63 ${gy - H * .7} 60 ${gy - H}" stroke="#2f7a3a" stroke-width="${p.v === "giant" ? 3.5 : 2.5}" fill="none"/>`;
+    for (let i = 0; i < nl; i++) { const y = gy - H * (0.15 + 0.82 * i / Math.max(nl - 1, 1)); s += leafPath(60, y, p.v === "bush" ? 20 : 17, i % 2 ? -150 : -30, i % 3 ? "#62b05c" : "#4f9e4f"); }
+    for (let k = 0; k < np; k++) { const y = gy - H * (0.2 + 0.6 * ((k * 0.37) % 1)), x = 60 + (k % 2 ? -8 : 8); s += `<path d="M${x} ${y} q ${k % 2 ? -3 : 3} 7 ${k % 2 ? -1 : 1} 13" stroke="#3c8a3c" stroke-width="3.2" fill="none" stroke-linecap="round"/>`; }
+    s += `</g>`;
+  }
+  if (p.space === "crowded") [[14, 1], [32, -1], [88, 1], [106, -1]].forEach(([x]) => { s += `<path d="M${x} ${gy} v -${p.res ? 40 : 12}" stroke="#4a7a3a" stroke-width="2"/>${leafPath(x, gy - (p.res ? 30 : 10), 10, -150, "#7a9a5a")}${leafPath(x, gy - (p.res ? 22 : 8), 10, -30, "#7a9a5a")}`; });
+  return s + "</g></svg>";
+}
+PARTS.plots = [
+  async box => {
+    addHTML(box, guide(`Last season! You have four test plots. Not every plant grows the same, even from the same seed packet. Your job: figure out <b>why</b>, like a real plant scientist. Change the settings under each plot, then press <b>Grow for 6 weeks</b>.`));
+    const plots = [0, 1, 2, 3].map(() => ({ v: "giant", light: "part", water: "med", fert: "none", space: "spread", res: null }));
+    const MIS = [
+      { title: "Mission 1: Does light matter?", text: "Set up a <b>fair test</b> with Plots 1, 2, and 3. Give them <b>different amounts of light</b>, but keep <b>everything else the same</b>. (Plot 4 doesn't count.) Then grow.",
+        check(P) {
+          for (const k of ["v", "water", "fert", "space"]) for (const j of [1, 2]) if (P[j][k] !== P[0][k]) return { ok: false, msg: `Plot ${j + 1} has a different <b>${POPTS[k].label.toLowerCase()}</b> setting than Plot 1. In a fair test only light should change, or you can't tell what caused the difference.` };
+          const L = new Set([P[0].light, P[1].light, P[2].light]);
+          if (L.size < 2) return { ok: false, msg: "Plots 1 to 3 all have the same light. Give them different amounts of light so you can compare." };
+          return { ok: true, msg: L.size === 3 ? "Great fair test! Light is the only thing that changed." : "Fair test! (Even better: try all three light levels next time.)" };
+        },
+        q: { q: "What did your fair test show about light?", opts: ["More light gave bigger plants and more beans, because the leaves could do more photosynthesis and make more sugar to build with", { t: "Light doesn't matter, only water does", fb: "Only light changed in your test, and the plants came out different. So light matters." }, { t: "Shade made the most beans", fb: "Check your results under each plot again." }], ans: 0, why: "Light is an <b>environmental factor</b>. Less light means less sugar, so less material to build a plant from." } },
+      { title: "Mission 2: Is it the seed or the soil?", text: "Plant <b>Sun Giant in Plot 1</b> and <b>Bush Pal in Plot 2</b>. Make <b>every other setting identical</b> in those two plots. Then grow.",
+        check(P) {
+          if (P[0].v === P[1].v) return { ok: false, msg: "Plots 1 and 2 need <b>different seed varieties</b>." };
+          for (const k of ["light", "water", "fert", "space"]) if (P[0][k] !== P[1][k]) return { ok: false, msg: `Plots 1 and 2 have different <b>${POPTS[k].label.toLowerCase()}</b>. Make the environment match so only the seed is different.` };
+          return { ok: true, msg: "Fair test! Same environment, different seeds." };
+        },
+        q: { q: "Both plots got the same light, water, compost, and space, but they grew differently. What kind of factor caused that?", opts: ["A genetic factor: traits inherited in the seed", { t: "An environmental factor", fb: "You made the environments identical. So the difference has to come from inside the seed." }, { t: "Just luck", fb: "A little variation is normal, but this difference is big and happens every time." }], ans: 0, why: "Sun Giant has genes for growing tall. Bush Pal has genes for a short, bushy plant. Same conditions, different genes, different plants." } },
+      { title: "Mission 3: Max harvest!", text: "Get <b>at least 65 beans</b> from one plot. Use what you've learned about seeds, light, water, compost, and spacing.",
+        check(P) {
+          const b = Math.max(...P.map(p => p.res ? p.res.b : 0));
+          return b >= 65 ? { ok: true, msg: `${b} beans! Master gardener.` } : { ok: false, msg: `Your best plot made ${b} beans. Keep experimenting. Which settings gave the biggest plants so far?` };
+        },
+        q: { q: "Someone grows Sun Giant in full sun with compost, spread out, but FLOODS the soil. They get very few beans. Why would too much water hurt?", opts: ["Roots need oxygen for cellular respiration, and flooded soil has almost none", { t: "Water blocks sunlight from reaching the leaves", fb: "The leaves are above the water. The problem is underground." }, { t: "The plant drinks too much and pops", fb: "Ha! Not quite. Think about what root cells need to get energy." }], ans: 0, why: "Roots are underground with no light, so they can't do photosynthesis. They depend on respiration for energy, and that needs oxygen. No oxygen, no energy, and the roots start to die." } }
+    ];
+    let mi = 0, attempts = 0; const out = [];
+    return new Promise(res => {
+      const d = addHTML(box, `<div class="card mission" id="mis"></div><div class="card"><div class="plots" id="plots"></div><div class="row end"><button class="btn sun" id="grow">Grow for 6 weeks</button></div><div class="fbwrap" id="pfb"></div></div><div id="pq"></div>`);
+      function renderMission() { const m = MIS[mi]; $("#mis", d).innerHTML = `<h3>${m.title}</h3><p>${m.text}</p>`; }
+      function renderPlots(anim) {
+        $("#plots", d).innerHTML = plots.map((p, i) => `<div class="plot"><h4>Plot ${i + 1}</h4>${plotSVG(p, anim)}<div class="pres">${p.res ? `${p.res.h} cm tall · ${p.res.b} beans` : `<span class="muted small">not grown yet</span>`}</div>${Object.entries(POPTS).map(([k, o]) => `<label>${o.label}<select data-p="${i}" data-k="${k}">${o.o.map(([v, t]) => `<option value="${v}" ${p[k] === v ? "selected" : ""}>${t}</option>`).join("")}</select></label>`).join("")}</div>`).join("");
+        $$("select", d).forEach(sel => sel.onchange = () => { const p = plots[+sel.dataset.p]; p[sel.dataset.k] = sel.value; p.res = null; renderPlots(false); });
+      }
+      renderMission(); renderPlots(false);
+      $("#grow", d).onclick = async () => {
+        const g = $("#grow", d); g.disabled = true;
+        plots.forEach(p => p.res = growPlot(p)); renderPlots(true);
+        await sleep(1300); if (!d.isConnected) return;
+        attempts++;
+        const r = MIS[mi].check(plots);
+        $("#pfb", d).innerHTML = `<div class="fb ${r.ok ? "good" : "bad"}">${r.msg}</div>`;
+        if (!r.ok) { g.disabled = false; return; }
+        const got = attempts === 1 ? 10 : 6; out.push({ pts: got, max: 10 });
+        $("#pfb", d).innerHTML += `<div class="fb info">Mission complete! <span class="pts">+${got}</span></div>`;
+        $$("select", d).forEach(s => s.disabled = true);
+        const pq = $("#pq", d); pq.innerHTML = "";
+        out.push(await mcq(pq, MIS[mi].q));
+        if (!d.isConnected) return;
+        pq.innerHTML = ""; $("#pfb", d).innerHTML = "";
+        mi++; attempts = 0;
+        if (mi >= MIS.length) { $("#mis", d).innerHTML = `<h3>All missions complete!</h3><p>Genes set what a plant <i>can</i> do. The environment decides how much of that it actually does.</p>`; waitBtn(d.firstChild).then(() => res(sum(out))); return; }
+        renderMission(); renderPlots(false); g.disabled = false; window.scrollTo({ top: $("#mis", d).getBoundingClientRect().top + window.scrollY - 70, behavior: "smooth" });
+      };
+    });
+  }
+];
+
+/* ===== Harvest Report ===== */
+PARTS.final = [
+  async box => {
+    addHTML(box, guide(`Harvest time! Answer these to show what you learned this year in your garden. Each question is worth 5 points.`));
+    const qs = [
+      { q: "Which equation is balanced?", opts: ["6CO₂ + 6H₂O → C₆H₁₂O₆ + 6O₂", "CO₂ + H₂O → C₆H₁₂O₆ + O₂", "6CO₂ + 6H₂O → C₆H₁₂O₆ + 3O₂", "3CO₂ + 6H₂O → C₆H₁₂O₆ + 6O₂"], ans: 0, why: "6 C, 12 H, and 18 O on each side." },
+      { q: "Which statement about your garden is true?", opts: ["Atoms cycle between air, plants, and animals, but energy flows through and leaves as heat", "Energy cycles, but atoms get used up", "Both atoms and energy get used up", "Plants make new atoms out of sunlight"], ans: 0, why: "Matter cycles, energy flows." },
+      { q: "Which living things do cellular respiration?", opts: ["Plants and animals, day and night", "Only animals", "Only plants, and only at night", "Only animals, and only during the day"], ans: 0, why: "Every living cell needs energy all the time." },
+      { q: "A scientist gives a plant water made with oxygen-18. Where will the heavy oxygen mostly show up?", opts: ["In the oxygen gas the plant releases", "In the sugar", "In the soil", "Nowhere, it disappears"], ans: 0, why: "The O₂ that plants release comes from splitting water." },
+      { q: "A seed is inside a sweet, bright red berry. How is it most likely spread?", opts: ["An animal eats the berry and drops the seed somewhere else", "The wind blows it away", "It floats down a river", "It just falls under the parent"], ans: 0, why: "Sweet fruit is a reward that gets animals to carry seeds." },
+      { q: "Two seeds from the same packet are planted. One gets full sun, one is in shade. The sunny one grows much bigger. What caused the difference?", opts: ["An environmental factor (light)", "A genetic factor", "The seeds had different genes", "Nothing, it was random"], ans: 0, why: "Same seeds, different conditions, so it's the environment." },
+      { q: "How many oxygen atoms are in 6O₂?", opts: ["12", "6", "2", "8"], ans: 0, why: "6 molecules × 2 oxygen atoms each = 12." },
+      { q: "A giant pumpkin weighs 900 kg. Where did most of that mass come from?", opts: ["CO₂ from the air and water, built into sugar by photosynthesis", "The soil", "Sunlight", "Fertilizer"], ans: 0, why: "Just like van Helmont's willow tree." }
+    ];
+    return quizSeq(box, qs.map((q, i) => ({ ...q, pts: 5, label: `Question ${i + 1} of ${qs.length}` })));
+  }
+];
+
+/* ---------------- screens ---------------- */
+let RUN = 0;
+function showTitle() {
+  updateBar();
+  const saved = load();
+  $("#main").innerHTML = `<div class="card">${gardenSVG(0)}<h1>Carbon Garden</h1>
+    <p>Grow a bean plant from seed to harvest. Along the way you'll run the leaf factory, track atoms with isotopes, launch seeds, and test what makes plants grow.</p>
+    <div id="tform"></div>
+    <p class="muted small" style="margin-top:14px">Grade 7 · NGSS MS-LS1-4, MS-LS1-5, MS-LS1-6, MS-LS1-7, MS-LS2-3, MS-PS1-5 · About two class periods</p></div>`;
+  const tf = $("#tform");
+  function form() {
+    tf.innerHTML = `<div class="form"><label for="nm">Your name (first name + last initial)</label><input id="nm" maxlength="40" autocomplete="off">
+      <label for="pd">Class period</label><select id="pd"><option value="">Choose...</option>${[1, 2, 3, 4, 5, 6, 7].map(n => `<option>${n}</option>`).join("")}<option>Other</option></select>
+      <div class="row" style="margin-top:14px"><button class="btn" id="go" disabled>Start my garden →</button></div></div>`;
+    const nm = $("#nm"), pd = $("#pd"), go = $("#go");
+    const chk = () => { go.disabled = nm.value.trim().length < 2 || !pd.value; };
+    nm.oninput = chk; pd.onchange = chk; nm.focus();
+    go.onclick = () => { S = blank(nm.value.trim().slice(0, 40), pd.value); save(); showHub(); };
+  }
+  if (saved && saved.name) {
+    tf.innerHTML = `<p><b>Welcome back, ${esc(saved.name)}!</b> (Period ${esc(saved.period)})</p><div class="row"><button class="btn" id="cont">Continue my garden →</button><button class="btn alt" id="fresh">I'm not ${esc(saved.name)}. Start new</button></div>`;
+    $("#cont").onclick = () => { S = saved; showHub(); };
+    $("#fresh").onclick = () => { if (confirm(`This erases ${saved.name}'s saved garden on this computer. Continue?`)) { try { localStorage.removeItem(SAVE_KEY); } catch (e) {} form(); } };
+  } else form();
+}
+function showHub() {
+  RUN++; updateBar(); save();
+  const done = STAGES.filter(s => S.stages[s.id] && S.stages[s.id].done).length;
+  const cards = STAGES.map((s, i) => {
+    const r = S.stages[s.id]; const open = i === 0 || (S.stages[STAGES[i - 1].id] && S.stages[STAGES[i - 1].id].done);
+    let status, btn;
+    if (r && r.done) { status = `<span class="status st-done">Done · ${r.pts} / ${r.max}</span>`; btn = s.id === "final" ? `<button class="btn small" data-rep="1">View my report</button> <button class="btn alt small" data-s="${s.id}">Practice again</button>` : `<button class="btn alt small" data-s="${s.id}">Practice again</button>`; }
+    else if (open) { status = `<span class="status st-go">${r && r.part ? "In progress" : "Ready"}</span>`; btn = `<button class="btn small" data-s="${s.id}">${r && r.part ? "Continue" : "Start"} →</button>`; }
+    else { status = `<span class="status st-lock">Locked</span>`; btn = ""; }
+    return `<div class="scard ${open ? "" : "locked"}"><div class="sic">${s.icon}</div><div><div class="muted small">${s.id === "final" ? "Finale" : "Season " + s.n}</div><h3>${s.title}</h3><div class="small muted">${s.sub}</div>${status}<div class="row" style="margin-top:6px">${btn}</div></div></div>`;
+  }).join("");
+  $("#main").innerHTML = `<div class="card">${gardenSVG(done)}<div class="gcap">${CAPTIONS[done]}</div></div>
+    <div class="row" style="justify-content:space-between"><h2>Your seasons</h2><span class="muted small">Day 1: Seasons 1 to 3 · Day 2: Seasons 4 to 6 and the Harvest Report</span></div>
+    <div class="stages">${cards}</div>`;
+  $$("[data-s]").forEach(b => b.onclick = () => runStage(STAGES.find(s => s.id === b.dataset.s)));
+  $$("[data-rep]").forEach(b => b.onclick = () => showReport());
+  window.scrollTo(0, 0);
+}
+function stageHeader(st, i, n, practice) {
+  return `<div class="shead"><button class="btn alt small" id="toHub">← Garden</button><div><div class="muted small">${st.id === "final" ? "Finale" : "Season " + st.n}${practice ? " · Practice mode (score not recorded)" : ""}</div><h2>${st.icon} ${st.title}</h2></div>${n > 1 ? `<div class="dots" aria-label="part ${i + 1} of ${n}">${Array.from({ length: n }, (_, k) => `<span class="d ${k < i ? "done" : k === i ? "now" : ""}"></span>`).join("")}</div>` : ""}</div><div id="stageBox"></div>`;
+}
+async function runStage(st) {
+  const token = ++RUN;
+  const rec = S.stages[st.id] || (S.stages[st.id] = { done: false, part: 0, pts: 0, max: 0 });
+  const practice = !!rec.done; save();
+  const parts = PARTS[st.id]; let pp = 0, pm = 0;
+  for (let i = practice ? 0 : rec.part; i < parts.length; i++) {
+    $("#main").innerHTML = stageHeader(st, i, parts.length, practice);
+    $("#toHub").onclick = () => { if (practice || confirm("Go back to your garden? Everything you finished is saved. This part will start over next time.")) showHub(); };
+    window.scrollTo(0, 0);
+    const r = await parts[i]($("#stageBox"));
+    if (token !== RUN) return;
+    if (practice) { pp += r.pts; pm += r.max; }
+    else { rec.pts += r.pts; rec.max += r.max; rec.part = i + 1; save(); updateBar(); }
+  }
+  if (token !== RUN) return;
+  if (!practice) {
+    rec.done = true; rec.when = new Date().toISOString(); save(); updateBar();
+    sendRow(`${st.n}. ${st.title}`, rec.pts, rec.max);
+    if (st.id === "final") { const t = totals(); setTimeout(() => sendRow("FINAL TOTAL", t.pts, t.max), 1500); }
+  }
+  if (st.id === "final" && !practice) showReport();
+  else stageDone(st, practice ? { pts: pp, max: pm } : rec, practice);
+}
+function stageDone(st, r, practice) {
+  const done = STAGES.filter(s => S.stages[s.id] && S.stages[s.id].done).length;
+  $("#main").innerHTML = `<div class="card center"><h1>${practice ? "Practice complete" : "Season complete!"}</h1><p style="font-size:20px">${st.icon} <b>${st.title}</b>: ${r.pts} / ${r.max} sugar points</p>
+    ${practice ? `<p class="muted">Practice scores aren't recorded. Your first score is the one that counts.</p>` : `<p class="muted">Saved on this computer.${SHEET_URL ? " Sent to your teacher's score sheet." : ""}</p>`}
+    ${gardenSVG(done)}<p class="gcap">${CAPTIONS[done]}</p><div class="row" style="justify-content:center;margin-top:10px"><button class="btn" id="back">Back to my garden →</button></div></div>`;
+  $("#back").onclick = showHub; window.scrollTo(0, 0);
+}
+function showReport() {
+  RUN++;
+  const t = totals(); const pct = t.max ? Math.round(100 * t.pts / t.max) : 0;
+  const rows = STAGES.map(s => { const r = S.stages[s.id]; return `<tr><td>${s.icon} ${s.title}</td><td>${r && r.done ? `${r.pts} / ${r.max}` : "not finished"}</td></tr>`; }).join("");
+  const when = new Date().toLocaleString();
+  $("#main").innerHTML = `<div class="card"><h1>🧺 Harvest Report</h1><p style="font-size:19px"><b>${esc(S.name)}</b> · Period ${esc(S.period)} · ${esc(when)}</p>
+    ${gardenSVG(7)}
+    <table class="report"><tr><th>Season</th><th>Score</th></tr>${rows}<tr><th>Total</th><th>${t.pts} / ${t.max} (${pct}%)</th></tr></table>
+    <p class="muted">${SHEET_URL ? "Your scores were sent to your teacher's score sheet. " : ""}If your teacher asks, take a screenshot of this page.</p>
+    <div class="row"><button class="btn" id="back">Back to my garden</button>${SHEET_URL ? `<button class="btn alt" id="resend">Send my final score again</button>` : ""}</div></div>`;
+  $("#back").onclick = showHub;
+  if (SHEET_URL) $("#resend").onclick = e => { sendRow("FINAL TOTAL (resent)", t.pts, t.max); e.target.disabled = true; e.target.textContent = "Sent!"; };
+  window.scrollTo(0, 0);
+}
+
+/* ---------------- start ---------------- */
+showTitle();
+</script>
+</body>
+</html>
