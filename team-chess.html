@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Team Chess: Science Edition</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+<script>window.Chess||document.write('<script src="https://cdn.jsdelivr.net/npm/chess.js@0.10.3/chess.js"><\/script>')</script>
+<style>
+:root{
+  --bg:#f3efe6; --card:#fffdf8; --ink:#1d2629; --muted:#5d6b70; --line:#ddd5c4;
+  --accent:#0f766e; --accent2:#e07a1f; --good:#15803d; --bad:#b91c1c;
+  --sqL:#eedcb5; --sqD:#b58863; --wteam:#fbfaf6; --bteam:#2a2f33;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button{font:inherit;cursor:pointer;border:0;border-radius:10px;padding:.55em 1em;background:var(--accent);color:#fff;font-weight:600}
+button:hover{filter:brightness(1.08)}
+button:disabled{opacity:.45;cursor:not-allowed;filter:none}
+button.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+button.warn{background:var(--bad)}
+button.orange{background:var(--accent2)}
+button.sm{padding:.3em .65em;font-size:.85rem;border-radius:8px}
+input,select{font:inherit;padding:.55em .7em;border:1.5px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
+input:focus{outline:2px solid var(--accent);border-color:transparent}
+h1,h2,h3{margin:0 0 .4em;line-height:1.15}
+.wrap{max-width:1200px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 1px 0 rgba(0,0,0,.03)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.col{display:flex;flex-direction:column;gap:10px}
+.muted{color:var(--muted)}
+.small{font-size:.85rem}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:.2em .6em;border-radius:999px;background:#ece6d8;font-size:.85rem}
+.pill.on::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--good)}
+.pill.off{opacity:.55}
+.pill.off::before{content:"";width:8px;height:8px;border-radius:50%;background:#aaa}
+.banner{padding:10px 14px;border-radius:12px;background:#fde8d2;border:1px solid #f3c79c;margin-bottom:12px}
+.err{background:#fde2e2;border-color:#f1aaaa}
+
+/* home */
+.hero{min-height:100vh;display:grid;place-items:center;padding:16px}
+.hero .card{max-width:520px;width:100%;padding:28px}
+.logo{font-size:2.6rem;letter-spacing:-.02em;font-weight:800}
+.logo span{color:var(--accent)}
+.code{font-size:3rem;font-weight:800;letter-spacing:.15em;color:var(--accent);font-variant-numeric:tabular-nums}
+
+/* layout */
+.grid2{display:grid;grid-template-columns:minmax(300px,420px) 1fr;gap:16px;align-items:start}
+@media (max-width:860px){.grid2{grid-template-columns:1fr}}
+.tables{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.tcard{border:1.5px solid var(--line);border-radius:14px;padding:12px;background:#fff}
+.tcard.mine{border-color:var(--accent);box-shadow:0 0 0 2px rgba(15,118,110,.15)}
+.tcard.watch{border-color:var(--accent2)}
+.teamcols{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+.teambox{border-radius:10px;padding:8px;min-height:60px}
+.teambox.w{background:var(--wteam);border:1.5px solid #d8d2c4}
+.teambox.b{background:var(--bteam);color:#eef}
+.teambox h4{margin:0 0 4px;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em}
+.teambox ul{list-style:none;margin:0;padding:0;font-size:.9rem}
+.teambox li{display:flex;justify-content:space-between;gap:4px;align-items:center}
+.status{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:.15em .5em;border-radius:6px}
+.status.lobby{background:#e7f3f2;color:var(--accent)}
+.status.playing{background:#fdebd6;color:#9a4b07}
+.status.over{background:#e9e9e9;color:#555}
+.x{background:none;color:inherit;padding:0 .3em;font-size:1rem;opacity:.6}
+
+/* game */
+.game{display:grid;grid-template-columns:auto minmax(280px,1fr);gap:16px;align-items:start}
+@media (max-width:900px){.game{grid-template-columns:1fr}}
+.boardwrap{width:min(92vw,78vh,640px)}
+.board{display:grid;grid-template-columns:repeat(8,1fr);aspect-ratio:1;border-radius:10px;overflow:hidden;border:4px solid #6b4f36;user-select:none;touch-action:manipulation}
+.sq{position:relative;display:grid;place-items:center;font-size:min(9.6vw,8vh,70px);line-height:1}
+.sq.l{background:var(--sqL)} .sq.d{background:var(--sqD)}
+.sq.last::after{content:"";position:absolute;inset:0;background:rgba(255,215,0,.38)}
+.sq.sel::after{content:"";position:absolute;inset:0;background:rgba(20,160,90,.45)}
+.sq.chk{background:radial-gradient(circle,#ff4d4d 0%,rgba(255,77,77,.5) 45%,transparent 75%),var(--sqD)}
+.sq.vote::before{content:"";position:absolute;inset:3px;border:4px solid #2563eb;border-radius:6px;z-index:2}
+.sq.tgt .dot{position:absolute;width:30%;height:30%;border-radius:50%;background:rgba(20,20,20,.28);z-index:3}
+.sq.tgt.cap .dot{width:88%;height:88%;background:transparent;border:5px solid rgba(20,20,20,.3)}
+.pc{position:relative;z-index:1}
+.pc.w{color:#fff;text-shadow:0 0 2px #000,0 0 1px #000,1px 1px 0 #222,-1px -1px 0 #222,1px -1px 0 #222,-1px 1px 0 #222}
+.pc.b{color:#111;text-shadow:0 0 1px #fff3}
+.coord{position:absolute;font-size:11px;font-weight:700;opacity:.65;z-index:2}
+.coord.f{right:3px;bottom:1px} .coord.r{left:3px;top:1px}
+.sq.l .coord{color:var(--sqD)} .sq.d .coord{color:var(--sqL)}
+.clocks{display:flex;justify-content:space-between;gap:10px;margin:8px 0}
+.clock{flex:1;border-radius:12px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;font-weight:700}
+.clock.w{background:var(--wteam);border:1.5px solid #d8d2c4}
+.clock.b{background:var(--bteam);color:#eef}
+.clock .t{font-size:1.6rem;font-variant-numeric:tabular-nums}
+.clock.active{outline:3px solid var(--accent2)}
+.clock.low .t{color:#ef4444}
+.turnbar{font-size:1.15rem;font-weight:700;padding:10px 14px;border-radius:12px;background:#e7f3f2;color:var(--accent);text-align:center}
+.turnbar.wait{background:#efece5;color:var(--muted)}
+.turnbar.over{background:#1d2629;color:#fff}
+.qcard{border:2px solid var(--accent2);background:#fff7ee;border-radius:14px;padding:12px}
+.qcard .qtext{font-weight:700;font-size:1.05rem;margin:4px 0 10px}
+.qcard .choices{display:grid;gap:8px}
+.qcard .choices button{background:#fff;color:var(--ink);border:1.5px solid #e8c9a5;text-align:left;font-weight:500}
+.qcard .choices button.right{background:#dcfce7;border-color:var(--good)}
+.qcard .choices button.wrong{background:#fee2e2;border-color:var(--bad)}
+.tally{display:flex;flex-direction:column;gap:6px}
+.tally button{display:flex;justify-content:space-between;align-items:center;background:#fff;color:var(--ink);border:1.5px solid var(--line);font-weight:600}
+.tally button.mine{border-color:#2563eb;background:#eef4ff}
+.bar{height:6px;border-radius:4px;background:var(--accent);margin-top:3px}
+.hist{max-height:180px;overflow:auto;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.9rem;background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px}
+.toast{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:50;background:#1d2629;color:#fff;padding:10px 16px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.25);font-weight:600;max-width:92vw;text-align:center;animation:pop .25s ease}
+.toast.bonus{background:var(--good)}
+@keyframes pop{from{transform:translate(-50%,-10px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:grid;place-items:center;z-index:40}
+.modal .card{display:flex;gap:10px}
+.modal button{font-size:2.4rem;background:#fff;color:#111;border:1.5px solid var(--line);width:72px;height:72px;padding:0}
+.settings label{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:.92rem}
+.settings input{width:80px;padding:.35em .5em}
+details summary{cursor:pointer;font-weight:700}
+.mates{display:flex;flex-wrap:wrap;gap:6px}
+.mate{padding:.2em .55em;border-radius:999px;background:#ece6d8;font-size:.85rem}
+.mate.done{background:#dcfce7}
+.mate.done::after{content:" ✓"}
+.mate.away{opacity:.45}
+
+.setlist{display:grid;grid-template-columns:1fr auto;gap:2px 12px;font-size:.9rem}
+.netbad{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);z-index:45}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toastHost"></div>
+<script>
+'use strict';
+/* =========================================================
+   PASTE YOUR APPS SCRIPT WEB APP URL HERE (ends in /exec)
+   ========================================================= */
+const SERVER_URL = 'https://script.google.com/macros/s/AKfycby_j0cXRxVC5XSwzVUV_HTlnyQYxs5DZJlTctMKnBT5x0Mca55VLoTuXeWVf20VYUiR/exec';
+
+const POLL_MS = 2000;
+const TEAM = {w:'White', b:'Black'};
+const GLYPH = {k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟'};
+const app = document.getElementById('app');
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function ss(op,k,v){try{if(op==='get')return sessionStorage.getItem(k);if(op==='set')sessionStorage.setItem(k,v);if(op==='del')sessionStorage.removeItem(k)}catch(e){}return null}
+function rid(n){const a='abcdefghjkmnpqrstuvwxyz23456789';let s='';for(let i=0;i<n;i++)s+=a[Math.floor(Math.random()*a.length)];return s}
+function fmt(ms){ms=Math.max(0,ms);if(ms<10000)return (ms/1000).toFixed(1);const s=Math.ceil(ms/1000);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
+function toast(msg,kind){const host=document.getElementById('toastHost');const d=document.createElement('div');d.className='toast '+(kind||'');d.textContent=msg;host.innerHTML='';host.appendChild(d);clearTimeout(toast._t);toast._t=setTimeout(()=>d.remove(),3500)}
+function parseFen(fen){const rows=fen.split(' ')[0].split('/');const b={};const files='abcdefgh';rows.forEach((row,ri)=>{let f=0;for(const ch of row){if(/\d/.test(ch))f+=+ch;else{b[files[f]+(8-ri)]={t:ch.toLowerCase(),c:ch===ch.toUpperCase()?'w':'b'};f++}}});return b}
+const urlReady = /^https:\/\/script\.google\.com\/.+\/exec$/.test(SERVER_URL);
+
+/* ---------- talking to the Google Sheet server ---------- */
+const C={mode:'home',pid:null,pin:null,v:null,lastNow:0,offset:0,offOk:false,key:'',sel:null,promo:null,
+  pending:null,pendingSeq:0,seq:0,fails:0,timer:null,inflight:false,lastEv:{},watch:null,flip:false,turnKey:'',draft:'',vtype:''};
+C.pid=ss('get','tc_pid');if(!C.pid){C.pid='p'+rid(12);ss('set','tc_pid',C.pid)}
+
+async function call(a,extra){
+  const seq=++C.seq;
+  const body=JSON.stringify(Object.assign({a,pid:C.pid,pin:C.pin},extra||{}));
+  const t0=Date.now();let r;
+  try{const res=await fetch(SERVER_URL,{method:'POST',body});r=await res.json()}
+  catch(e){C.fails++;netBanner();return null}
+  const t1=Date.now();
+  if(C.fails){C.fails=0;netBanner()}
+  if(r.now){const off=r.now-(t0+t1)/2;C.offset=C.offOk?C.offset*0.7+off*0.3:off;C.offOk=true}
+  if(!r.ok){
+    if(r.badPin){ss('del','tc_pin');C.pin=null;goHome('Wrong teacher PIN. Check the Settings tab of your Google Sheet.');return r}
+    if(r.err)toast(r.err);return r;
+  }
+  if(r.gone){ss('del','tc_name');goHome('Your teacher started a new room. Type your name to join again.');return r}
+  if(r.msg)toast(r.msg);
+  if(r.v&&r.now>=C.lastNow){C.lastNow=r.now;C.v=r.v;if(seq>=C.pendingSeq)C.pending=null;render(false)}
+  return r;
+}
+function startLoop(){
+  clearTimeout(C.timer);
+  const tick=async()=>{
+    if(C.mode==='home')return;
+    if(!C.inflight){C.inflight=true;try{await call(C.mode==='teacher'?'t_poll':'poll')}finally{C.inflight=false}}
+    C.timer=setTimeout(tick,C.fails?4000:POLL_MS);
+  };
+  tick();
+}
+function serverNow(){return Date.now()+C.offset}
+function netBanner(){
+  let el=document.getElementById('netbad');
+  if(C.fails>=2&&C.mode!=='home'){if(!el){el=document.createElement('div');el.id='netbad';el.className='banner err netbad';document.body.appendChild(el)}
+    el.textContent="Can't reach the game server. Retrying…"}
+  else if(el)el.remove();
+}
+function goHome(msg){C.mode='home';clearTimeout(C.timer);C.v=null;C.key='';C.vtype='';netBanner();renderHome(msg)}
+
+/* ---------- board and shared pieces ---------- */
+function boardHTML(o){
+  const pcs=parseFen(o.fen);const files='abcdefgh';
+  const ranks=o.flip?[1,2,3,4,5,6,7,8]:[8,7,6,5,4,3,2,1];
+  const fl=o.flip?files.split('').reverse():files.split('');
+  let checkSq=null;if(o.check){for(const sq in pcs){if(pcs[sq].t==='k'&&pcs[sq].c===o.check)checkSq=sq}}
+  let h='';
+  ranks.forEach((r,ri)=>{fl.forEach((f,fi)=>{
+    const sq=f+r;const light=(files.indexOf(f)+r)%2===1;const cls=['sq',light?'l':'d'];
+    if(o.last&&(o.last.from===sq||o.last.to===sq))cls.push('last');
+    if(o.sel===sq)cls.push('sel');
+    if(o.vote&&(o.vote.from===sq||o.vote.to===sq))cls.push('vote');
+    if(checkSq===sq)cls.push('chk');
+    const tg=o.targets&&(sq in o.targets);if(tg){cls.push('tgt');if(o.targets[sq])cls.push('cap')}
+    const p=pcs[sq];
+    h+=`<div class="${cls.join(' ')}" data-sq="${sq}">`+(p?`<span class="pc ${p.c}">${GLYPH[p.t]}︎</span>`:'')+
+      (tg?'<span class="dot"></span>':'')+(ri===7?`<span class="coord f">${f}</span>`:'')+(fi===0?`<span class="coord r">${r}</span>`:'')+`</div>`;
+  })});
+  return `<div class="board">${h}</div>`;
+}
+function histHTML(hist){
+  if(!hist||!hist.length)return '<span class="muted">No moves yet.</span>';
+  const icon={majority:'✔',random:'🎲',time:'⏱'};let out='';
+  for(let i=0;i<hist.length;i+=2){const a=hist[i],b=hist[i+1];
+    out+=`<div>${i/2+1}. ${esc(a.san)} ${icon[a.how]||''}${b?`&nbsp;&nbsp;${esc(b.san)} ${icon[b.how]||''}`:''}</div>`}
+  return out;
+}
+function clockOf(g,team){
+  if(g.status==='playing'&&team===g.turn)return g.clock[team]-((g.paused?g.pausedAt:serverNow())-g.turnStart);
+  return g.clock[team];
+}
+function teamBox(g,tm,o){
+  o=o||{};
+  return `<div class="teambox ${tm}"><h4>${TEAM[tm]} (${g[tm].length})</h4><ul>${g[tm].map(p=>`<li><span style="${p.on?'':'opacity:.5'}">${esc(p.name)}${p.on?'':' (away)'}${o.me===p.name?' (you)':''}</span>${o.teacher?`<button class="x" data-act="kick" data-target="${esc(p.pid)}" title="Remove from table">×</button>`:''}</li>`).join('')}</ul>${o.extra?o.extra(tm):''}</div>`;
+}
+function gameViewHTML(v,o){
+  const flip=o.flip,myTeam=o.myTeam||null,top=flip?'w':'b',bot=flip?'b':'w';
+  const clock=team=>`<div class="clock ${team} ${v.status==='playing'&&v.turn===team?'active':''}" data-clockbox="${team}"><span>${TEAM[team]} team${myTeam===team?' (you)':''}</span><span class="t" data-clock="${team}">${fmt(clockOf(v,team))}</span></div>`;
+  let turn;
+  if(v.status==='over')turn=`<div class="turnbar over">🏁 ${esc(v.result||'Game over')}</div>`;
+  else if(v.paused)turn=`<div class="turnbar wait">⏸ Paused by the teacher</div>`;
+  else if(myTeam&&v.turn===myTeam)turn=`<div class="turnbar">Your team's turn! Pick a move to vote. (${v.votedCount}/${v.teamSize} voted)</div>`;
+  else if(myTeam)turn=`<div class="turnbar wait">${TEAM[v.turn]} team is voting… (${v.votedCount}/${v.teamSize}) Plan your next move!</div>`;
+  else turn=`<div class="turnbar">${TEAM[v.turn]} team is voting (${v.votedCount||0}/${v.teamSize||0})</div>`;
+  const myVote=o.pendingVote||v.myVote;
+  const board=boardHTML({fen:v.fen,flip,last:v.lastMove,sel:o.sel,targets:o.targets,vote:myVote,check:v.check?v.turn:null});
+  let side='';
+  if(v.question&&v.status==='playing'){
+    const Q=v.question,st=Q.state;
+    side+=`<div class="qcard"><div class="row" style="justify-content:space-between"><b>⭐ ${Q.mine?'Bonus question for YOU!':'Bonus question for '+esc(v.qHolder)}</b><span class="small muted">${esc(Q.std)}</span></div>
+      <div class="qtext">${esc(Q.text)}</div>
+      <div class="choices">${Q.choices.map((c,i)=>{let cls='';if(Q.answer!=null){if(i===Q.answer)cls='right';else if(i===Q.choice)cls='wrong'}
+        return `<button class="${cls}" ${Q.mine&&st==='open'&&!o.answered?`data-ans="${i}"`:'disabled'}>${String.fromCharCode(65+i)}. ${esc(c)}</button>`}).join('')}</div>
+      <div class="small" style="margin-top:8px">${st==='open'?`Time left: <b data-qclock="${Q.deadline}">${fmt(Q.deadline-serverNow())}</b>. Right answer = +${o.bonus}s for the team.`:st==='right'?'✅ Correct! Bonus time added.':st==='wrong'?'❌ Not this time.':'⏱ Time ran out on this question.'}</div></div>`;
+  }else if(v.qHolder&&v.status==='playing'){
+    const st=v.qState;
+    side+=`<div class="qcard small">⭐ <b>${esc(v.qHolder)}</b> (${TEAM[v.qTeam]} team) ${st==='open'?'is answering a bonus science question…':st==='right'?'got the bonus question right!':st==='wrong'?'missed the bonus question.':'ran out of time on the bonus question.'}</div>`;
+  }
+  if(v.tally&&v.status==='playing'){
+    const max=Math.max(1,...v.tally.map(x=>x.n)),tot=v.tally.reduce((a,x)=>a+x.n,0);
+    side+=`<div class="card col" style="padding:12px"><b>${o.teacher?TEAM[v.turn]+' team votes':"Your team's votes"}</b>
+      ${v.tally.length?`<div class="tally">${v.tally.map(x=>`<button ${o.teacher?'disabled':''} class="${myVote&&myVote.from===x.from&&myVote.to===x.to?'mine':''}" data-agree="${esc(JSON.stringify({from:x.from,to:x.to,promotion:x.promotion}))}">
+        <span style="flex:1;text-align:left">${esc(x.san)}<div class="bar" style="width:${Math.round(x.n/max*100)}%"></div></span><span>&nbsp;${x.n} (${Math.round(x.n/tot*100)}%)</span></button>`).join('')}</div>
+        <div class="small muted">${o.teacher?'':'Tap a move to vote for it too. '}More than ${o.threshold}% on one move = that move is played. Otherwise one vote is picked at random.</div>`:'<span class="muted small">No votes yet.</span>'}
+      ${o.mates&&o.mates.length?`<div class="mates">${o.mates.map(m=>`<span class="mate ${m.done?'done':''} ${m.on?'':'away'}">${esc(m.name)}</span>`).join('')}</div>`:''}</div>`;
+  }
+  side+=`<div><b>Moves</b> <span class="small muted">✔ majority · 🎲 random pick · ⏱ out of time</span><div class="hist">${histHTML(v.history)}</div></div>`;
+  if(v.events&&v.events.length)side+=`<div class="small muted">${esc(v.events[v.events.length-1].text)}</div>`;
+  if(o.teacher)side+=`<div class="row"><button class="sm ghost" data-act="flip">Flip board</button></div>`;
+  return `<div class="game"><div class="boardwrap">${o.teacher?`<h3>${esc(v.name)}</h3>`:''}${clock(top)}${board}${clock(bot)}</div><div class="col">${turn}${side}</div></div>`;
+}
+function updateClocks(){
+  if(C.mode==='home'||!C.v)return;
+  const g=C.mode==='teacher'?(C.v.tables||[]).find(t=>t.id===C.watch):C.v.game;
+  if(!g||!g.fen)return;
+  const run=g.status==='playing'&&!g.paused;
+  document.querySelectorAll('[data-clock]').forEach(el=>{const tm=el.dataset.clock;const ms=clockOf(g,tm);el.textContent=fmt(ms);
+    const box=el.closest('[data-clockbox]');if(box)box.classList.toggle('low',run&&tm===g.turn&&ms<10000)});
+  document.querySelectorAll('[data-qclock]').forEach(el=>{el.textContent=fmt(+el.dataset.qclock-(g.paused?g.pausedAt:serverNow()))});
+}
+setInterval(updateClocks,200);
+
+/* ---------- render ---------- */
+function render(force){
+  if(C.mode==='student')renderStudent(force);
+  else if(C.mode==='teacher')renderTeacher(force);
+}
+function eventToast(g){
+  if(!g||!g.events||!g.events.length)return;
+  const last=g.events[g.events.length-1];
+  if(C.lastEv[g.id]!=null&&last.id>C.lastEv[g.id])toast(last.text,last.kind);
+  C.lastEv[g.id]=last.id;
+}
+
+/* ----- student screens ----- */
+function canVote(){const g=C.v&&C.v.game;return !!(g&&g.status==='playing'&&!g.paused&&g.turn===C.v.me.team)}
+function renderStudent(force){
+  const s=C.v;if(!s)return;
+  const g=s.game;eventToast(g);
+  const vtype=!g?'lobby':g.status==='lobby'?'wait':'game';
+  const tk=g?g.id+':'+(g.history||[]).length+':'+g.status:'';
+  if(tk!==C.turnKey){C.turnKey=tk;C.sel=null;C.promo=null;C.answered=false}
+  const key=JSON.stringify(s)+'|'+C.sel+'|'+JSON.stringify(C.promo)+'|'+JSON.stringify(C.pending)+'|'+C.answered;
+  if(!force&&key===C.key)return;
+  C.key=key;
+  if(vtype==='lobby'){
+    if(C.vtype!=='lobby'){
+      app.innerHTML=`<div class="wrap"><div class="card row" style="justify-content:space-between;margin-bottom:16px">
+        <div><h2 style="margin:0">Hi, <span id="meName"></span>!</h2><div class="muted">Pick a table and a team, or make a new table.</div></div>
+        <div class="row"><input id="newName" placeholder="New table name" maxlength="24"><button data-c="create">Make a table</button></div></div>
+        <div id="tableList" class="tables"></div></div>`;
+      const ni=document.getElementById('newName');ni.value=C.draft;ni.oninput=()=>C.draft=ni.value;
+    }
+    document.getElementById('meName').textContent=s.me.name;
+    document.getElementById('tableList').innerHTML=s.tables.length?s.tables.map(t=>`<div class="tcard">
+      <div class="row" style="justify-content:space-between"><b>${esc(t.name)}</b><span class="status ${t.status}">${t.status==='lobby'?'waiting':t.status}</span></div>
+      <div class="teamcols">${teamBox(t,'w')}${teamBox(t,'b')}</div>
+      <div class="row"><button class="sm" data-c="team" data-tid="${esc(t.id)}" data-team="w">Join White</button><button class="sm" style="background:#2a2f33" data-c="team" data-tid="${esc(t.id)}" data-team="b">Join Black</button></div>
+      ${t.status==='playing'?'<div class="small muted" style="margin-top:6px">Game in progress. You can still join a team.</div>':''}</div>`).join(''):'<div class="card muted">No tables yet. Make one!</div>';
+  }else if(vtype==='wait'){
+    const n=g.w.filter(p=>p.on).length+g.b.filter(p=>p.on).length,st=s.settings;
+    const sw=tm=>s.me.team!==tm?`<button class="sm ghost" style="margin-top:8px;${tm==='b'?'color:#fff;border-color:#666':''}" data-c="team" data-tid="${esc(g.id)}" data-team="${tm}">Switch to ${TEAM[tm]}</button>`:'';
+    app.innerHTML=`<div class="wrap"><div class="card col" style="max-width:640px;margin:0 auto">
+      <div class="row" style="justify-content:space-between"><h2>${esc(g.name)}</h2><button class="sm ghost" data-c="leave">Leave table</button></div>
+      <div class="teamcols">${teamBox(g,'w',{me:s.me.name,extra:sw})}${teamBox(g,'b',{me:s.me.name,extra:sw})}</div>
+      <div>${n<st.minPlayers?`Waiting for players… need at least ${st.minPlayers} (now ${n}).`:'Ready to play!'}</div>
+      ${g.amCreator?`<button data-c="start" ${n<st.minPlayers?'disabled':''}>Start the game</button>`:'<div class="muted">The person who made this table (or your teacher) starts the game.</div>'}
+      <div class="card small" style="background:#f7f4ec"><b>How it works</b><br>
+      Everyone on your team votes for a move. If more than ${st.threshold}% pick the same move, that move is played. If not, one of the votes is picked at random, so talk it out!<br>
+      Your team starts with ${st.startSec}s on the clock and gets +${st.incSec}s after every move. Each turn, one player gets a science question. Get it right for +${st.bonusSec}s.</div></div></div>`;
+  }else{
+    const myTeam=s.me.team;let targets=null;
+    if(C.sel&&canVote()){const ch=new Chess(g.fen);targets={};ch.moves({square:C.sel,verbose:true}).forEach(m=>{targets[m.to]=!!m.captured})}
+    const mates=(g.status==='playing'&&g.turn===myTeam&&g.voted)?g[myTeam].map(p=>({name:p.name,on:p.on,done:g.voted.includes(p.name)})):[];
+    app.innerHTML=`<div class="wrap"><div class="row" style="justify-content:space-between;margin-bottom:10px"><b>${esc(g.name)} · You are on the ${TEAM[myTeam]} team</b>
+      <button class="sm ghost" data-c="leave">Leave table</button></div>`+
+      gameViewHTML(g,{flip:myTeam==='b',myTeam,sel:C.sel,targets,mates,threshold:s.settings.threshold,bonus:s.settings.bonusSec,pendingVote:C.pending,answered:C.answered})+`</div>`+
+      (C.promo?`<div class="modal" data-c="promoCancel"><div class="card">${['q','r','b','n'].map(p=>`<button data-promo="${p}"><span class="pc ${myTeam}">${GLYPH[p]}︎</span></button>`).join('')}</div></div>`:'');
+  }
+  C.vtype=vtype;updateClocks();
+}
+async function vote(from,to,promotion){
+  C.pending={from,to};C.sel=null;C.promo=null;C.pendingSeq=C.seq+1;render(true);
+  await call('vote',{from,to,promotion});
+}
+
+/* ----- teacher screen ----- */
+function renderTeacher(force){
+  const v=C.v;if(!v)return;
+  if(!C.watch||!v.tables.find(t=>t.id===C.watch)){const pl=v.tables.find(t=>t.status==='playing');C.watch=pl?pl.id:(v.tables[0]&&v.tables[0].id)||null}
+  const key=JSON.stringify(v)+'|'+C.watch+'|'+C.flip;
+  if(!force&&key===C.key)return;C.key=key;
+  const st=v.settings,url=location.href.split('#')[0].split('?')[0];
+  const tables=v.tables.map(t=>{const n=t.w.filter(p=>p.on).length+t.b.filter(p=>p.on).length;const id=esc(t.id);
+    return `<div class="tcard ${C.watch===t.id?'watch':''}">
+      <div class="row" style="justify-content:space-between"><b>${esc(t.name)}</b><span class="status ${t.status}">${t.status==='lobby'?'waiting':t.status}${t.paused&&t.status==='playing'?' · paused':''}</span></div>
+      <div class="teamcols">${teamBox(t,'w',{teacher:true})}${teamBox(t,'b',{teacher:true})}</div>
+      <div class="row"><button class="sm ghost" data-act="watch" data-tid="${id}">Watch</button>
+      ${t.status==='lobby'?`<button class="sm" data-act="start" data-tid="${id}">Start (${n}/${st.minPlayers}+)</button><button class="sm ghost" data-act="swap" data-tid="${id}">Swap sides</button>`:''}
+      ${t.status==='playing'?`<button class="sm orange" data-act="pause" data-tid="${id}">${t.paused?'Resume':'Pause'}</button><button class="sm warn" data-act="end" data-tid="${id}">End</button>`:''}
+      ${t.status==='over'?`<button class="sm" data-act="reset" data-tid="${id}">New game, same teams</button><button class="sm ghost" data-act="swap" data-tid="${id}">Swap sides</button>`:''}
+      <button class="sm ghost" data-act="delete" data-tid="${id}">Delete</button></div></div>`}).join('')||'<div class="muted">No tables yet. Students can make their own, or tap "+ New table".</div>';
+  const players=v.players.length?v.players.map(p=>`<span class="pill ${p.on?'on':'off'}">${esc(p.name)} · ${p.tableName?esc(p.tableName)+' '+TEAM[p.team]:'no table'}
+    <button class="x" data-act="remove" data-target="${esc(p.pid)}" title="Remove from the room">×</button></span>`).join(''):'<span class="muted">Waiting for students to join…</span>';
+  const w=v.tables.find(t=>t.id===C.watch);
+  let watch;
+  if(!w)watch='<h3>Watch a game</h3><p class="muted">Start a table to see the board here. This view works well on the projector.</p>';
+  else if(!w.fen)watch=`<h3>${esc(w.name)}</h3><p class="muted">Waiting to start.</p><div class="teamcols">${teamBox(w,'w')}${teamBox(w,'b')}</div>`;
+  else{eventToast(w);watch=gameViewHTML(w,{flip:C.flip,teacher:true,threshold:st.threshold,bonus:st.bonusSec})}
+  app.innerHTML=`<div class="wrap">
+   <div class="card row" style="justify-content:space-between;margin-bottom:16px">
+     <div><div class="logo" style="font-size:1.8rem">Team <span>Chess</span> · Teacher</div>
+       <div class="muted small" style="word-break:break-all">Students open: <b>${esc(url)}</b></div></div>
+     <div class="row"><button class="sm ghost" data-act="sheet">Open my Google Sheet</button><button class="sm warn" data-act="clearRoom">Clear room for next class</button></div>
+   </div>
+   <div class="grid2"><div class="col">
+     <div class="card col"><div class="row" style="justify-content:space-between"><h3>Tables</h3>
+       <div class="row"><button class="sm" data-act="newTable">+ New table</button><button class="sm orange" data-act="autofill" title="Put students with no table onto tables, balancing teams">Auto-fill</button></div></div>
+       <div class="col">${tables}</div></div>
+     <div class="card col"><h3>Students in the room (${v.players.length})</h3><div class="row">${players}</div></div>
+     <div class="card"><details><summary>Game settings</summary><div class="setlist" style="margin-top:8px">
+       <span>Starting clock</span><b>${st.startSec}s</b><span>After each move</span><b>+${st.incSec}s</b><span>Clock cap</span><b>${st.capSec?st.capSec+'s':'none'}</b>
+       <span>Science bonus</span><b>+${st.bonusSec}s</b><span>Time to answer</span><b>${st.qSec}s</b><span>Majority needed</span><b>more than ${st.threshold}%</b><span>Players to start</span><b>${st.minPlayers}</b></div>
+       <div class="small muted" style="margin-top:8px">Change these in the Settings tab of your Google Sheet. New values show up within about 30 seconds.</div></details></div>
+   </div><div class="card">${watch}</div></div></div>`;
+  updateClocks();
+}
+
+/* ---------- clicks ---------- */
+document.addEventListener('click',async e=>{
+  if(C.mode==='teacher'){
+    const b=e.target.closest('[data-act]');if(!b)return;
+    const a=b.dataset.act,tid=b.dataset.tid,target=b.dataset.target;
+    if(a==='watch'){C.watch=tid;render(true);return}
+    if(a==='flip'){C.flip=!C.flip;render(true);return}
+    if(a==='sheet'){if(C.v&&C.v.sheetUrl)window.open(C.v.sheetUrl,'_blank');return}
+    if(a==='end'&&!confirm('End this game now?'))return;
+    if(a==='delete'&&!confirm('Delete this table? Students go back to the lobby.'))return;
+    if(a==='remove'&&!confirm('Remove this student from the room?'))return;
+    if(a==='clearRoom'&&!confirm('Clear the whole room? All tables and students are removed so the next class starts fresh. Your Sheet logs stay.'))return;
+    if(a==='start')C.watch=tid;
+    b.disabled=true;await call('t_'+a,{tid,target});return;
+  }
+  if(C.mode!=='student')return;
+  const pr=e.target.closest('[data-promo]');
+  if(pr){vote(C.promo.from,C.promo.to,pr.dataset.promo);return}
+  if(e.target.classList.contains('modal')){C.promo=null;render(true);return}
+  const c=e.target.closest('[data-c]');
+  if(c){const a=c.dataset.c;
+    if(a==='create'){c.disabled=true;const name=C.draft;C.draft='';await call('create',{name})}
+    else if(a==='team'){c.disabled=true;await call('team',{tid:c.dataset.tid,team:c.dataset.team})}
+    else if(a==='leave'){if(confirm('Leave this table?'))await call('leave')}
+    else if(a==='start'){c.disabled=true;await call('start')}
+    return}
+  const ans=e.target.closest('[data-ans]');
+  if(ans){C.answered=true;document.querySelectorAll('[data-ans]').forEach(x=>x.disabled=true);ans.style.outline='3px solid #2563eb';await call('answer',{choice:+ans.dataset.ans});return}
+  const ag=e.target.closest('[data-agree]');
+  if(ag&&canVote()){try{const m=JSON.parse(ag.dataset.agree);vote(m.from,m.to,m.promotion)}catch(err){}return}
+  const sqEl=e.target.closest('[data-sq]');
+  if(sqEl&&canVote()){
+    const sq=sqEl.dataset.sq,ch=new Chess(C.v.game.fen);
+    if(C.sel){const mv=ch.moves({square:C.sel,verbose:true}).filter(m=>m.to===sq);
+      if(mv.length){if(mv.some(m=>m.promotion)){C.promo={from:C.sel,to:sq};render(true);return}vote(C.sel,sq);return}}
+    const p=ch.get(sq);C.sel=(p&&p.color===C.v.me.team&&C.sel!==sq)?sq:null;render(true);
+  }
+});
+
+/* ---------- home ---------- */
+function renderHome(msg){
+  if(typeof window.Chess!=='function'){app.innerHTML=`<div class="hero"><div class="card"><div class="banner err">The game couldn't load its chess tools. Check the internet and refresh.</div></div></div>`;return}
+  if(!urlReady){app.innerHTML=`<div class="hero"><div class="card"><div class="banner err">Setup not finished: paste your Apps Script web app URL (it ends in /exec) into SERVER_URL near the top of this file.</div></div></div>`;return}
+  app.innerHTML=`<div class="hero"><div class="card col">
+    <div class="logo">Team <span>Chess</span></div>
+    <div class="muted">Science edition · vote on every move as a team</div>
+    ${msg?`<div class="banner">${esc(msg)}</div>`:''}
+    <h3 style="margin-top:12px">Join the game</h3>
+    <input id="jName" placeholder="Your first name" maxlength="18" autocomplete="off">
+    <button id="jGo">Join</button>
+    <details style="margin-top:14px"><summary class="muted">Teacher</summary>
+      <div class="row" style="margin-top:8px"><input id="tPin" type="password" inputmode="numeric" placeholder="Teacher PIN" style="width:140px"><button class="ghost" id="tGo">Open teacher screen</button></div></details>
+  </div></div>`;
+  const ni=document.getElementById('jName');ni.value=ss('get','tc_lastname')||'';
+  const go=async()=>{const name=ni.value.trim();if(!name){toast('Type your name');return}
+    const b=document.getElementById('jGo');b.disabled=true;b.textContent='Joining…';
+    const r=await call('join',{name});
+    if(r&&r.ok&&r.v){ss('set','tc_name',name);ss('set','tc_lastname',name);C.mode='student';C.key='';C.vtype='';render(true);startLoop()}
+    else{b.disabled=false;b.textContent='Join';if(!r)toast("Can't reach the game server. Try again.")}};
+  document.getElementById('jGo').onclick=go;ni.onkeydown=e=>{if(e.key==='Enter')go()};
+  const tgo=async()=>{C.pin=document.getElementById('tPin').value.trim();if(!C.pin)return;
+    const r=await call('t_poll');
+    if(r&&r.ok){ss('set','tc_pin',C.pin);C.mode='teacher';C.key='';render(true);startLoop()}
+    else if(!r)toast("Can't reach the game server.")};
+  document.getElementById('tGo').onclick=tgo;document.getElementById('tPin').onkeydown=e=>{if(e.key==='Enter')tgo()};
+}
+(function init(){
+  if(typeof window.Chess!=='function'||!urlReady){renderHome();return}
+  const pin=ss('get','tc_pin'),name=ss('get','tc_name');
+  if(pin){C.pin=pin;C.mode='teacher';app.innerHTML='<div class="hero"><div class="card">Loading teacher screen…</div></div>';startLoop()}
+  else if(name){C.mode='student';app.innerHTML='<div class="hero"><div class="card">Reconnecting…</div></div>';startLoop()}
+  else renderHome();
+})();
+</script>
+</body>
+</html>
