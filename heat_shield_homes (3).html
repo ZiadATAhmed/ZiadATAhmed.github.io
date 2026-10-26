@@ -1,0 +1,2223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Heat Shield Homes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root{
+  --paper:#f6f7f4; --white:#ffffff; --ink:#22303a; --muted:#61707a; --line:#d4d9d2;
+  --sky:#2f7fd1; --skysoft:#e6f0fa; --axisR:#d33b2c; --axisG:#2c9a4a; --axisB:#2f5fd1;
+  --hot:#e0533f; --cold:#3b6fd8; --good:#1f8a4c; --warn:#c77a0a;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;height:100%;overflow:hidden;font-family:Lexend,system-ui,sans-serif;color:var(--ink);background:var(--paper)}
+button,select,input{font-family:inherit}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #f2b705;outline-offset:2px}
+#gl{position:fixed;left:0;top:0;z-index:0;display:block}
+#app{position:fixed;inset:0;z-index:1;display:grid;grid-template-rows:auto 1fr;grid-template-columns:290px 1fr;pointer-events:none}
+#app.noside{grid-template-columns:0 1fr}
+#app.noside aside{display:none}
+
+/* header */
+header{grid-column:1/3;display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:7px 10px;background:var(--white);border-bottom:2px solid var(--ink);pointer-events:auto}
+.logo{display:flex;align-items:center;gap:7px;font-weight:800;font-size:17px;letter-spacing:-.3px;margin-right:2px;white-space:nowrap}
+#sClimate{max-width:170px}
+@media (max-width:1500px){.logo .lt{display:none}}
+.grp{display:flex;gap:6px;align-items:center;padding:3px 4px;border-radius:10px;background:#eef1ec}
+.spacer{flex:1}
+.btn{font-weight:600;font-size:13px;border:2px solid var(--ink);background:var(--white);border-radius:9px;padding:6px 11px;cursor:pointer;color:var(--ink);white-space:nowrap}
+.btn:hover{background:#f1f4f0}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.primary{background:var(--sky);color:#fff;border-color:#1d5c9e}
+.btn.primary:hover{background:#286fb8}
+.btn.warm{background:#f6d38a;border-color:#a8750e}
+.btn.warm:hover{background:#f0c66c}
+.btn.danger{background:#fde2de;border-color:var(--axisR);color:#9e2418}
+.btn.on{background:var(--skysoft);border-color:var(--sky)}
+.btn.icon{padding:6px 10px}
+select{font-size:13px;font-weight:500;border:2px solid var(--line);border-radius:8px;padding:5px 6px;background:#fff;color:var(--ink)}
+.chk{display:flex;align-items:center;gap:4px;font-size:13px;font-weight:500;padding:0 4px;cursor:pointer}
+
+/* sidebar */
+aside{pointer-events:auto;background:var(--white);border-right:2px solid var(--ink);overflow-y:auto;padding:12px 12px 30px}
+aside h3{font-size:14px;font-weight:700;margin:16px 0 8px}
+aside h3:first-child{margin-top:0}
+.tools{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.tool{display:flex;flex-direction:column;align-items:center;gap:2px;padding:7px 2px;border:2px solid var(--line);border-radius:10px;background:#fff;font-size:12px;font-weight:600;cursor:pointer;color:var(--ink)}
+.tool span{font-size:21px;line-height:1.1}
+.tool.sel{border-color:var(--sky);background:var(--skysoft)}
+.toolsplit{grid-column:1/-1;font-size:11px;color:var(--muted);font-weight:600;margin:4px 0 -2px}
+.hint{font-size:12px;color:var(--muted);line-height:1.45;margin:8px 0 0;background:#f4f6f2;border-radius:8px;padding:7px 9px}
+.mcard{display:grid;grid-template-columns:38px 1fr auto;gap:9px;align-items:center;width:100%;text-align:left;border:2px solid var(--line);border-radius:10px;background:#fff;padding:7px;margin-bottom:6px;cursor:pointer;color:var(--ink)}
+.mcard:hover{border-color:#a9b4ad}
+.mcard.sel{border-color:var(--sky);box-shadow:0 0 0 3px #cfe3f7}
+.sw{width:38px;height:38px;border-radius:7px;border:2px solid var(--ink);background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:21px}
+.mi b{display:block;font-size:13px;font-weight:600}
+.mi small{display:block;font-size:11px;color:var(--muted);line-height:1.3;margin-top:1px}
+.meter{display:flex;gap:2px;align-items:center;margin-top:4px;font-size:10px;color:var(--muted)}
+.meter .ml{width:62px}
+.bar{width:10px;height:8px;border-radius:2px;background:#e3e7e1}
+.bar.on{background:var(--hot)}
+.bar.sun{background:#f2b705}
+.tag{display:inline-block;font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px;margin-top:4px}
+.tag.cond{background:#fde2de;color:#a8281c}
+.tag.poor{background:#fdecd4;color:#8f5a08}
+.tag.ok{background:#eaf3d4;color:#4f6d14}
+.tag.great{background:#d6f0e0;color:#17693a}
+.tag.heat{background:#fff0d6;color:#9a5a00}
+.price{font-weight:700;font-size:12px;white-space:nowrap;text-align:right}
+.price small{display:block;font-weight:500;color:var(--muted);font-size:10px}
+.wide{width:100%;margin-top:4px}
+.budget{height:14px;border-radius:7px;background:#e8ebe6;border:2px solid var(--ink);overflow:hidden}
+.bfill{height:100%;transition:width .3s}
+.bnum{font-size:13px;font-weight:600;margin:5px 0 10px}
+.blabel{font-size:12px;font-weight:600;margin-bottom:4px;color:var(--muted)}
+.checks{list-style:none;padding:0;margin:0;font-size:12.5px}
+.checks li{display:flex;gap:7px;align-items:flex-start;padding:3px 0;line-height:1.35}
+.checks .ok{color:var(--good)} .checks .no{color:var(--axisR)}
+.row{display:flex;gap:6px;flex-wrap:wrap}
+.row .btn{flex:1;font-size:12px;padding:6px 6px}
+.tabs{display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap}
+.tabs button{flex:1;border:2px solid var(--line);background:#fff;border-radius:8px;padding:5px 2px;font-size:11.5px;font-weight:600;cursor:pointer;color:var(--ink)}
+.tabs button.sel{border-color:var(--sky);background:var(--skysoft)}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.fcard{display:flex;flex-direction:column;align-items:center;gap:1px;border:2px solid var(--line);border-radius:10px;background:#fff;padding:6px 4px;cursor:pointer;color:var(--ink);text-align:center}
+.fcard:hover{border-color:#a9b4ad}
+.fcard.sel{border-color:var(--sky);box-shadow:0 0 0 3px #cfe3f7}
+.fcard .fi{font-size:24px;line-height:1.15}
+.fcard b{font-size:12px;font-weight:600;line-height:1.2}
+.fcard small{font-size:10.5px;color:var(--muted)}
+.fcard .need{font-size:10px;font-weight:700;color:#17693a;background:#d6f0e0;border-radius:10px;padding:0 6px;margin-top:2px}
+.types{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.types button{border:2px solid var(--line);background:#fff;border-radius:9px;padding:6px 4px;font-size:12px;font-weight:600;cursor:pointer;color:var(--ink);text-align:left}
+.types button.sel{border-color:var(--sky);background:var(--skysoft)}
+.papers{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.paper{display:flex;flex-direction:column;align-items:center;gap:2px;border:none;background:none;cursor:pointer;padding:0;font-size:10px;color:var(--ink)}
+.paper i{display:block;width:100%;aspect-ratio:1;border:2px solid var(--line);border-radius:8px;background-size:cover}
+.paper.sel i{border-color:var(--sky);box-shadow:0 0 0 3px #cfe3f7}
+.rlist{display:flex;flex-direction:column;gap:4px}
+.rlist button{display:flex;justify-content:space-between;gap:6px;border:2px solid var(--line);background:#fff;border-radius:9px;padding:6px 8px;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--ink);text-align:left}
+.rlist button.sel{border-color:var(--sky);background:var(--skysoft)}
+.rbox{border:2px solid var(--ink);border-radius:12px;padding:10px;background:#fbfcfa}
+.rbox input{width:100%;font-size:14px;font-weight:600;border:2px solid var(--line);border-radius:8px;padding:5px 8px;margin-bottom:8px}
+.rbox .sub{font-size:12px;font-weight:600;margin:10px 0 5px}
+.tcard{display:grid;grid-template-columns:38px 1fr;gap:8px;align-items:center;width:100%;text-align:left;border:2px solid var(--line);border-radius:10px;background:#fff;padding:6px;margin-bottom:6px;cursor:pointer;color:var(--ink)}
+.tcard.sel{border-color:var(--sky);box-shadow:0 0 0 3px #cfe3f7}
+.tcard b{display:block;font-size:13px}
+.tcard small{font-size:11px;color:var(--muted)}
+.art{display:grid;grid-template-columns:52px 1fr;gap:8px;align-items:center;border:2px solid var(--line);border-radius:10px;padding:6px;margin-bottom:6px;background:#fff;cursor:pointer}
+.art.sel{border-color:var(--sky);box-shadow:0 0 0 3px #cfe3f7}
+.art img{width:52px;height:52px;image-rendering:pixelated;border:4px solid #8a5a33;border-radius:3px;display:block}
+.art b{font-size:13px;display:block}
+.art .row{margin-top:4px}
+.art .row button{flex:none;font-size:11px;padding:3px 7px}
+
+/* stage + panels */
+#stage{display:grid;gap:8px;padding:8px;pointer-events:none;min-height:0;min-width:0}
+.panel{display:flex;flex-direction:column;border:3px solid #b9c1bb;border-radius:12px;overflow:hidden;min-width:0;min-height:0;pointer-events:none}
+.panel.active{border-color:var(--hc)}
+.phead{pointer-events:auto;display:flex;align-items:center;gap:6px;padding:5px 8px;background:#fff;border-bottom:2px solid #b9c1bb}
+.panel.active .phead{border-bottom-color:var(--hc);background:color-mix(in srgb,var(--hc) 10%,white)}
+.dot{width:14px;height:14px;border-radius:50%;background:var(--hc);border:2px solid var(--ink);flex:none}
+.pname{font-weight:700;border:none;outline:none;min-width:40px;flex:1;font-size:14px;background:transparent;color:var(--ink);padding:2px}
+.pname:focus{background:#fff;border-radius:5px}
+.pcost{font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap}
+.ib{border:1.5px solid var(--line);background:#fff;border-radius:7px;padding:3px 7px;cursor:pointer;font-size:13px;color:var(--ink)}
+.ib:hover{background:#f1f4f0}
+.ib:disabled{opacity:.35;cursor:not-allowed}
+.view{flex:1;position:relative;pointer-events:auto;touch-action:none;cursor:crosshair;min-height:0;overflow:hidden}
+.view.look{cursor:grab}
+.hud{position:absolute;left:8px;top:8px;display:flex;flex-direction:column;align-items:flex-start;gap:4px;pointer-events:none;z-index:3}
+.chip{background:rgba(255,255,255,.94);border:2px solid var(--ink);border-radius:8px;padding:3px 9px;font-size:12px;font-weight:600;white-space:nowrap}
+.chip.off{background:#fff4d6}
+.camctl{position:absolute;right:8px;top:8px;display:flex;gap:4px;z-index:3}
+.camctl .ib{border-color:var(--ink);font-size:14px;padding:2px 7px}
+.labels{position:absolute;inset:0;pointer-events:none;z-index:2}
+.rlabel{position:absolute;transform:translate(-50%,-100%);background:rgba(255,255,255,.95);border:2px solid var(--ink);border-radius:8px;padding:2px 8px;font-size:11.5px;text-align:center;pointer-events:auto;white-space:nowrap;cursor:default;user-select:none}
+.rlabel.sel{border-color:#f2b705;box-shadow:0 0 0 3px #f2b705}
+.rlabel.bad .rn::after{content:" ⚠";color:var(--axisR)}
+.rlabel .rn{font-weight:600}
+.rlabel .rv{font-weight:800;font-size:13px}
+.card{position:absolute;left:8px;right:8px;bottom:8px;background:#fff;border:3px solid var(--hc);border-radius:12px;padding:9px 12px;font-size:13px;display:none;z-index:4;line-height:1.45}
+.card .big{font-size:18px;font-weight:800}
+.card .x{position:absolute;right:6px;top:4px;border:none;background:none;font-size:16px;cursor:pointer}
+.empty{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);background:rgba(255,255,255,.95);border:2px dashed var(--ink);border-radius:10px;padding:7px 12px;font-size:12.5px;font-weight:500;text-align:center;pointer-events:none;z-index:3;max-width:90%}
+
+/* modal */
+.modal{position:fixed;inset:0;z-index:20;background:rgba(20,32,40,.5);display:none;align-items:center;justify-content:center;pointer-events:auto}
+.modal.show{display:flex}
+.mbox{background:#fff;border:3px solid var(--ink);border-radius:16px;width:min(1150px,95vw);max-height:92vh;overflow:auto;padding:20px 24px;position:relative}
+.mbox h2{margin:0 0 6px;font-size:24px;letter-spacing:-.4px}
+.mbox p{line-height:1.55}
+.mclose{position:absolute;right:14px;top:12px}
+.intro{width:min(740px,95vw)}
+.intro ol{padding-left:22px;line-height:1.6;margin:8px 0}
+.idea{display:flex;gap:12px;align-items:center;background:var(--skysoft);border:2px solid var(--sky);border-radius:12px;padding:10px 14px;margin:12px 0}
+.idea b{display:block}
+.painter{width:min(700px,95vw)}
+.pwrap{display:flex;gap:18px;flex-wrap:wrap;margin-top:8px}
+#pcan{border:3px solid var(--ink);border-radius:6px;cursor:crosshair;touch-action:none;image-rendering:pixelated;width:336px;height:336px;background:#fff}
+.pside{flex:1;min-width:220px;display:flex;flex-direction:column;gap:10px}
+.pside label{font-size:13px;font-weight:600;display:flex;flex-direction:column;gap:4px}
+.pside input{font-size:14px;border:2px solid var(--line);border-radius:8px;padding:6px 8px}
+.ptools{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.pal{display:grid;grid-template-columns:repeat(8,1fr);gap:4px}
+.pal button{aspect-ratio:1;border:2px solid var(--line);border-radius:6px;cursor:pointer;padding:0}
+.pal button.sel{border-color:var(--ink);box-shadow:0 0 0 2px #f2b705}
+.rgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:14px}
+.rcol{border:3px solid var(--hc);border-radius:14px;padding:12px 14px}
+.rcol h4{margin:0;font-size:16px;display:flex;align-items:center;gap:7px}
+.rbig{font-size:30px;font-weight:800;letter-spacing:-.5px;margin-top:6px}
+.rsub{font-size:13px;color:var(--muted);font-weight:500}
+.rsec{margin-top:12px;font-size:13px}
+.rsec>b{display:block;margin-bottom:5px}
+.sbars{display:flex;gap:8px;align-items:flex-end;height:90px;border-bottom:2px solid var(--ink);padding:0 4px}
+.sbar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;font-size:10px;font-weight:600}
+.sbar i{display:block;width:100%;border:2px solid var(--ink);border-bottom:none;border-radius:5px 5px 0 0;min-height:2px}
+.slabels{display:flex;gap:8px;padding:2px 4px;font-size:11px;text-align:center}
+.slabels span{flex:1}
+.stack{display:flex;height:18px;border:2px solid var(--ink);border-radius:6px;overflow:hidden}
+.stack i{display:block;height:100%}
+.legend{display:grid;grid-template-columns:1fr auto;gap:1px 10px;margin-top:5px;font-size:12px}
+.legend span{display:flex;align-items:center;gap:5px}
+.legend em{width:10px;height:10px;border-radius:3px;border:1.5px solid var(--ink);display:inline-block;font-style:normal}
+.rtable{width:100%;border-collapse:collapse;font-size:12px}
+.rtable td,.rtable th{padding:3px 4px;border-bottom:1px solid var(--line);text-align:left}
+.rtable th{font-weight:600;color:var(--muted)}
+.warnline{color:var(--axisR);font-size:12px;font-weight:600;margin-top:4px}
+.design{font-size:12px;color:var(--muted);line-height:1.5}
+.think{margin-top:18px;background:#fff8e6;border:2px solid #d3a326;border-radius:12px;padding:12px 16px}
+.think h3{margin:0 0 6px;font-size:16px}
+.think ol{margin:0;padding-left:22px;line-height:1.65;font-size:14px}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:9px 16px;border-radius:10px;font-size:13.5px;font-weight:500;z-index:30;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90vw;text-align:center}
+.toast.show{opacity:1}
+/* tabs, playback, chart */
+.tabsw{display:flex;gap:2px;background:#eef1ec;border-radius:10px;padding:3px}
+.tabsw button{border:none;background:none;padding:6px 11px;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;color:var(--ink);white-space:nowrap}
+.tabsw button.sel{background:#fff;box-shadow:0 0 0 2px var(--ink)}
+#app.city .buildonly{display:none!important}
+#sScrub{width:140px;accent-color:var(--sky)}
+#lScrub{font-size:12px;font-weight:600;min-width:92px}
+.ychart{position:absolute;left:8px;right:8px;bottom:8px;height:104px;background:rgba(255,255,255,.96);border:2px solid var(--ink);border-radius:10px;z-index:3;display:none;pointer-events:none}
+.ychart canvas{width:100%;height:100%;display:block}
+.card.up{bottom:120px}
+/* city */
+#cityWrap{grid-column:2;grid-row:2;display:none;padding:8px;pointer-events:none;min-height:0;min-width:0}
+#app.city #stage{display:none}
+#app.city #cityWrap{display:flex}
+#cityView{flex:1;border:3px solid var(--ink);border-radius:12px;position:relative;pointer-events:auto;touch-action:none;overflow:hidden;cursor:grab}
+#citySigns{position:absolute;inset:0;pointer-events:none;z-index:2}
+.sign{position:absolute;transform:translate(-50%,-100%);background:#fff;border:2px solid var(--ink);border-radius:8px;padding:2px 8px;font-size:11px;text-align:center;white-space:nowrap;pointer-events:auto;cursor:pointer;line-height:1.3}
+.sign b{display:block;font-size:12px}
+.sign .k{font-weight:700;color:#9a5a00}
+.sign.sel{border-color:#f2b705;box-shadow:0 0 0 3px #f2b705}
+.ccard{position:absolute;right:10px;top:10px;width:min(340px,calc(100% - 20px));max-height:calc(100% - 20px);overflow:auto;background:#fff;border:3px solid var(--ink);border-radius:14px;padding:12px 14px;z-index:5;display:none;font-size:13px;line-height:1.45}
+.ccard .x{position:absolute;right:8px;top:6px;border:none;background:none;font-size:16px;cursor:pointer}
+.ccard .row .btn{font-size:12px}
+#cityEmpty{position:absolute;left:50%;top:12%;transform:translate(-50%,-50%);background:#fff;border:2px dashed var(--ink);border-radius:12px;padding:14px 18px;font-size:14px;text-align:center;max-width:80%;display:none;z-index:3;pointer-events:none}
+.pub label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600;margin-bottom:10px}
+.pub input,.pub select{font-size:14px;border:2px solid var(--line);border-radius:8px;padding:6px 8px;font-weight:500}
+#pubStatus{font-size:13px;min-height:1.2em}
+.hoodsign{position:absolute;transform:translate(-50%,-100%);background:var(--hc);border:3px solid var(--ink);border-radius:10px;padding:4px 12px;font-size:15px;font-weight:800;text-align:center;white-space:nowrap;pointer-events:auto;cursor:pointer;z-index:1}
+.hoodsign small{display:block;font-size:11px;font-weight:600}
+.hoodbtn{display:flex;justify-content:space-between;align-items:center;width:100%;border:2px solid var(--ink);background:var(--hc);border-radius:9px;padding:6px 9px;font-size:13px;font-weight:700;cursor:pointer;color:var(--ink)}
+.rlist small{font-weight:500;color:var(--muted)}
+@media print{
+  #app,#gl,.toast,.mclose,.noprint{display:none!important}
+  .modal{position:static;background:none;display:block}
+  .mbox{border:none;max-height:none;width:auto;overflow:visible}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<div id="app">
+  <header>
+    <button class="btn icon" id="bSide" title="Show or hide the tools panel">☰</button>
+    <div class="logo">
+      <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path d="M4 14 L15 5 L26 14" fill="none" stroke="#22303a" stroke-width="2.5" stroke-linejoin="round"/><rect x="7" y="13" width="16" height="13" fill="#f6d38a" stroke="#22303a" stroke-width="2.5"/><rect x="12" y="17" width="6" height="9" fill="#3b6fd8" stroke="#22303a" stroke-width="2"/><path d="M2 27h26" stroke="#e0533f" stroke-width="2.5"/></svg>
+      <span class="lt">Heat Shield Homes</span>
+    </div>
+    <div class="tabsw" role="tablist"><button id="tBuild" class="sel" role="tab">🏗️ Build</button><button id="tCity" role="tab">🏙️ City</button></div>
+    <div class="grp" title="Where will your houses be built?"><span aria-hidden="true">🌎</span><select id="sClimate" aria-label="Climate"></select></div>
+    <div class="grp buildonly">
+      <button class="btn icon" id="bUnits" title="Switch temperature units">°F</button>
+      <label class="chk"><input type="checkbox" id="cRoof">Roofs</label>
+      <label class="chk" title="Lowers the walls so you can see inside while decorating"><input type="checkbox" id="cCut">Cutaway</label>
+      <label class="chk" title="Hides the heat ratings so you must reason from what each material is made of"><input type="checkbox" id="cChal">Challenge</label>
+    </div>
+    <button class="btn buildonly" id="bAdd">➕ Add house</button>
+    <div class="spacer"></div>
+    <div class="grp buildonly" id="gPlay" hidden>
+      <button class="btn" id="bPause" title="Pause or play">Pause</button>
+      <input type="range" id="sScrub" min="0" max="8759" value="0" aria-label="Move through the test">
+      <span id="lScrub"></span>
+      <select id="sAvg" aria-label="How temperatures are shown"><option value="hour">Every hour</option><option value="day">Daily average</option><option value="week" selected>Weekly average</option></select>
+    </div>
+    <div class="grp buildonly" id="gDay">
+      <select id="sSeason" aria-label="Season for the 24-hour test">
+        <option value="0">❄️ Winter</option><option value="1">🌱 Spring</option><option value="2">☀️ Summer</option><option value="3">🍂 Fall</option>
+      </select>
+      <button class="btn warm" id="bDay" title="Runs one day with the heater and AC turned off">🌡️ 24-hour test</button>
+    </div>
+    <div class="grp buildonly" id="gYear">
+      <select id="sSpeed" aria-label="Year test speed">
+        <option value="slow">Slow</option><option value="normal" selected>Normal</option><option value="fast">Fast</option><option value="instant">Instant</option>
+      </select>
+      <button class="btn primary" id="bYear" title="Runs a full year with the heater and AC turned on">📅 Year test</button>
+    </div>
+    <button class="btn danger buildonly" id="bStop" hidden>■ Stop test</button>
+    <button class="btn buildonly" id="bBack" hidden>🏗️ Back to building</button>
+    <button class="btn buildonly" id="bReport" hidden>📊 Year report</button>
+    <button class="btn icon" id="bHelp" title="How to play">?</button>
+  </header>
+  <aside id="side"></aside>
+  <main id="stage"></main>
+  <section id="cityWrap"><div id="cityView"><div id="citySigns"></div><div class="ccard" id="cityCard"></div>
+    <div id="cityEmpty">No houses in this class city yet.<br>Build a house, then press <b>🏙️ Publish</b> to move in.</div></div></section>
+</div>
+
+<div class="modal" id="mIntro">
+  <div class="mbox intro">
+    <button class="btn mclose" data-close>✕</button>
+    <h2>Heat Shield Homes</h2>
+    <p>Your mission: design a home with a living room, bedroom, bathroom, and kitchen that stays comfortable all year while using as little electricity as possible for heating and cooling.</p>
+    <div class="idea">
+      <svg width="46" height="46" viewBox="0 0 46 46" aria-hidden="true"><rect x="3" y="12" width="15" height="22" rx="3" fill="#e0533f" stroke="#22303a" stroke-width="2"/><rect x="28" y="12" width="15" height="22" rx="3" fill="#3b6fd8" stroke="#22303a" stroke-width="2"/><path d="M19 23h7m-3-4 4 4-4 4" fill="none" stroke="#22303a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div><b>The big idea</b>Heat always moves from hotter places to colder places. Conductors let heat pass through easily. Insulators slow heat down.</div>
+    </div>
+    <ol>
+      <li>Build walls on the grid, or use the 🏷️ Rooms tool to drop in a ready-made room. You need a living room, bedroom, bathroom, and kitchen.</li>
+      <li>Add windows and doors. Every room needs a door, and the house needs a door to the outside.</li>
+      <li>Pick materials for the walls, windows, doors, roof, and floor. Watch your building budget.</li>
+      <li>Furnish each room with the equipment it needs. Add wallpaper, and paint your own pixel art for the walls.</li>
+      <li>Run the <b>24-hour test</b> to see how warm or cold each room gets with the heater and AC turned off.</li>
+      <li>Run the <b>Year test</b> to see how much electricity your house uses through all four seasons.</li>
+      <li>Add up to 4 houses to compare them side by side.</li>
+    </ol>
+    <p><b>Scientist tip:</b> Use the ⧉ button to copy a house, then change only <b>one</b> thing. Now you can see exactly what that one change does.</p>
+    <p style="font-size:13px;color:var(--muted)">Controls: drag with the 👁️ Look tool (or right-drag) to spin the view. Scroll to zoom. Ctrl+Z undoes. R turns furniture.</p>
+    <button class="btn primary" data-close style="font-size:15px;padding:9px 18px">Start building</button>
+  </div>
+</div>
+
+<div class="modal" id="mPaint" data-sticky>
+  <div class="mbox painter">
+    <button class="btn mclose" id="pCancel">✕</button>
+    <h2>Paint your picture</h2>
+    <p style="margin:0;font-size:13px;color:var(--muted)">Click and drag to paint pixels. Your painting will hang on a wall in your house.</p>
+    <div class="pwrap">
+      <canvas id="pcan" width="336" height="336"></canvas>
+      <div class="pside">
+        <label>Title<input id="pTitle" maxlength="24" placeholder="My painting"></label>
+        <div class="ptools">
+          <button class="tool sel" data-pt="pen"><span>✏️</span>Pencil</button>
+          <button class="tool" data-pt="fill"><span>🪣</span>Fill</button>
+          <button class="tool" data-pt="erase"><span>🧽</span>Eraser</button>
+        </div>
+        <div class="pal" id="pPal"></div>
+        <label>Frame<select id="pFrame"><option value="wood">Wood</option><option value="gold">Gold</option><option value="black">Black</option><option value="white">White</option></select></label>
+        <div class="row"><button class="btn" id="pClear">Clear</button><button class="btn primary" id="pSave">Save painting</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="mPub">
+  <div class="mbox intro pub">
+    <button class="btn mclose" data-close>✕</button>
+    <h2>Publish to the city</h2>
+    <p style="margin-top:0">Your house will appear in your class city. Each student gets <b>one</b> house there. Publishing again replaces your old one.</p>
+    <label>Your first name<input id="pubName" maxlength="20" autocomplete="off"></label>
+    <label>Class period<span id="pubClsWrap"></span></label>
+    <label>Password<input id="pubPw" type="password" maxlength="40" autocomplete="off" placeholder="At least 4 characters"></label>
+    <p class="hint" style="margin:-4px 0 10px">First time? Make up a password and remember it. You will need it to update or load your house later.</p>
+    <label>Neighbourhood<select id="pubHood"></select></label>
+    <label>House name<input id="pubHouse" maxlength="28" autocomplete="off"></label>
+    <div id="pubWarn" style="margin-bottom:10px;font-size:13px"></div>
+    <div class="row"><button class="btn" id="pubFile">💾 Download house file</button><button class="btn primary" id="pubGo">🏙️ Publish</button></div>
+    <p id="pubStatus"></p>
+  </div>
+</div>
+<div class="modal" id="mLogin">
+  <div class="mbox intro pub">
+    <button class="btn mclose" data-close>✕</button>
+    <h2>Load my house</h2>
+    <p style="margin-top:0">Get your house from the city so you can keep working on it, on any computer.</p>
+    <label>Your first name<input id="lgName" maxlength="20" autocomplete="off"></label>
+    <label>Class period<span id="lgClsWrap"></span></label>
+    <label>Password<input id="lgPw" type="password" maxlength="40" autocomplete="off"></label>
+    <div class="row"><button class="btn primary" id="lgGo">🔑 Load my house</button></div>
+    <p id="lgStatus" style="font-size:13px"></p>
+  </div>
+</div>
+<input type="file" id="fileIn" accept=".json,application/json" multiple hidden>
+<div class="modal" id="mReport"><div class="mbox" id="reportBox"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ================= TEACHER SETTINGS (safe to edit) =================
+const BUDGET = 9000;        // building budget (walls, windows, doors, roof, floor)
+const DECOR_BUDGET = 6000;  // furniture, wallpaper, and paintings
+const MIN_AREA = 40;        // minimum floor area in square meters
+const MIN_WINDOWS = 3;      // minimum windows on outside walls
+const PRICE_PER_KWH = 0.30; // electricity price for the report
+const PAINTING_COST = 50;   // cost to buy one painting
+const PAPER_COST = 30;      // wallpaper or paint cost per room
+// Class city: paste your Apps Script web app URL here (see city_server.gs).
+// Leave it empty and the city only shows houses saved on this computer.
+const CITY_URL = 'https://script.google.com/macros/s/AKfycbw07xxbvhSFqqcNM2Fbl_XYPA-mgqPtZThMmgzIJ7FHKgD98EyxTxFLXJY0eUzYUgIhhQ/exec';
+const CLASS_PERIODS = ['Period 1','Period 2','Period 3','Period 4','Period 5','Period 6']; // empty [] lets students type it
+const NEIGHBOURHOODS = ['Maple Grove','Sunny Hills','River Bend','Pine Ridge','Lakeside']; // every class city has these
+// ===================================================================
+
+// PURE-START
+const GW=12, GH=10, WALL_H=2.7, WALL_T=0.15, POST=0.15, SEG=1-POST;
+const WALL_A=2.7, WIN_A=1.0, DOOR_A=1.8;
+const HEAT_SET_C=20, COOL_SET_C=24.4, GROUND_C=12.8, COP_HEAT=2.5, COP_COOL=3;
+
+const WALLS={
+  metal:{name:'Sheet Metal',U:6.0,cost:25,mass:5e3,desc:'Thin metal sheets.'},
+  concrete:{name:'Concrete Block',U:2.6,cost:50,mass:2e5,desc:'Heavy and strong blocks.'},
+  brick:{name:'Brick',U:2.0,cost:65,mass:1.6e5,desc:'Fired clay bricks. Sturdy and heavy.'},
+  wood:{name:'Wood Planks',U:1.4,cost:45,mass:3e4,desc:'Boards cut from trees.'},
+  straw:{name:'Straw Bale',U:0.3,cost:70,mass:2.5e4,desc:'Thick packed straw with air trapped inside.'},
+  foam:{name:'Foam Panel',U:0.18,cost:120,mass:1e4,desc:'Foam full of tiny trapped air bubbles.'}
+};
+const WINDOWS={
+  single:{name:'Single Pane',U:5.8,shgc:0.85,leak:3,cost:60,color:'#cfeaf7',desc:'One sheet of glass.'},
+  double:{name:'Double Pane',U:2.8,shgc:0.7,leak:1,cost:150,color:'#8fc8ea',desc:'Two sheets of glass with air trapped between.'},
+  triple:{name:'Triple Pane',U:1.0,shgc:0.45,leak:0.5,cost:300,color:'#79c4b0',desc:'Three sheets of glass with a special coating.'}
+};
+const DOORS={
+  metal:{name:'Hollow Metal',U:4.0,leak:6,cost:80,color:'#8d99a6',desc:'Thin metal shell, hollow inside.'},
+  wood:{name:'Solid Wood',U:2.0,leak:4,cost:120,color:'#8a5a33',desc:'A thick slab of solid wood.'},
+  insul:{name:'Foam Core',U:1.0,leak:1.5,cost:200,color:'#3d6f8e',desc:'Foam center with tight rubber seals.'}
+};
+const ROOFS={
+  metal:{name:'Bare Metal',U:6.0,abs:0.55,cost:10,color:'#a7b1b9',desc:'Metal sheets with nothing underneath.'},
+  shingle:{name:'Dark Shingles',U:1.2,abs:0.92,cost:18,color:'#3b3c42',desc:'Dark shingles with a thin insulation layer.'},
+  clay:{name:'Clay Tile',U:0.6,abs:0.55,cost:26,color:'#c0663e',desc:'Clay tiles with some insulation.'},
+  cool:{name:'Cool White',U:0.22,abs:0.2,cost:40,color:'#f4f4ef',desc:'Bright white top with thick insulation.'},
+  green:{name:'Green Roof',U:0.3,abs:0.35,cost:48,color:'#6aa84f',desc:'Soil and plants on top, plus insulation.'}
+};
+const FLOORS={
+  slab:{name:'Bare Concrete',U:1.6,mass:8e4,cost:10,color:'#cfcac0',desc:'Concrete poured right on the ground.'},
+  wood:{name:'Raised Wood',U:1.0,mass:1e4,cost:15,color:'#c89b66',desc:'Wood floor over a crawl space.'},
+  insul:{name:'Insulated Slab',U:0.25,mass:8e4,cost:25,color:'#c7d9e2',desc:'Concrete with foam underneath.'}
+};
+const FURN={
+  sofa:{name:'Sofa',icon:'🛋️',cat:'living',w:2,d:1,cost:400,auto:'living'},
+  armchair:{name:'Armchair',icon:'💺',cat:'living',w:1,d:1,cost:200},
+  tv:{name:'TV + stand',icon:'📺',cat:'living',w:2,d:1,cost:300,heat:25,auto:'living'},
+  coffeeTable:{name:'Coffee table',icon:'☕',cat:'living',w:1,d:1,cost:80},
+  bookshelf:{name:'Bookshelf',icon:'📚',cat:'living',w:1,d:1,cost:150},
+  rug:{name:'Rug',icon:'🟥',cat:'living',w:2,d:2,cost:60,floor:true},
+  lamp:{name:'Floor lamp',icon:'💡',cat:'living',w:1,d:1,cost:50,heat:15},
+  plant:{name:'Plant',icon:'🪴',cat:'living',w:1,d:1,cost:40},
+  bed:{name:'Bed',icon:'🛏️',cat:'bedroom',w:2,d:2,cost:350,auto:'bedroom'},
+  nightstand:{name:'Nightstand',icon:'🕯️',cat:'bedroom',w:1,d:1,cost:70},
+  dresser:{name:'Dresser',icon:'🗄️',cat:'bedroom',w:1,d:1,cost:180},
+  desk:{name:'Desk + computer',icon:'💻',cat:'bedroom',w:1,d:1,cost:250,heat:30},
+  closet:{name:'Closet',icon:'👕',cat:'bedroom',w:1,d:1,cost:200},
+  toilet:{name:'Toilet',icon:'🚽',cat:'bathroom',w:1,d:1,cost:150,auto:'bathroom'},
+  bathSink:{name:'Bathroom sink',icon:'🪥',cat:'bathroom',w:1,d:1,cost:120,auto:'bathroom'},
+  shower:{name:'Shower',icon:'🚿',cat:'bathroom',w:1,d:1,cost:400,auto:'bathroom'},
+  bathtub:{name:'Bathtub',icon:'🛁',cat:'bathroom',w:2,d:1,cost:500,auto:'bathroom'},
+  fridge:{name:'Refrigerator',icon:'🧊',cat:'kitchen',w:1,d:1,cost:600,heat:50,auto:'kitchen'},
+  stove:{name:'Stove + oven',icon:'🍳',cat:'kitchen',w:1,d:1,cost:400,heat:60,auto:'kitchen'},
+  kSink:{name:'Kitchen sink',icon:'🚰',cat:'kitchen',w:1,d:1,cost:200,auto:'kitchen'},
+  counter:{name:'Counter',icon:'🔪',cat:'kitchen',w:1,d:1,cost:150},
+  dining:{name:'Dining table',icon:'🍽️',cat:'kitchen',w:2,d:2,cost:300}
+};
+const ROOM_TYPES={
+  living:{name:'Living room',icon:'🛋️',needs:[['sofa'],['tv']]},
+  bedroom:{name:'Bedroom',icon:'🛏️',needs:[['bed']]},
+  bathroom:{name:'Bathroom',icon:'🛁',needs:[['toilet'],['bathSink'],['shower','bathtub']]},
+  kitchen:{name:'Kitchen',icon:'🍳',needs:[['fridge'],['stove'],['kSink']]},
+  other:{name:'Other room',icon:'📦',needs:[]}
+};
+const REQUIRED_TYPES=['living','bedroom','bathroom','kitchen'];
+const PAPERS={none:{name:'Bare wall'},white:{name:'White paint',color:'#f7f5ef'},sky:{name:'Sky blue',color:'#bcdcf2'},mint:{name:'Mint',color:'#c8ead6'},
+  sunny:{name:'Sunny yellow',color:'#f8e7a0'},blush:{name:'Blush pink',color:'#f6cfd6'},stripes:{name:'Stripes'},dots:{name:'Polka dots'},
+  stars:{name:'Night stars'},tiles:{name:'White tiles'},checker:{name:'Checker'},panel:{name:'Wood panels'},flowers:{name:'Flowers'}};
+const CLIMATES={
+  chicago:{name:'Four seasons (like Chicago)',lat:42,swing:9,m:[26,30,40,51,62,72,76,75,67,55,42,31],cloud:[.6,.6,.55,.5,.45,.35,.3,.3,.35,.45,.6,.65]},
+  minneapolis:{name:'Snowy north (like Minneapolis)',lat:45,swing:10,m:[15,20,32,46,59,69,73,71,62,48,33,20],cloud:[.6,.6,.6,.55,.5,.45,.4,.4,.45,.55,.65,.65]},
+  phoenix:{name:'Hot desert (like Phoenix)',lat:33,swing:13,m:[56,60,65,73,82,91,95,94,89,77,64,55],cloud:[.3,.3,.25,.15,.1,.1,.3,.3,.15,.15,.2,.3]},
+  sf:{name:'Mild coast (like San Francisco)',lat:38,swing:6,m:[51,53,55,56,58,61,62,63,64,61,56,51],cloud:[.5,.45,.4,.3,.35,.4,.45,.45,.3,.3,.4,.5]}
+};
+const MDAYS=[31,28,31,30,31,30,31,31,30,31,30,31];
+const MSTART=[0,31,59,90,120,151,181,212,243,273,304,334];
+const MNAMES=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const SEASONS=['Winter','Spring','Summer','Fall'];
+const SEASON_ICON=['❄️','🌱','☀️','🍂'];
+const REP_DAY=[14,104,195,287];
+
+function monthOf(d){for(let i=0;i<12;i++){if(d<MSTART[i]+MDAYS[i])return i;}return 11;}
+function seasonOfMonth(m){return (m===11||m<2)?0:m<5?1:m<8?2:3;}
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const f2c=f=>(f-32)*5/9;
+
+function makeWeather(cl){
+  const R=rng(20261025);
+  const N=8760, T=new Float32Array(N), alt=new Float32Array(N), saz=new Float32Array(N), dni=new Float32Array(N), dhi=new Float32Array(N), ihor=new Float32Array(N);
+  const mid=MSTART.map((s,i)=>s+MDAYS[i]/2);
+  const lat=cl.lat*Math.PI/180;
+  let anom=0;
+  for(let d=0;d<365;d++){
+    let m0,m1,f;
+    if(d<mid[0]){m0=11;m1=0;f=(d+365-mid[11])/(mid[0]+365-mid[11]);}
+    else if(d>=mid[11]){m0=11;m1=0;f=(d-mid[11])/(mid[0]+365-mid[11]);}
+    else{let i=0;while(i<10&&d>=mid[i+1])i++;m0=i;m1=i+1;f=(d-mid[i])/(mid[i+1]-mid[i]);}
+    const mean=cl.m[m0]+(cl.m[m1]-cl.m[m0])*f;
+    anom=0.7*anom+(R()+R()+R()-1.5)*4;
+    const cloudy=R()<cl.cloud[monthOf(d)];
+    const sf=cloudy?0.3:0.95;
+    const decl=23.45*Math.PI/180*Math.sin(2*Math.PI*(284+d+1)/365);
+    for(let h=0;h<24;h++){
+      const k=d*24+h;
+      T[k]=f2c(mean+anom+cl.swing*Math.sin(2*Math.PI*(h-9)/24));
+      const ha=(h+0.5-12)*15*Math.PI/180;
+      const sa=Math.sin(lat)*Math.sin(decl)+Math.cos(lat)*Math.cos(decl)*Math.cos(ha);
+      alt[k]=sa;
+      if(sa>0){
+        const ca=Math.sqrt(1-sa*sa);
+        let cz=(Math.sin(decl)-sa*Math.sin(lat))/(ca*Math.cos(lat));
+        cz=Math.max(-1,Math.min(1,cz));
+        let az=Math.acos(cz)*180/Math.PI; if(ha>0)az=360-az;
+        saz[k]=az; dni[k]=900*sf*Math.pow(sa,0.3); dhi[k]=(cloudy?90:50)*sa+15; ihor[k]=dni[k]*sa+dhi[k];
+      }
+    }
+  }
+  return {T,alt,saz,dni,dhi,ihor,lat:cl.lat};
+}
+function ivert(wx,k,az){
+  const sa=wx.alt[k]; if(sa<=0)return 0;
+  const ca=Math.sqrt(1-sa*sa);
+  const c=ca*Math.cos((wx.saz[k]-az)*Math.PI/180);
+  return wx.dni[k]*Math.max(0,c)+wx.dhi[k]*0.5;
+}
+
+function analyze(walls){
+  const isW=(t,x,z)=>!!walls[t+','+x+','+z];
+  const idx=(x,z)=>x*GH+z;
+  const outside=new Uint8Array(GW*GH), room=new Int16Array(GW*GH).fill(-1);
+  const nbrs=(x,z)=>{const r=[];
+    if(x<GW-1&&!isW('v',x+1,z))r.push([x+1,z]);
+    if(x>0&&!isW('v',x,z))r.push([x-1,z]);
+    if(z<GH-1&&!isW('h',x,z+1))r.push([x,z+1]);
+    if(z>0&&!isW('h',x,z))r.push([x,z-1]);
+    return r;};
+  const q=[];
+  const seed=(x,z)=>{if(!outside[idx(x,z)]){outside[idx(x,z)]=1;q.push([x,z]);}};
+  for(let x=0;x<GW;x++){if(!isW('h',x,0))seed(x,0);if(!isW('h',x,GH))seed(x,GH-1);}
+  for(let z=0;z<GH;z++){if(!isW('v',0,z))seed(0,z);if(!isW('v',GW,z))seed(GW-1,z);}
+  while(q.length){const [x,z]=q.pop();for(const [a,b] of nbrs(x,z))seed(a,b);}
+  const rooms=[];
+  for(let x=0;x<GW;x++)for(let z=0;z<GH;z++){
+    if(outside[idx(x,z)]||room[idx(x,z)]>=0)continue;
+    const id=rooms.length, cells=[], st=[[x,z]]; room[idx(x,z)]=id;
+    while(st.length){const c=st.pop();cells.push(c);for(const [a,b] of nbrs(c[0],c[1])){if(room[idx(a,b)]<0&&!outside[idx(a,b)]){room[idx(a,b)]=id;st.push([a,b]);}}}
+    let cx=0,cz=0;cells.forEach(c=>{cx+=c[0]+.5;cz+=c[1]+.5;});cx/=cells.length;cz/=cells.length;
+    let best=cells[0],bd=1e9;cells.forEach(c=>{const d=(c[0]+.5-cx)**2+(c[1]+.5-cz)**2;if(d<bd){bd=d;best=c;}});
+    rooms.push({cells,area:cells.length,lx:best[0],lz:best[1]});
+  }
+  const rAt=(x,z)=>(x<0||z<0||x>=GW||z>=GH)?-1:room[idx(x,z)];
+  const ext=[],int=[];let extWin=0,extDoor=0;
+  for(const key in walls){
+    const [t,xs,zs]=key.split(',');const x=+xs,z=+zs,w=walls[key];
+    let a,b,azA,azB;
+    if(t==='h'){a=rAt(x,z-1);b=rAt(x,z);azA=180;azB=0;}
+    else{a=rAt(x-1,z);b=rAt(x,z);azA=90;azB=270;}
+    if(a>=0&&b<0){ext.push({key,w,room:a,az:azA});}
+    else if(b>=0&&a<0){ext.push({key,w,room:b,az:azB});}
+    else if(a>=0&&b>=0&&a!==b){int.push({key,w,a,b});continue;}
+    else continue;
+    if(w.open==='window')extWin++; if(w.open==='door')extDoor++;
+  }
+  const area=rooms.reduce((s,r)=>s+r.area,0);
+  return {rooms,ext,int,extWin,extDoor,area,cellRoom:room,rAt};
+}
+function roomMapGet(map,r){for(const c of r.cells){const v=map&&map[c[0]+','+c[1]];if(v)return v;}return null;}
+function furnDims(f){const d=FURN[f.type];return f.rot%2?[d.d,d.w]:[d.w,d.d];}
+
+function roomInfo(h,an){
+  const info=an.rooms.map(r=>({type:roomMapGet(h.roomTypes,r),items:{},hasDoor:false,missing:[]}));
+  (h.furn||[]).forEach(f=>{const r=an.rAt(f.x,f.z);if(r>=0)info[r].items[f.type]=(info[r].items[f.type]||0)+1;});
+  an.ext.forEach(e=>{if(e.w.open==='door')info[e.room].hasDoor=true;});
+  an.int.forEach(e=>{if(e.w.open==='door'){info[e.a].hasDoor=true;info[e.b].hasDoor=true;}});
+  info.forEach(i=>{if(!i.type)return;ROOM_TYPES[i.type].needs.forEach(opts=>{if(!opts.some(o=>i.items[o]))i.missing.push(opts.map(o=>FURN[o].name).join(' or '));});});
+  return info;
+}
+
+function buildModel(h,an){
+  const roof=ROOFS[h.roof],fl=FLOORS[h.floor];
+  const R=an.rooms.map(r=>{const V=r.area*WALL_H;return{area:r.area,C:V*1206*6+r.area*fl.mass,Gw:0,Gwin:0,Gd:0,Gi:0.335*0.35*V,Gr:r.area*roof.U,Gg:r.area*fl.U,sol:[],links:[],qi:r.area*4};});
+  (h.furn||[]).forEach(f=>{const r=an.rAt(f.x,f.z);if(r>=0&&FURN[f.type].heat)R[r].qi+=FURN[f.type].heat;});
+  const opening=(w)=>{
+    if(w.open==='window'){const t=WINDOWS[w.win];return{wallA:WALL_A-WIN_A,G:t.U*WIN_A,leak:t.leak,kind:'win',t};}
+    if(w.open==='door'){const t=DOORS[w.door];return{wallA:WALL_A-DOOR_A,G:t.U*DOOR_A,leak:t.leak,kind:'door',t};}
+    return{wallA:WALL_A,G:0,leak:0,kind:null};
+  };
+  an.ext.forEach(e=>{
+    const r=R[e.room],m=WALLS[e.w.mat],o=opening(e.w);
+    r.C+=m.mass; r.Gw+=m.U*o.wallA; r.Gi+=o.leak;
+    if(o.kind==='win'){r.Gwin+=o.G;r.sol.push({k:o.t.shgc*WIN_A,az:e.az});}
+    if(o.kind==='door')r.Gd+=o.G;
+  });
+  an.int.forEach(e=>{
+    const m=WALLS[e.w.mat],o=opening(e.w);
+    const G=m.U*o.wallA+o.G+o.leak*0.5;
+    R[e.a].C+=m.mass/2;R[e.b].C+=m.mass/2;
+    R[e.a].links.push({to:e.b,G});R[e.b].links.push({to:e.a,G});
+  });
+  return{rooms:R,roofAbs:roof.abs};
+}
+
+function simulate(M,wx,start,nH,hvac,T0){
+  const R=M.rooms,n=R.length,SUB=4,dt=3600/SUB;
+  const T=new Float64Array(n).fill(T0),Tn=new Float64Array(n);
+  const temps=new Float32Array(nH*n),hv=new Int8Array(nH*n),kwh=new Float32Array(nH),khc=new Float32Array(nH);let elecH=0;
+  const loss={walls:0,windows:0,doors:0,roof:0,floor:0,air:0};
+  const gain={walls:0,windows:0,doors:0,roof:0,floor:0,air:0,sun:0};
+  const season=[0,0,0,0];let heatJ=0,coolJ=0,elec=0;
+  const rs=R.map(()=>({sum:0,min:1e9,max:-1e9,heatH:0,coolH:0}));
+  const den=R.map(r=>r.C/dt+r.Gw+r.Gwin+r.Gd+r.Gi+r.Gr+r.Gg+r.links.reduce((s,l)=>s+l.G,0));
+  const qs=new Float64Array(n),qh=new Float64Array(n);
+  const acc=(key,f)=>{if(f>0)loss[key]+=f*dt;else gain[key]-=f*dt;};
+  for(let i=0;i<nH;i++){
+    const k=(start+i)%8760,To=wx.T[k],Tsa=To+M.roofAbs*wx.ihor[k]/20;
+    const s=seasonOfMonth(monthOf(Math.floor(k/24)));
+    for(let r=0;r<n;r++){let q=0;for(const o of R[r].sol)q+=o.k*ivert(wx,k,o.az);qs[r]=q;qh[r]=0;}
+    for(let sub=0;sub<SUB;sub++){
+      for(let r=0;r<n;r++){
+        const m=R[r];
+        let num=m.C/dt*T[r]+(m.Gw+m.Gwin+m.Gd+m.Gi)*To+m.Gr*Tsa+m.Gg*GROUND_C+qs[r]+m.qi;
+        for(const l of m.links)num+=l.G*T[l.to];
+        let t=num/den[r];
+        if(hvac){
+          if(t<HEAT_SET_C){const Q=(HEAT_SET_C-t)*den[r];heatJ+=Q*dt;qh[r]+=Q/SUB;t=HEAT_SET_C;const e=Q*dt/COP_HEAT;elec+=e;elecH+=e;season[s]+=e;}
+          else if(t>COOL_SET_C){const Q=(t-COOL_SET_C)*den[r];coolJ+=Q*dt;qh[r]-=Q/SUB;t=COOL_SET_C;const e=Q*dt/COP_COOL;elec+=e;season[s]+=e;}
+        }
+        Tn[r]=t;
+      }
+      T.set(Tn);
+      for(let r=0;r<n;r++){
+        const m=R[r],t=T[r];
+        acc('walls',m.Gw*(t-To));acc('windows',m.Gwin*(t-To));acc('doors',m.Gd*(t-To));acc('air',m.Gi*(t-To));
+        acc('roof',m.Gr*(t-Tsa));acc('floor',m.Gg*(t-GROUND_C));gain.sun+=qs[r]*dt;
+      }
+    }
+    for(let r=0;r<n;r++){
+      temps[i*n+r]=T[r];
+      const st=qh[r]>30?1:qh[r]<-30?-1:0;hv[i*n+r]=st;
+      const x=rs[r];x.sum+=T[r];if(T[r]<x.min)x.min=T[r];if(T[r]>x.max)x.max=T[r];if(st>0)x.heatH++;if(st<0)x.coolH++;
+    }
+    kwh[i]=elec/3.6e6;khc[i]=elecH/3.6e6;
+  }
+  rs.forEach(x=>x.avg=x.sum/nH);
+  return{n,temps,hv,kwh,kh:khc,start,nH,totalKWh:elec/3.6e6,heatKWh:heatJ/COP_HEAT/3.6e6,coolKWh:coolJ/COP_COOL/3.6e6,seasonKWh:season.map(v=>v/3.6e6),loss,gain,rs};
+}
+
+function costOf(h,an){
+  let c=0;
+  for(const k in h.walls){const w=h.walls[k];c+=WALLS[w.mat].cost;if(w.open==='window')c+=WINDOWS[w.win].cost;if(w.open==='door')c+=DOORS[w.door].cost;}
+  c+=an.area*(ROOFS[h.roof].cost+FLOORS[h.floor].cost);
+  return c;
+}
+function decorOf(h,an){
+  let c=(h.furn||[]).reduce((s,f)=>s+FURN[f.type].cost,0);
+  c+=(h.paintings||[]).length*PAINTING_COST;
+  an.rooms.forEach(r=>{const p=roomMapGet(h.roomPaper,r);if(p&&p!=='none')c+=PAPER_COST;});
+  return c;
+}
+function rulesOf(h,an,cost,decor){
+  const info=roomInfo(h,an);
+  const have=new Set(info.map(i=>i.type).filter(Boolean));
+  const missingTypes=REQUIRED_TYPES.filter(t=>!have.has(t)).map(t=>ROOM_TYPES[t].name);
+  const untyped=info.filter(i=>!i.type).length;
+  const needList=[];info.forEach((i,ri)=>{if(i.missing.length)needList.push(ROOM_TYPES[i.type].name+' needs '+i.missing.join(', '));});
+  const noDoor=info.filter(i=>!i.hasDoor).length;
+  return[
+    {ok:!missingTypes.length,text:'Has a living room, bedroom, bathroom, and kitchen'+(missingTypes.length?` (missing: ${missingTypes.join(', ')})`:'')},
+    {ok:!untyped&&an.rooms.length>0,text:'Every room has a room type'+(untyped?` (${untyped} not set yet)`:'')},
+    {ok:!needList.length&&info.some(i=>i.type),text:'Every room has the equipment it needs'+(needList.length?` (${needList.join('; ')})`:'')},
+    {ok:!noDoor&&an.rooms.length>0,text:'Every room has a door'+(noDoor?` (${noDoor} room${noDoor>1?'s':''} without one)`:'')},
+    {ok:an.extDoor>=1,text:'At least 1 door to the outside'},
+    {ok:an.area>=MIN_AREA,text:`At least ${MIN_AREA} m² of floor (you have ${an.area})`},
+    {ok:an.extWin>=MIN_WINDOWS,text:`At least ${MIN_WINDOWS} windows on outside walls (you have ${an.extWin})`},
+    {ok:cost<=BUDGET,text:`Building cost within $${BUDGET.toLocaleString()}`},
+    {ok:decor<=DECOR_BUDGET,text:`Decor cost within $${DECOR_BUDGET.toLocaleString()}`}
+  ];
+}
+// PURE-END
+
+// ================= APP =================
+const $=s=>document.querySelector(s);
+const HOUSE_COLORS=['#2f7fd1','#e8762c','#8a4fd1','#17a08e'];
+const TOOLS=[
+  {id:'look',icon:'👁️',name:'Look'},{id:'wall',icon:'🧱',name:'Wall'},{id:'window',icon:'🪟',name:'Window'},
+  {id:'door',icon:'🚪',name:'Door'},{id:'paint',icon:'🎨',name:'Material'},{id:'erase',icon:'🧽',name:'Erase'},
+  {id:'room',icon:'🏷️',name:'Rooms'},{id:'furn',icon:'🛋️',name:'Furniture'},{id:'art',icon:'🖼️',name:'Paintings'}];
+const BUILD_TOOLS=['look','wall','window','door','paint','erase'];
+const HINTS={
+  look:'Drag to spin the view. Scroll to zoom. Shift+drag to slide the view.',
+  wall:'Click a grid line to add one wall. Click and drag along a line to draw a long wall. Clicking a wall that is already there changes it to the selected material.',
+  window:'Click a wall to put a window in it. Click the window again to take it out. Look at the N, S, E, W letters on the ground to see which way each window faces.',
+  door:'Click a wall to put a door in it. Every room needs a door, and the house needs at least one door to the outside.',
+  paint:'Click any wall to change what it is built from. Or change every wall at once with the button below.',
+  erase:'Click furniture or a painting to remove it. Click a window or door to remove it. Click a wall to remove the wall. Drag along a line to erase a long wall.',
+  room:'Click a room\'s floor to pick it. Then choose its type and wallpaper. Or drop in a ready-made room below.',
+  furn:'Pick an item, then click a floor to place it. Press R or the turn button to rotate first. Click an item in your house to turn it. Drag an item to move it.',
+  art:'Buy a painting and draw it. Then pick it and click the inside of a wall to hang it. Click a hanging painting to take it down. Paintings hide while Cutaway is on.'
+};
+const BREAK_LABELS={walls:'Walls',windows:'Windows',doors:'Doors',roof:'Roof',floor:'Floor',air:'Air leaks',sun:'Sunlight through windows'};
+const BREAK_COLORS={walls:'#b5543c',windows:'#59a8d8',doors:'#8a5a33',roof:'#4a4b52',floor:'#b8ae96',air:'#9ccbb0',sun:'#f2b705'};
+const PAL=['#000000','#1d2b53','#7e2553','#008751','#ab5236','#5f574f','#c2c3c7','#fff1e8','#ff004d','#ffa300','#ffec27','#00e436','#29adff','#83769c','#ff77a8','#ffccaa'];
+const FRAMES={wood:'#8a5a33',gold:'#d4a72c',black:'#26292d',white:'#f4f4f4'};
+const TEMPLATES={
+  living:{name:'Living room',w:4,d:4,type:'living',paper:'stripes',door:['h',2,4],windows:[['h',3,0],['v',0,2]],
+    furn:[['tv',1,0,0],['rug',1,1,0],['coffeeTable',1,1,0],['sofa',1,2,2],['armchair',3,1,1],['plant',0,0,0],['lamp',0,3,0]]},
+  bedroom:{name:'Bedroom',w:3,d:3,type:'bedroom',paper:'stars',door:['h',2,3],windows:[['v',3,1]],
+    furn:[['bed',0,0,0],['nightstand',2,0,0],['dresser',0,2,2],['closet',1,2,2]]},
+  bathroom:{name:'Bathroom',w:2,d:3,type:'bathroom',paper:'tiles',door:['v',2,1],windows:[['v',0,1]],
+    furn:[['toilet',0,0,0],['bathSink',1,0,0],['bathtub',0,2,0]]},
+  kitchen:{name:'Kitchen',w:3,d:3,type:'kitchen',paper:'checker',door:['h',2,3],windows:[['h',2,0]],
+    furn:[['fridge',0,0,0],['stove',1,0,0],['kSink',2,0,0],['dining',0,1,0],['counter',2,1,1]]}
+};
+
+const state={houses:[],active:0,tool:'wall',sel:{wall:'wood',window:'double',door:'wood',furn:'sofa',art:null},furnRot:0,furnCat:'living',stamp:null,
+  mode:'build',avg:'week',climate:'chicago',units:'F',showRoof:false,cut:false,challenge:false,test:null,sideOpen:true};
+let WX=makeWeather(CLIMATES.chicago);
+const fmtT=c=>state.units==='F'?Math.round(c*9/5+32)+'°F':Math.round(c)+'°C';
+const fmtN=n=>Math.round(n).toLocaleString();
+const act=()=>state.houses[state.active];
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),2800);}
+
+// ---------- three.js shared ----------
+const canvas=$('#gl');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.75));
+renderer.setSize(innerWidth,innerHeight);
+addEventListener('resize',()=>renderer.setSize(innerWidth,innerHeight));
+
+function makeCanvasTex(draw,size=128){const c=document.createElement('canvas');c.width=c.height=size;const g=c.getContext('2d');draw(g,size);const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=4;return t;}
+const R0=rng(7);
+const TEX={
+  metal:makeCanvasTex(g=>{g.fillStyle='#b9c3cc';g.fillRect(0,0,128,128);for(let x=0;x<128;x+=16){g.fillStyle='#dbe2e8';g.fillRect(x,0,5,128);g.fillStyle='#95a1ab';g.fillRect(x+12,0,3,128);}}),
+  concrete:makeCanvasTex(g=>{g.fillStyle='#a9aaa4';g.fillRect(0,0,128,128);for(let i=0;i<700;i++){g.fillStyle=R0()<.5?'#9a9b95':'#babbb5';g.fillRect(R0()*128,R0()*128,2,2);}g.strokeStyle='#d0d1cb';g.lineWidth=3;for(let y=0;y<=128;y+=32){g.beginPath();g.moveTo(0,y);g.lineTo(128,y);g.stroke();}for(let r=0;r<4;r++){for(let x=(r%2?32:0);x<=128;x+=64){g.beginPath();g.moveTo(x,r*32);g.lineTo(x,r*32+32);g.stroke();}}}),
+  brick:makeCanvasTex(g=>{g.fillStyle='#d8cfc4';g.fillRect(0,0,128,128);for(let r=0;r<8;r++){for(let x=(r%2?-16:0);x<128;x+=32){const s=R0()*30-15;g.fillStyle=`rgb(${181+s},${84+s/2},${60+s/3})`;g.fillRect(x+2,r*16+2,28,12);}}}),
+  wood:makeCanvasTex(g=>{for(let r=0;r<8;r++){const s=R0()*24-12;g.fillStyle=`rgb(${200+s},${149+s},${90+s/2})`;g.fillRect(0,r*16,128,16);g.fillStyle='rgba(90,55,25,.25)';for(let i=0;i<3;i++)g.fillRect(0,r*16+3+R0()*10,128,1);g.fillStyle='#7a4f27';g.fillRect(0,r*16+15,128,1.5);}}),
+  straw:makeCanvasTex(g=>{g.fillStyle='#dcc06a';g.fillRect(0,0,128,128);g.lineWidth=1.4;for(let i=0;i<520;i++){g.strokeStyle=R0()<.5?'#c4a446':'#f0dc92';const x=R0()*128,y=R0()*128,a=(R0()-.5)*.8;g.beginPath();g.moveTo(x,y);g.lineTo(x+Math.cos(a)*10,y+Math.sin(a)*10);g.stroke();}}),
+  foam:makeCanvasTex(g=>{g.fillStyle='#f4bccb';g.fillRect(0,0,128,128);for(let i=0;i<260;i++){g.fillStyle=R0()<.5?'#f9d6df':'#e9a8b9';g.beginPath();g.arc(R0()*128,R0()*128,1+R0()*2.5,0,Math.PI*2);g.fill();}g.fillStyle='#e29aae';g.fillRect(0,0,2,128);})
+};
+const star=(g,x,y,r,c)=>{g.fillStyle=c;g.beginPath();for(let i=0;i<10;i++){const a=i*Math.PI/5-Math.PI/2,rr=i%2?r*0.45:r;g.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr);}g.closePath();g.fill();};
+const PAPER_TEX={
+  stripes:makeCanvasTex(g=>{for(let x=0;x<128;x+=32){g.fillStyle='#e9f2f8';g.fillRect(x,0,16,128);g.fillStyle='#9cc3e0';g.fillRect(x+16,0,16,128);}}),
+  dots:makeCanvasTex(g=>{g.fillStyle='#f8e08a';g.fillRect(0,0,128,128);g.fillStyle='#fffaf0';for(let y=0;y<128;y+=32)for(let x=0;x<128;x+=32){g.beginPath();g.arc(x+((y/32)%2?16:0)+8,y+8,6,0,Math.PI*2);g.fill();}}),
+  stars:makeCanvasTex(g=>{g.fillStyle='#24345e';g.fillRect(0,0,128,128);const R=rng(3);for(let i=0;i<12;i++)star(g,R()*128,R()*128,4+R()*5,'#ffe27a');g.fillStyle='#fff';for(let i=0;i<30;i++)g.fillRect(R()*128,R()*128,1.5,1.5);}),
+  tiles:makeCanvasTex(g=>{g.fillStyle='#c9d0d3';g.fillRect(0,0,128,128);for(let y=0;y<128;y+=32)for(let x=0;x<128;x+=32){g.fillStyle='#fbfcfc';g.fillRect(x+2,y+2,28,28);}}),
+  checker:makeCanvasTex(g=>{for(let y=0;y<8;y++)for(let x=0;x<8;x++){g.fillStyle=(x+y)%2?'#d9534f':'#fbf6ef';g.fillRect(x*16,y*16,16,16);}}),
+  panel:makeCanvasTex(g=>{for(let x=0;x<128;x+=32){g.fillStyle=x%64?'#d8b48a':'#cfa87c';g.fillRect(x,0,32,128);g.fillStyle='#9c7448';g.fillRect(x+31,0,1.5,128);}}),
+  flowers:makeCanvasTex(g=>{g.fillStyle='#fbf3e4';g.fillRect(0,0,128,128);const R=rng(9);for(let i=0;i<10;i++){const x=R()*128,y=R()*128,c=['#e7798f','#f2a65a','#8a7be0'][i%3];for(let p=0;p<5;p++){const a=p*Math.PI*2/5;g.fillStyle=c;g.beginPath();g.arc(x+Math.cos(a)*5,y+Math.sin(a)*5,4,0,Math.PI*2);g.fill();}g.fillStyle='#f6d54a';g.beginPath();g.arc(x,y,3,0,Math.PI*2);g.fill();}})
+};
+const PAPER_MAT={},PAPER_SW={};
+for(const k in PAPERS){
+  if(k==='none')continue;
+  if(PAPER_TEX[k]){PAPER_MAT[k]=new THREE.MeshLambertMaterial({map:PAPER_TEX[k]});PAPER_SW[k]=`background-image:url(${PAPER_TEX[k].image.toDataURL()})`;}
+  else{PAPER_MAT[k]=new THREE.MeshLambertMaterial({color:PAPERS[k].color});PAPER_SW[k]=`background:${PAPERS[k].color}`;}
+}
+PAPER_SW.none='background:repeating-linear-gradient(45deg,#eee 0 6px,#fff 6px 12px)';
+const WALL_MAT={};for(const k in WALLS)WALL_MAT[k]=new THREE.MeshLambertMaterial({map:TEX[k]});
+const SWATCH={};for(const k in TEX)SWATCH[k]=TEX[k].image.toDataURL();
+const GLASS={},SILL={};for(const k in WINDOWS){GLASS[k]=new THREE.MeshLambertMaterial({color:WINDOWS[k].color,transparent:true,opacity:k==='single'?0.45:0.6,depthWrite:false});SILL[k]=new THREE.MeshLambertMaterial({color:k==='single'?'#ffffff':k==='double'?'#9aa3aa':'#3f5f55'});}
+const DOOR_MAT={};for(const k in DOORS)DOOR_MAT[k]=new THREE.MeshLambertMaterial({color:DOORS[k].color});
+const ROOF_MAT={},ROOF_MAT_T={};for(const k in ROOFS){ROOF_MAT[k]=new THREE.MeshLambertMaterial({color:ROOFS[k].color});ROOF_MAT_T[k]=new THREE.MeshLambertMaterial({color:ROOFS[k].color,transparent:true,opacity:0.3,depthWrite:false});}
+const FRAME_MAT={};for(const k in FRAMES)FRAME_MAT[k]=new THREE.MeshLambertMaterial({color:FRAMES[k]});
+const EDGE_MAT=new THREE.LineBasicMaterial({color:0x1a1f24});
+const LOT_MAT=new THREE.MeshLambertMaterial({color:0xeef0ea});
+const GRID_MAT=new THREE.LineBasicMaterial({color:0xc4c9be});
+const BORDER_MAT=new THREE.LineBasicMaterial({color:0x7d857a});
+const HL_MAT=new THREE.MeshBasicMaterial({color:0xf2b705,transparent:true,opacity:0.4,depthWrite:false});
+const GHOST_MAT=new THREE.MeshBasicMaterial({color:0x2f7fd1,transparent:true,opacity:0.35,depthWrite:false});
+const GHOST_MAT_E=new THREE.MeshBasicMaterial({color:0xd33b2c,transparent:true,opacity:0.35,depthWrite:false});
+const GHOST_OK=new THREE.MeshBasicMaterial({color:0x2c9a4a,transparent:true,opacity:0.45,depthWrite:false});
+const GHOST_BAD=new THREE.MeshBasicMaterial({color:0xd33b2c,transparent:true,opacity:0.45,depthWrite:false});
+const GLASS_SH=new THREE.MeshLambertMaterial({color:'#cfeaf7',transparent:true,opacity:0.35,depthWrite:false});
+const FLOOR_GEO=new THREE.PlaneGeometry(1,1);FLOOR_GEO.rotateX(-Math.PI/2);
+const PIC_GEO=new THREE.PlaneGeometry(0.6,0.6);
+const HL_GEO=new THREE.BoxGeometry(1.02,WALL_H+0.08,0.34);
+const KNOB_GEO=new THREE.SphereGeometry(0.045,10,8);
+const PLANE=new THREE.Plane(new THREE.Vector3(0,1,0),0);
+const RAY=new THREE.Raycaster();
+const TMPV=new THREE.Vector3();
+
+const SKY=makeCanvasTex((g,s)=>{const gr=g.createLinearGradient(0,0,0,s);gr.addColorStop(0,'#8dbbe3');gr.addColorStop(0.55,'#d6e7f5');gr.addColorStop(1,'#f4f8fb');g.fillStyle=gr;g.fillRect(0,0,s,s);},256);
+SKY.wrapS=SKY.wrapT=THREE.ClampToEdgeWrapping;
+
+const geoCache={};
+function boxGeo(w,h,d){
+  const k=w+'_'+h+'_'+d;if(geoCache[k])return geoCache[k];
+  const g=new THREE.BoxGeometry(w,h,d),uv=g.attributes.uv;
+  const dims=[[d,h],[d,h],[w,d],[w,d],[w,h],[w,h]];
+  for(let f=0;f<6;f++)for(let j=0;j<4;j++){const i=f*4+j;uv.setXY(i,uv.getX(i)*dims[f][0],uv.getY(i)*dims[f][1]);}
+  uv.needsUpdate=true;
+  return geoCache[k]={g,e:new THREE.EdgesGeometry(g)};
+}
+function boxE(parent,w,h,d,mat,x,y,z,edges=true){
+  const gg=boxGeo(w,h,d);const m=new THREE.Mesh(gg.g,mat);m.position.set(x,y,z);parent.add(m);
+  if(edges){const e=new THREE.LineSegments(gg.e,EDGE_MAT);e.position.set(x,y,z);parent.add(e);}
+  return m;
+}
+const MATC={};function mc(c){return MATC[c]||(MATC[c]=new THREE.MeshLambertMaterial({color:c}));}
+function B(g,w,h,d,c,x,y,z,edges=true){return boxE(g,w,h,d,typeof c==='string'?mc(c):c,x,y+h/2,z,edges);}
+const cylCache={};
+function cyl(g,rt,rb,h,c,x,y,z){const k=rt+'_'+rb+'_'+h;let cc=cylCache[k];if(!cc){const geo=new THREE.CylinderGeometry(rt,rb,h,14);cc=cylCache[k]={g:geo,e:new THREE.EdgesGeometry(geo,30)};}
+  const m=new THREE.Mesh(cc.g,mc(c));m.position.set(x,y+h/2,z);g.add(m);const e=new THREE.LineSegments(cc.e,EDGE_MAT);e.position.copy(m.position);g.add(e);return m;}
+const icoCache={};
+function ico(g,r,c,x,y,z){let cc=icoCache[r];if(!cc){const geo=new THREE.IcosahedronGeometry(r,0);cc=icoCache[r]={g:geo,e:new THREE.EdgesGeometry(geo)};}
+  const m=new THREE.Mesh(cc.g,mc(c));m.position.set(x,y,z);g.add(m);const e=new THREE.LineSegments(cc.e,EDGE_MAT);e.position.copy(m.position);g.add(e);return m;}
+
+// furniture models: centered on footprint, back of item at -z, front facing +z
+const FB={
+  sofa:g=>{B(g,1.9,.42,.8,'#3f7f8c',0,0,.05);B(g,1.9,.5,.2,'#3f7f8c',0,.42,-.3);B(g,.16,.22,.8,'#36707c',-.87,.42,.05);B(g,.16,.22,.8,'#36707c',.87,.42,.05);B(g,.78,.1,.55,'#5aa6b3',-.4,.42,.12);B(g,.78,.1,.55,'#5aa6b3',.4,.42,.12);},
+  armchair:g=>{B(g,.85,.42,.75,'#c2703d',0,0,.05);B(g,.85,.5,.18,'#c2703d',0,.42,-.3);B(g,.14,.22,.75,'#a85e31',-.355,.42,.05);B(g,.14,.22,.75,'#a85e31',.355,.42,.05);B(g,.55,.1,.5,'#d98a52',0,.42,.1);},
+  tv:g=>{B(g,1.6,.45,.42,'#6b4a2e',0,0,-.2);B(g,1.3,.74,.06,'#1d1f24',0,.47,-.3);B(g,1.18,.64,.012,'#3a6db5',0,.52,-.264,false);},
+  coffeeTable:g=>{B(g,.8,.05,.55,'#8a5a33',0,.38,0);[[-.34,-.22],[.34,-.22],[-.34,.22],[.34,.22]].forEach(([x,z])=>B(g,.05,.38,.05,'#6b4a2e',x,0,z,false));},
+  bookshelf:g=>{const c='#8a5a33';B(g,.9,1.8,.04,c,0,0,-.46);B(g,.04,1.8,.34,c,-.43,0,-.3);B(g,.04,1.8,.34,c,.43,0,-.3);[0,.6,1.2,1.76].forEach(y=>B(g,.9,.04,.34,c,0,y,-.3));
+    const cols=['#d9534f','#3b6fd8','#2c9a4a','#f2b705','#8a4fd1','#e8762c'];[0,.6,1.2].forEach((s,si)=>{for(let i=0;i<7;i++)B(g,.08,.3+((i+si)%3)*.05,.24,cols[(i+si*2)%6],-.33+i*.1,s+.04,-.32,false);});},
+  rug:g=>{B(g,1.8,.012,1.8,'#b8473d',0,0,0);B(g,1.4,.016,1.4,'#e8c26a',0,0,0,false);B(g,1.0,.02,1.0,'#b8473d',0,0,0,false);},
+  lamp:g=>{cyl(g,.15,.15,.04,'#3b3c42',0,0,0);B(g,.04,1.3,.04,'#3b3c42',0,.04,0,false);cyl(g,.13,.24,.32,'#f6e3a1',0,1.3,0);},
+  plant:g=>{cyl(g,.2,.15,.35,'#b5603c',0,0,0);ico(g,.32,'#4f9a4a',0,.7,0);ico(g,.22,'#62b35a',.12,.98,.05);},
+  bed:g=>{B(g,1.5,.3,1.9,'#8a5a33',0,0,.02);B(g,1.42,.18,1.84,'#f5f5f2',0,.3,.02);B(g,1.46,.07,1.2,'#4a78c2',0,.46,.33);B(g,.55,.12,.32,'#ffffff',-.36,.48,-.7);B(g,.55,.12,.32,'#ffffff',.36,.48,-.7);B(g,1.5,.95,.08,'#6b4a2e',0,0,-.94);},
+  nightstand:g=>{B(g,.5,.5,.42,'#8a5a33',0,0,-.24);B(g,.4,.015,.01,'#5a3a1e',0,.3,-.025,false);cyl(g,.06,.08,.16,'#e2b33c',0,.5,-.24);cyl(g,.08,.12,.14,'#f6e3a1',0,.66,-.24);},
+  dresser:g=>{B(g,.9,.95,.48,'#a36b3f',0,0,-.24);[.25,.55,.82].forEach(y=>B(g,.8,.015,.012,'#5a3a1e',0,y,.002,false));},
+  desk:g=>{B(g,.95,.05,.55,'#d9c7a5',0,.7,-.2);[[-.43,-.43],[.43,-.43],[-.43,.03],[.43,.03]].forEach(([x,z])=>B(g,.05,.7,.05,'#9a8a6a',x,0,z,false));
+    B(g,.5,.32,.04,'#1d1f24',0,.82,-.38);B(g,.44,.26,.01,'#3a6db5',0,.85,-.355,false);B(g,.42,.06,.42,'#3b3c42',0,.42,.22);B(g,.42,.42,.05,'#3b3c42',0,.48,.42);B(g,.05,.42,.05,'#3b3c42',0,0,.22,false);},
+  closet:g=>{B(g,.95,2.0,.6,'#c9a77c',0,0,-.18);B(g,.012,1.9,.01,'#5a3a1e',0,.05,.125,false);B(g,.03,.14,.03,'#5a3a1e',-.06,1.0,.135,false);B(g,.03,.14,.03,'#5a3a1e',.06,1.0,.135,false);},
+  toilet:g=>{B(g,.45,.4,.18,'#ffffff',0,.4,-.36);cyl(g,.2,.16,.4,'#ffffff',0,0,-.05);cyl(g,.21,.21,.04,'#e9ecef',0,.4,-.05);},
+  bathSink:g=>{B(g,.8,.8,.48,'#7fa7b8',0,0,-.24);B(g,.84,.04,.5,'#f2f2ee',0,.8,-.24);B(g,.5,.012,.32,'#d7dde0',0,.84,-.22,false);B(g,.04,.16,.04,'#c0c6cc',0,.84,-.43,false);B(g,.6,.7,.02,'#bfe3f5',0,1.15,-.47);},
+  shower:g=>{B(g,.9,.06,.9,'#ffffff',0,0,0);B(g,.9,1.9,.02,GLASS_SH,0,.06,.44);B(g,.02,1.9,.9,GLASS_SH,.44,.06,0);B(g,.03,.5,.03,'#c0c6cc',0,1.5,-.43,false);B(g,.18,.03,.18,'#c0c6cc',0,1.97,-.34);},
+  bathtub:g=>{B(g,1.8,.55,.8,'#ffffff',0,0,0);B(g,1.6,.01,.6,'#8fd0ef',0,.55,0,false);B(g,.04,.18,.04,'#c0c6cc',-.82,.55,0,false);},
+  fridge:g=>{B(g,.8,1.85,.68,'#e9edf0',0,0,-.14);B(g,.8,.015,.01,'#9aa3aa',0,1.2,.205,false);B(g,.03,.4,.04,'#9aa3aa',.32,1.35,.22,false);B(g,.03,.6,.04,'#9aa3aa',.32,.45,.22,false);},
+  stove:g=>{B(g,.8,.9,.62,'#dfe3e6',0,0,-.15);[[-.18,-.3],[.18,-.3],[-.18,-.02],[.18,-.02]].forEach(([x,z])=>cyl(g,.1,.1,.02,'#1d1f24',x,.9,z));B(g,.55,.3,.012,'#2a2c30',0,.3,.166,false);B(g,.5,.03,.03,'#9aa3aa',0,.66,.18,false);},
+  kSink:g=>{B(g,.9,.86,.6,'#7f9fb5',0,0,-.17);B(g,.95,.05,.64,'#e6e1d6',0,.86,-.17);B(g,.5,.012,.34,'#9aa3aa',0,.91,-.15,false);B(g,.04,.25,.04,'#c0c6cc',0,.91,-.42,false);},
+  counter:g=>{B(g,.9,.86,.6,'#7f9fb5',0,0,-.17);B(g,.95,.05,.64,'#e6e1d6',0,.86,-.17);B(g,.35,.03,.25,'#c89b66',.1,.91,-.15);cyl(g,.1,.07,.08,'#e8762c',-.25,.91,-.2);},
+  dining:g=>{B(g,1.4,.05,.9,'#a36b3f',0,.72,0);[[-.62,-.38],[.62,-.38],[-.62,.38],[.62,.38]].forEach(([x,z])=>B(g,.06,.72,.06,'#7a4f27',x,0,z,false));
+    [[-.35,1],[.35,1],[-.35,-1],[.35,-1]].forEach(([x,s])=>{B(g,.4,.05,.4,'#c89b66',x,.42,.68*s);B(g,.4,.45,.05,'#c89b66',x,.47,.88*s);B(g,.04,.42,.04,'#7a4f27',x,0,.68*s,false);});}
+};
+function buildFurn(type){const g=new THREE.Group();FB[type](g);return g;}
+function placeFurn(g,f){const [W,D]=furnDims(f);g.position.set(f.x+W/2-GW/2,0.03,f.z+D/2-GH/2);g.rotation.y=-f.rot*Math.PI/2;}
+
+const GRID_GEO=(()=>{const p=[];for(let x=0;x<=GW;x++)p.push(x-GW/2,0.008,-GH/2,x-GW/2,0.008,GH/2);for(let z=0;z<=GH;z++)p.push(-GW/2,0.008,z-GH/2,GW/2,0.008,z-GH/2);const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));return g;})();
+const BORDER_GEO=(()=>{const a=-GW/2,b=GW/2,c=-GH/2,d=GH/2,y=0.012;const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute([a,y,c,b,y,c,b,y,c,b,y,d,b,y,d,a,y,d,a,y,d,a,y,c],3));return g;})();
+function lineGeo(pts){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));return g;}
+const AX_O=[-GW/2,0.014,GH/2];
+const AXES=[
+  [lineGeo([...AX_O,GW/2+2,0.014,GH/2]),new THREE.LineBasicMaterial({color:0xd33b2c})],
+  [lineGeo([...AX_O,-GW/2,0.014,-GH/2-2]),new THREE.LineBasicMaterial({color:0x2c9a4a})],
+  [lineGeo([...AX_O,-GW/2,4,GH/2]),new THREE.LineBasicMaterial({color:0x2f5fd1})]
+];
+const COMPASS={};
+['N','S','E','W'].forEach(L=>{
+  const t=makeCanvasTex((g,s)=>{g.clearRect(0,0,s,s);g.fillStyle='rgba(255,255,255,.85)';g.beginPath();g.arc(s/2,s/2,s/2-6,0,Math.PI*2);g.fill();g.lineWidth=6;g.strokeStyle='#22303a';g.stroke();g.fillStyle=L==='N'?'#d33b2c':'#22303a';g.font='bold 70px Lexend, sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(L,s/2,s/2+4);});
+  COMPASS[L]=new THREE.MeshBasicMaterial({map:t,transparent:true,depthWrite:false});
+});
+const COMPASS_GEO=new THREE.PlaneGeometry(1.3,1.3);
+
+// ---------- paintings ----------
+const picCache={};
+function paintingCanvas(p,scale=1){const c=document.createElement('canvas');c.width=c.height=16*scale;const g=c.getContext('2d');for(let i=0;i<256;i++){g.fillStyle=PAL[parseInt(p.px[i],16)];g.fillRect((i%16)*scale,Math.floor(i/16)*scale,scale,scale);}return c;}
+function paintingMat(p){
+  const k=p.px;const c=picCache[k];
+  if(c&&c.ver===p.ver&&c.px===p.px)return c.mat;
+  if(c){c.tex.dispose();c.mat.dispose();}
+  const tex=new THREE.CanvasTexture(paintingCanvas(p));tex.magFilter=THREE.NearestFilter;tex.minFilter=THREE.NearestFilter;
+  const mat=new THREE.MeshLambertMaterial({map:tex});
+  picCache[k]={ver:p.ver,px:p.px,tex,mat};return mat;
+}
+function paintingThumb(p){return paintingCanvas(p,4).toDataURL();}
+
+// ---------- houses ----------
+function makeScene(h){
+  const s=new THREE.Scene();s.background=SKY;
+  h.hemi=new THREE.HemisphereLight(0xffffff,0xbdbcad,0.82);s.add(h.hemi);
+  h.sun=new THREE.DirectionalLight(0xffffff,0.5);h.sun.position.set(-7,14,9);s.add(h.sun);
+  h.groundMat=new THREE.MeshLambertMaterial({color:0xdfe3d6});
+  const ground=new THREE.Mesh(new THREE.PlaneGeometry(400,400),h.groundMat);ground.rotation.x=-Math.PI/2;ground.position.y=-0.01;s.add(ground);
+  const lot=new THREE.Mesh(new THREE.PlaneGeometry(GW,GH),LOT_MAT);lot.rotation.x=-Math.PI/2;s.add(lot);
+  s.add(new THREE.LineSegments(GRID_GEO,GRID_MAT));s.add(new THREE.LineSegments(BORDER_GEO,BORDER_MAT));
+  AXES.forEach(([g,m])=>s.add(new THREE.Line(g,m)));
+  const cp={N:[0,-GH/2-1],S:[0,GH/2+1],E:[GW/2+1,0],W:[-GW/2-1,0]};
+  for(const L in cp){const m=new THREE.Mesh(COMPASS_GEO,COMPASS[L]);m.rotation.x=-Math.PI/2;m.position.set(cp[L][0],0.02,cp[L][1]);s.add(m);}
+  h.build=new THREE.Group();s.add(h.build);
+  h.hl=new THREE.Mesh(HL_GEO,HL_MAT);h.hl.visible=false;s.add(h.hl);
+  h.ghost=new THREE.Group();s.add(h.ghost);
+  h.camera=new THREE.PerspectiveCamera(38,1,0.1,600);
+  h.scene=s;
+}
+function placeEdge(obj,key,y){
+  const [t,xs,zs]=key.split(',');const x=+xs,z=+zs;
+  if(t==='h'){obj.position.set(x+.5-GW/2,y,z-GH/2);obj.rotation.y=0;}
+  else{obj.position.set(x-GW/2,y,z+.5-GH/2);obj.rotation.y=Math.PI/2;}
+}
+// cells on each side of a wall: plus = local +z side, minus = local -z side
+function sideCells(key){const [t,xs,zs]=key.split(',');const x=+xs,z=+zs;return t==='h'?{plus:[x,z],minus:[x,z-1]}:{plus:[x,z],minus:[x-1,z]};}
+
+const clone=o=>JSON.parse(JSON.stringify(o||{}));
+function createHouse(data){
+  data=data||{};
+  const h={uid:data.uid||newUid(),name:data.name||'House '+(state.houses.length+1),
+    walls:clone(data.walls),roof:data.roof||'shingle',floor:data.floor||'slab',
+    roomNames:clone(data.roomNames),roomTypes:clone(data.roomTypes),roomPaper:clone(data.roomPaper),
+    furn:JSON.parse(JSON.stringify(data.furn||[])),paintings:JSON.parse(JSON.stringify(data.paintings||[])),art:JSON.parse(JSON.stringify(data.art||[])),
+    undo:[],cam:data.cam?{...data.cam}:{theta:-0.55,phi:0.95,r:19,tx:0,tz:0},
+    pick:[],furnPick:[],artPick:[],dayRes:null,yearRes:null,selCell:null};
+  makeScene(h);makePanel(h);state.houses.push(h);
+  return h;
+}
+
+function makePanel(h){
+  const p=document.createElement('div');p.className='panel';
+  p.innerHTML=`<div class="phead"><span class="dot"></span><input class="pname" aria-label="House name" maxlength="28"><span class="pcost"></span>
+    <button class="ib b-dup" title="Copy this house into a new side-by-side view">⧉</button>
+    <button class="ib b-del" title="Remove this house">✕</button></div>
+    <div class="view"><div class="labels"></div><div class="hud"></div>
+    <div class="camctl"><button class="ib" data-cam="l" title="Turn left">⟲</button><button class="ib" data-cam="r" title="Turn right">⟳</button><button class="ib" data-cam="t" title="Top view">⊤</button><button class="ib" data-cam="h" title="Reset view">⌂</button></div>
+    <div class="empty"></div><div class="ychart"><canvas></canvas></div><div class="card"></div></div>`;
+  $('#stage').appendChild(p);
+  h.panel=p;h.view=p.querySelector('.view');h.labelsEl=p.querySelector('.labels');h.hud=p.querySelector('.hud');
+  h.card=p.querySelector('.card');h.chartEl=p.querySelector('.ychart');h.chartCv=h.chartEl.querySelector('canvas');h.emptyEl=p.querySelector('.empty');h.costEl=p.querySelector('.pcost');
+  const nm=p.querySelector('.pname');nm.value=h.name;h.nameEl=nm;
+  nm.addEventListener('input',()=>{h.name=nm.value||'House';save();});
+  nm.addEventListener('focus',()=>setActive(h));
+  p.querySelector('.b-dup').addEventListener('click',()=>duplicate(h));
+  p.querySelector('.b-del').addEventListener('click',()=>removeHouse(h));
+  p.querySelectorAll('[data-cam]').forEach(b=>b.addEventListener('click',e=>{
+    e.stopPropagation();const c=h.cam,k=b.dataset.cam;
+    if(k==='l')c.theta-=Math.PI/4;if(k==='r')c.theta+=Math.PI/4;
+    if(k==='t'){c.phi=0.06;c.theta=0;c.r=17;}if(k==='h'){Object.assign(c,{theta:-0.55,phi:0.95,r:19,tx:0,tz:0});}
+  }));
+  p.querySelectorAll('.camctl button').forEach(b=>b.addEventListener('pointerdown',e=>e.stopPropagation()));
+  const v=h.view;
+  v.addEventListener('contextmenu',e=>e.preventDefault());
+  v.addEventListener('pointerdown',e=>onDown(h,e));
+  v.addEventListener('pointermove',e=>onMove(h,e));
+  v.addEventListener('pointerup',e=>onUp(h,e));
+  v.addEventListener('pointerleave',()=>{if(!h.drag){h.hl.visible=false;clearGhost(h);}});
+  v.addEventListener('wheel',e=>{e.preventDefault();h.cam.r=Math.max(5,Math.min(45,h.cam.r*Math.exp(e.deltaY*0.0012)));},{passive:false});
+}
+
+function setActive(h){
+  const i=state.houses.indexOf(h);if(i<0)return;
+  if(state.active!==i){state.active=i;renderSidebar();}
+  state.houses.forEach((x,j)=>x.panel.classList.toggle('active',j===i));
+}
+
+// ---------- pointer ----------
+function ndc(h,e){const r=h.view.getBoundingClientRect();return new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);}
+function groundPt(h,e){RAY.setFromCamera(ndc(h,e),h.camera);const g=new THREE.Vector3();return RAY.ray.intersectPlane(PLANE,g)?g:null;}
+function cellAt(h,e){const g=groundPt(h,e);if(!g)return null;const x=Math.floor(g.x+GW/2),z=Math.floor(g.z+GH/2);return(x<0||z<0||x>=GW||z>=GH)?null:[x,z];}
+function nearestEdge(g){
+  const u=g.x+GW/2,v=g.z+GH/2;
+  if(u<-0.4||v<-0.4||u>GW+0.4||v>GH+0.4)return null;
+  const rx=Math.round(u),rz=Math.round(v),fx=Math.floor(u),fz=Math.floor(v);
+  let best=null,bd=0.4;
+  if(rx>=0&&rx<=GW&&fz>=0&&fz<GH){const d=Math.abs(u-rx);if(d<bd){bd=d;best='v,'+rx+','+fz;}}
+  if(rz>=0&&rz<=GH&&fx>=0&&fx<GW){const d=Math.abs(v-rz);if(d<bd){bd=d;best='h,'+fx+','+rz;}}
+  return best;
+}
+function pickEdge(h,e){
+  RAY.setFromCamera(ndc(h,e),h.camera);
+  const hits=RAY.intersectObjects(h.pick,false);
+  if(hits.length)return hits[0].object.userData.key;
+  const g=groundPt(h,e);return g?nearestEdge(g):null;
+}
+function pickAny(h,e){
+  RAY.setFromCamera(ndc(h,e),h.camera);
+  const hits=RAY.intersectObjects([...h.furnPick,...h.artPick,...h.pick],false);
+  if(!hits.length)return null;
+  const o=hits[0].object.userData,pt=hits[0].point;
+  if(o.furn!==undefined)return{type:'furn',idx:o.furn,point:pt};
+  if(o.art!==undefined)return{type:'art',idx:o.art,point:pt};
+  return{type:'wall',key:o.key,point:pt};
+}
+function snapV(g){return[Math.max(0,Math.min(GW,Math.round(g.x+GW/2))),Math.max(0,Math.min(GH,Math.round(g.z+GH/2)))];}
+function lineKeys(a,b){
+  const k=[];
+  if(a[1]===b[1]&&a[0]!==b[0]){for(let x=Math.min(a[0],b[0]);x<Math.max(a[0],b[0]);x++)k.push('h,'+x+','+a[1]);}
+  else if(a[0]===b[0]&&a[1]!==b[1]){for(let z=Math.min(a[1],b[1]);z<Math.max(a[1],b[1]);z++)k.push('v,'+a[0]+','+z);}
+  return k;
+}
+function onDown(h,e){
+  setActive(h);
+  h.view.setPointerCapture(e.pointerId);
+  h.drag={x:e.clientX,y:e.clientY,moved:false,mode:'click'};
+  if(e.button===2||e.button===1||state.tool==='look'||state.test){
+    h.drag.mode=(e.button===1||e.shiftKey)?'pan':'orbit';
+    if(state.test&&state.tool!=='look'&&e.button===0)h.drag.lockedClick=true;
+    return;
+  }
+  if(state.tool==='wall'||state.tool==='erase'){
+    if(state.tool==='erase'){const hit=pickAny(h,e);if(hit&&hit.type!=='wall')return;}
+    const g=groundPt(h,e);
+    if(g){h.drag.mode='line';h.drag.start=snapV(g);h.drag.end=h.drag.start;}
+  }else if(state.tool==='furn'){
+    const hit=pickAny(h,e);
+    if(hit&&hit.type==='furn'){
+      const f=h.furn[hit.idx],c=cellAt(h,e)||[f.x,f.z];
+      h.drag.mode='furnDrag';h.drag.idx=hit.idx;h.drag.snap=snapshot(h);h.drag.off=[c[0]-f.x,c[1]-f.z];h.drag.orig=[f.x,f.z];clearGhost(h);
+    }
+  }
+}
+function onMove(h,e){
+  if(!h.drag){hover(h,e);return;}
+  const d=h.drag,dx=e.clientX-d.x,dy=e.clientY-d.y;
+  if(Math.abs(dx)+Math.abs(dy)>4)d.moved=true;
+  if(d.mode==='orbit'){h.cam.theta-=dx*0.008;h.cam.phi=Math.max(0.06,Math.min(1.45,h.cam.phi-dy*0.006));d.x=e.clientX;d.y=e.clientY;}
+  else if(d.mode==='pan'){const s=h.cam.r*0.0018,c=Math.cos(h.cam.theta),si=Math.sin(h.cam.theta);h.cam.tx=Math.max(-12,Math.min(12,h.cam.tx-(dx*c+dy*si)*s));h.cam.tz=Math.max(-12,Math.min(12,h.cam.tz-(-dx*si+dy*c)*s));d.x=e.clientX;d.y=e.clientY;}
+  else if(d.mode==='line'){
+    const g=groundPt(h,e);if(!g)return;
+    let end=snapV(g);
+    if(Math.abs(end[0]-d.start[0])>=Math.abs(end[1]-d.start[1]))end[1]=d.start[1];else end[0]=d.start[0];
+    d.end=end;showGhost(h,lineKeys(d.start,end));
+  }else if(d.mode==='furnDrag'&&d.moved){
+    const c=cellAt(h,e);if(!c)return;
+    const f=h.furn[d.idx],nx=c[0]-d.off[0],nz=c[1]-d.off[1];
+    if((nx!==f.x||nz!==f.z)&&canPlace(h,h.an,f.type,nx,nz,f.rot,d.idx)){f.x=nx;f.z=nz;placeFurn(h.furnGroups[d.idx],f);}
+  }
+}
+function onUp(h,e){
+  const d=h.drag;h.drag=null;
+  try{h.view.releasePointerCapture(e.pointerId);}catch(_){}
+  if(!d)return;
+  if(d.mode==='line')clearGhost(h);
+  if(d.lockedClick&&!d.moved){toast('Tests are running. Click "Back to building" to make changes.');return;}
+  if(d.mode==='line'){
+    const keys=d.moved?lineKeys(d.start,d.end):[];
+    if(keys.length)applyLine(h,keys);
+    else{const k=pickEdge(h,e);if(k)applyTool(h,k);}
+  }else if(d.mode==='furnDrag'){
+    const f=h.furn[d.idx];
+    if(d.moved){if(f.x!==d.orig[0]||f.z!==d.orig[1]){h.undo.push(d.snap);autoType(h,f);rebuild(h);}}
+    else rotateItem(h,d.idx);
+  }else if(d.mode==='click'&&!d.moved){
+    clickTool(h,e);
+  }
+}
+function clickTool(h,e){
+  const t=state.tool;
+  if(t==='erase'){const hit=pickAny(h,e);if(!hit)return;
+    if(hit.type==='furn'){pushUndo(h);h.furn.splice(hit.idx,1);rebuild(h);return;}
+    if(hit.type==='art'){pushUndo(h);h.art.splice(hit.idx,1);rebuild(h);return;}
+    applyTool(h,hit.key);return;}
+  if(t==='furn'){placeItem(h,e);return;}
+  if(t==='room'){
+    const c=cellAt(h,e);if(!c)return;
+    if(state.stamp){placeStamp(h,state.stamp,c[0],c[1]);return;}
+    const r=h.an.rAt(c[0],c[1]);
+    if(r<0){h.selCell=null;toast('That spot is outside. Click the floor inside a closed room.');}
+    else h.selCell=c[0]+','+c[1];
+    refreshSelection(h);renderSidebar();return;
+  }
+  if(t==='art'){hangArt(h,e);return;}
+  const k=pickEdge(h,e);if(k)applyTool(h,k);
+}
+function hover(h,e){
+  if(state.test||state.tool==='look'){h.hl.visible=false;clearGhost(h);return;}
+  const t=state.tool;
+  if(t==='furn'){h.hl.visible=false;const c=cellAt(h,e);if(!c){clearGhost(h);return;}ghostFurn(h,state.sel.furn,c[0],c[1],state.furnRot);return;}
+  if(t==='room'){h.hl.visible=false;if(state.stamp){const c=cellAt(h,e);if(!c){clearGhost(h);return;}ghostStamp(h,state.stamp,c[0],c[1]);}return;}
+  if(t==='art'){RAY.setFromCamera(ndc(h,e),h.camera);const hits=RAY.intersectObjects(h.pick,false);
+    if(!hits.length){h.hl.visible=false;return;}placeEdge(h.hl,hits[0].object.userData.key,WALL_H/2);h.hl.material=HL_MAT;h.hl.visible=true;return;}
+  const k=pickEdge(h,e);
+  if(!k||(t!=='wall'&&!h.walls[k])){h.hl.visible=false;return;}
+  placeEdge(h.hl,k,WALL_H/2);h.hl.visible=true;
+  h.hl.material=t==='erase'?GHOST_MAT_E:HL_MAT;
+}
+function showGhost(h,keys,mat){
+  clearGhost(h);
+  mat=mat||(state.tool==='erase'?GHOST_MAT_E:GHOST_MAT);
+  keys.forEach(k=>{const m=new THREE.Mesh(HL_GEO,mat);placeEdge(m,k,WALL_H/2);h.ghost.add(m);});
+  h.hl.visible=false;
+}
+function clearGhost(h){while(h.ghost.children.length)h.ghost.remove(h.ghost.children[0]);h.ghostKey=null;}
+function ghostFurn(h,type,x,z,rot){
+  const ok=canPlace(h,h.an,type,x,z,rot,-1);
+  const key=[type,x,z,rot,ok].join('|');if(h.ghostKey===key)return;
+  clearGhost(h);h.ghostKey=key;
+  const g=buildFurn(type);g.traverse(o=>{if(o.isMesh)o.material=ok?GHOST_OK:GHOST_BAD;if(o.isLineSegments)o.visible=false;});
+  placeFurn(g,{type,x,z,rot});g.position.y=0.05;h.ghost.add(g);
+}
+function ghostStamp(h,tid,x0,z0){
+  const t=TEMPLATES[tid],ok=x0+t.w<=GW&&z0+t.d<=GH;
+  const key=['stamp',tid,x0,z0].join('|');if(h.ghostKey===key)return;
+  const keys=perimeter(t.w,t.d,x0,z0);showGhost(h,keys,ok?GHOST_MAT:GHOST_MAT_E);h.ghostKey=key;
+}
+
+// ---------- editing ----------
+function snapshot(h){return JSON.stringify({walls:h.walls,roof:h.roof,floor:h.floor,roomNames:h.roomNames,roomTypes:h.roomTypes,roomPaper:h.roomPaper,furn:h.furn,paintings:h.paintings,art:h.art});}
+function pushUndo(h){h.undo.push(snapshot(h));if(h.undo.length>60)h.undo.shift();}
+function undo(h){if(!h.undo.length){toast('Nothing to undo.');return;}const s=JSON.parse(h.undo.pop());Object.assign(h,s);rebuild(h);}
+function applyTool(h,key){
+  const w=h.walls[key],t=state.tool;
+  if(t==='wall'){if(w&&w.mat===state.sel.wall)return;pushUndo(h);if(w)w.mat=state.sel.wall;else h.walls[key]={mat:state.sel.wall,open:null};}
+  else if(t==='paint'){if(!w){toast('Click on a wall to change its material.');return;}pushUndo(h);w.mat=state.sel.wall;}
+  else if(t==='window'){if(!w){toast('Build a wall first, then click it to add a window.');return;}pushUndo(h);
+    if(w.open==='window'&&w.win===state.sel.window){w.open=null;delete w.win;}else{w.open='window';w.win=state.sel.window;delete w.door;}}
+  else if(t==='door'){if(!w){toast('Build a wall first, then click it to add a door.');return;}pushUndo(h);
+    if(w.open==='door'&&w.door===state.sel.door){w.open=null;delete w.door;}else{w.open='door';w.door=state.sel.door;delete w.win;}}
+  else if(t==='erase'){if(!w)return;pushUndo(h);if(w.open){w.open=null;delete w.win;delete w.door;}else delete h.walls[key];}
+  rebuild(h);
+}
+function applyLine(h,keys){
+  pushUndo(h);
+  keys.forEach(k=>{if(state.tool==='wall'){if(!h.walls[k])h.walls[k]={mat:state.sel.wall,open:null};}else delete h.walls[k];});
+  rebuild(h);
+}
+function canPlace(h,an,type,x,z,rot,ignore){
+  const def=FURN[type];const [W,D]=rot%2?[def.d,def.w]:[def.w,def.d];
+  let room=-2;
+  for(let i=x;i<x+W;i++)for(let j=z;j<z+D;j++){
+    if(i<0||j<0||i>=GW||j>=GH)return false;
+    const r=an.rAt(i,j);if(r<0)return false;
+    if(room===-2)room=r;else if(r!==room)return false;
+  }
+  for(let k=0;k<h.furn.length;k++){
+    if(k===ignore)continue;const f=h.furn[k],fd=FURN[f.type];
+    if(!!fd.floor!==!!def.floor)continue;
+    const [fw,fdp]=furnDims(f);
+    if(x<f.x+fw&&f.x<x+W&&z<f.z+fdp&&f.z<z+D)return false;
+  }
+  return true;
+}
+function autoType(h,f){
+  const at=FURN[f.type].auto;if(!at)return;
+  const r=h.an.rAt(f.x,f.z);if(r<0)return;const room=h.an.rooms[r];
+  if(roomMapGet(h.roomTypes,room))return;
+  room.cells.forEach(c=>delete h.roomTypes[c[0]+','+c[1]]);h.roomTypes[room.lx+','+room.lz]=at;
+  toast('This room is now a '+ROOM_TYPES[at].name.toLowerCase()+'. Change it with the 🏷️ Rooms tool.');
+}
+function placeItem(h,e){
+  const c=cellAt(h,e);if(!c)return;
+  const type=state.sel.furn,rot=state.furnRot;
+  if(!canPlace(h,h.an,type,c[0],c[1],rot,-1)){toast(h.an.rAt(c[0],c[1])<0?'Furniture goes inside a closed room.':'No space there. Try another spot, or press R to turn it.');return;}
+  pushUndo(h);const f={type,x:c[0],z:c[1],rot};h.furn.push(f);autoType(h,f);rebuild(h);
+}
+function rotateItem(h,i){
+  const f=h.furn[i];
+  for(let s=1;s<=3;s++){const r=(f.rot+s)%4;if(canPlace(h,h.an,f.type,f.x,f.z,r,i)){pushUndo(h);f.rot=r;rebuild(h);return;}}
+  toast('No room to turn it here. Drag it somewhere with more space.');
+}
+function perimeter(w,d,x0,z0){const k=[];for(let x=x0;x<x0+w;x++){k.push('h,'+x+','+z0);k.push('h,'+x+','+(z0+d));}for(let z=z0;z<z0+d;z++){k.push('v,'+x0+','+z);k.push('v,'+(x0+w)+','+z);}return k;}
+function placeStamp(h,tid,x0,z0){
+  const t=TEMPLATES[tid];
+  if(x0+t.w>GW||z0+t.d>GH){toast('That room does not fit there. Click closer to the top-left of the lot.');return;}
+  pushUndo(h);
+  perimeter(t.w,t.d,x0,z0).forEach(k=>{if(!h.walls[k])h.walls[k]={mat:state.sel.wall,open:null};});
+  const rel=r=>r[0]+','+(r[1]+x0)+','+(r[2]+z0);
+  t.windows.forEach(r=>{const w=h.walls[rel(r)];if(w&&!w.open){w.open='window';w.win=state.sel.window;}});
+  const dw=h.walls[rel(t.door)];if(dw){dw.open='door';dw.door=state.sel.door;delete dw.win;}
+  const an=analyze(h.walls);
+  t.furn.forEach(([type,x,z,rot])=>{if(canPlace(h,an,type,x0+x,z0+z,rot,-1))h.furn.push({type,x:x0+x,z:z0+z,rot});});
+  const ri=an.rAt(x0,z0);
+  if(ri>=0){an.rooms[ri].cells.forEach(c=>{const k=c[0]+','+c[1];delete h.roomTypes[k];delete h.roomPaper[k];});h.roomTypes[x0+','+z0]=t.type;h.roomPaper[x0+','+z0]=t.paper;h.selCell=x0+','+z0;}
+  state.stamp=null;clearGhost(h);rebuild(h);toast(t.name+' added. Build onto it, or add another room next to it.');
+}
+function exampleHouse(h){
+  pushUndo(h);
+  const w={};const W=(k,o)=>{w[k]=Object.assign({mat:'wood',open:null},o||{});};
+  for(let x=1;x<11;x++){W('h,'+x+',2');W('h,'+x+',9');W('h,'+x+',5');}
+  for(let z=2;z<9;z++){W('v,1,'+z);W('v,11,'+z);}
+  for(let z=2;z<5;z++){W('v,6,'+z);W('v,8,'+z);}
+  const win=o=>({open:'window',win:'single'}),dr={open:'door',door:'wood'};
+  ['h,2,9','h,7,9','h,9,9','h,3,2','h,6,2','h,10,2','v,1,3','v,11,3','v,11,6','v,1,7'].forEach(k=>W(k,win()));
+  ['h,4,9','h,2,5','h,6,5','h,9,5'].forEach(k=>W(k,dr));
+  h.walls=w;
+  h.furn=[
+    ['tv',3,5,0],['rug',3,6,0],['coffeeTable',3,6,0],['sofa',3,7,2],['armchair',5,6,1],['lamp',1,8,0],['plant',1,5,0],['bookshelf',5,8,2],['dining',8,6,0],['plant',10,8,0],
+    ['bed',1,2,0],['nightstand',3,2,0],['dresser',5,2,0],['desk',4,4,2],['closet',1,4,2],
+    ['toilet',6,2,0],['bathSink',7,2,0],['shower',7,4,2],
+    ['fridge',8,2,0],['stove',9,2,0],['kSink',10,2,0],['counter',10,3,1]
+  ].map(([type,x,z,rot])=>({type,x,z,rot}));
+  h.roomTypes={'1,5':'living','1,2':'bedroom','6,2':'bathroom','8,2':'kitchen'};
+  h.roomPaper={'1,5':'stripes','1,2':'stars','6,2':'tiles','8,2':'checker'};
+  h.roomNames={};h.art=[];h.selCell=null;
+  rebuild(h);
+}
+function hangArt(h,e){
+  RAY.setFromCamera(ndc(h,e),h.camera);
+  const hits=RAY.intersectObjects([...h.artPick,...h.pick],false);
+  if(!hits.length){toast('Click the inside of a wall to hang a painting.');return;}
+  const u=hits[0].object.userData;
+  if(u.art!==undefined){pushUndo(h);h.art.splice(u.art,1);rebuild(h);toast('Painting taken down.');return;}
+  const p=h.paintings.find(x=>x.id===state.sel.art);
+  if(!p){toast(h.paintings.length?'Pick one of your paintings first.':'Buy and paint a painting first.');return;}
+  const key=u.key,w=h.walls[key];
+  if(w.open){toast('Paintings go on plain walls, not on windows or doors.');return;}
+  const [t,xs,zs]=key.split(',');const pt=hits[0].point;
+  const side=t==='h'?(pt.z>(+zs-GH/2)?1:-1):(pt.x>(+xs-GW/2)?1:-1);
+  const sc=sideCells(key),cell=side>0?sc.plus:sc.minus;
+  if(h.an.rAt(cell[0],cell[1])<0){toast('Hang paintings on the inside of your house.');return;}
+  pushUndo(h);
+  const ex=h.art.findIndex(a=>a.key===key&&a.side===side);
+  if(ex>=0)h.art[ex].pid=p.id;else h.art.push({key,side,pid:p.id});
+  rebuild(h);
+}
+
+// ---------- building the 3D model ----------
+function roomName(h,r,i,an){const n=roomMapGet(h.roomNames,r);if(n)return n;const t=roomMapGet(h.roomTypes,r);if(t){const same=an.rooms.filter((rr,j)=>j<i&&roomMapGet(h.roomTypes,rr)===t&&!roomMapGet(h.roomNames,rr)).length;return ROOM_TYPES[t].name+(same?' '+(same+1):'');}return 'Room '+String.fromCharCode(65+i);}
+function selRoomIdx(h){if(!h.selCell||!h.an)return -1;const [x,z]=h.selCell.split(',').map(Number);return h.an.rAt(x,z);}
+function refreshSelection(h){
+  const si=state.tool==='room'&&!state.test?selRoomIdx(h):-1;
+  (h.floorMats||[]).forEach((m,i)=>m.emissive.setHex(i===si?0x4a3a00:0x000000));
+  (h.lab||[]).forEach((l,i)=>l.el.classList.toggle('sel',i===si));
+}
+function rebuild(h){
+  while(h.build.children.length)h.build.remove(h.build.children[0]);
+  (h.floorMats||[]).forEach(m=>m.dispose());
+  if(h.roofLineGeo){h.roofLineGeo.dispose();h.roofLineGeo=null;}
+  h.art=h.art.filter(a=>{const w=h.walls[a.key];return w&&!w.open&&h.paintings.some(p=>p.id===a.pid);});
+  const g=buildGeometry(h,h.build,{cut:cutOn(),roof:state.test?'ghost':(state.showRoof&&!cutOn()?'solid':'none'),furniture:true,art:true});
+  Object.assign(h,{an:g.an,floorMats:g.floorMats,pick:g.pick,furnPick:g.furnPick,artPick:g.artPick,furnGroups:g.furnGroups,roofLineGeo:g.roofLineGeo});
+  const an=h.an;
+  h.model=an.rooms.length?buildModel(h,an):null;
+  h.cost=costOf(h,an);h.decor=decorOf(h,an);
+  h.info=roomInfo(h,an);
+  // labels
+  h.labelsEl.innerHTML='';
+  h.lab=an.rooms.map((r,i)=>{
+    const el=document.createElement('div');el.className='rlabel';
+    el.innerHTML='<div class="rn"></div><div class="rv"></div>';
+    const nm=roomName(h,r,i,an),ty=roomMapGet(h.roomTypes,r);
+    el.querySelector('.rn').textContent=(ty?ROOM_TYPES[ty].icon+' ':'')+nm;
+    el.querySelector('.rv').textContent=r.area+' m²';
+    const inf=h.info[i];if(!ty||inf.missing.length||!inf.hasDoor)el.classList.add('bad');
+    el.title='Click to set up this room. Double-click to rename it.';
+    el.addEventListener('pointerdown',e=>e.stopPropagation());
+    el.addEventListener('click',()=>{if(state.test)return;setActive(h);h.selCell=r.lx+','+r.lz;if(state.tool!=='room')setTool('room');else{refreshSelection(h);renderSidebar();}});
+    el.addEventListener('dblclick',()=>{
+      if(state.test)return;
+      const v=prompt('Name this room (for example Kitchen or Bedroom):',nm);
+      if(v&&v.trim()){setRoomMap(h,'roomNames',r,v.trim().slice(0,20));}
+    });
+    h.labelsEl.appendChild(el);
+    return{el,rv:el.querySelector('.rv'),pos:new THREE.Vector3(r.lx+.5-GW/2,cutOn()?1.3:WALL_H*0.55,r.lz+.5-GH/2),name:nm};
+  });
+  refreshSelection(h);
+  h.costEl.textContent='$'+fmtN(h.cost);
+  h.costEl.style.color=h.cost>BUDGET?'var(--axisR)':'';
+  if(!state.test)buildHud(h);
+  if(h===act())renderSidebar();
+  save();
+}
+// Builds a house's 3D model into root. o = {cut, roof:'none'|'solid'|'ghost', furniture, art}
+function buildGeometry(h,root,o){
+  const an=analyze(h.walls);
+  const res={an,pick:[],furnPick:[],artPick:[],furnGroups:[],roofLineGeo:null};
+  res.floorMats=an.rooms.map(()=>new THREE.MeshLambertMaterial({color:FLOORS[h.floor].color}));
+  an.rooms.forEach((r,i)=>r.cells.forEach(([x,z])=>{const m=new THREE.Mesh(FLOOR_GEO,res.floorMats[i]);m.position.set(x+.5-GW/2,0.02,z+.5-GH/2);root.add(m);}));
+  const paperOf=an.rooms.map(r=>roomMapGet(h.roomPaper,r));
+  const posts={};
+  for(const key in h.walls){
+    const w=h.walls[key];addSeg(root,key,w,an,paperOf,o.cut,res.pick);
+    const [t,xs,zs]=key.split(',');const x=+xs,z=+zs;
+    const ends=t==='h'?[[x,z],[x+1,z]]:[[x,z],[x,z+1]];
+    ends.forEach(p=>{const pk=p[0]+','+p[1];if(!posts[pk])posts[pk]={p,mat:w.mat};});
+  }
+  const PH=o.cut?CUT_H:WALL_H;for(const pk in posts){const q=posts[pk];boxE(root,POST,PH,POST,WALL_MAT[q.mat],q.p[0]-GW/2,PH/2,q.p[1]-GH/2);}
+  if(o.furniture)(h.furn||[]).forEach((f,i)=>{if(!FB[f.type])return;const g=buildFurn(f.type);placeFurn(g,f);g.traverse(q=>{if(q.isMesh){q.userData.furn=i;res.furnPick.push(q);}});root.add(g);res.furnGroups[i]=g;});
+  if(o.art&&!o.cut)(h.art||[]).forEach((a,i)=>{
+    const w=h.walls[a.key],p=(h.paintings||[]).find(x=>x.id===a.pid);if(!w||w.open||!p)return;
+    const grp=new THREE.Group();placeEdge(grp,a.key,0);
+    const fr=boxE(grp,0.72,0.72,0.04,FRAME_MAT[p.frame]||FRAME_MAT.wood,0,1.6,a.side*(WALL_T/2+0.02));
+    const pic=new THREE.Mesh(PIC_GEO,paintingMat(p));pic.position.set(0,1.6,a.side*(WALL_T/2+0.042));if(a.side<0)pic.rotation.y=Math.PI;grp.add(pic);
+    [fr,pic].forEach(m=>{m.userData.art=i;res.artPick.push(m);});root.add(grp);
+  });
+  if(o.roof!=='none'){
+    const rm=o.roof==='ghost'?ROOF_MAT_T[h.roof]:ROOF_MAT[h.roof];
+    const rg=boxGeo(1,0.22,1).g;
+    an.rooms.forEach(r=>r.cells.forEach(([x,z])=>{const m=new THREE.Mesh(rg,rm);m.position.set(x+.5-GW/2,WALL_H+0.11,z+.5-GH/2);root.add(m);}));
+    const pts=[];
+    an.ext.forEach(e=>{const [t,xs,zs]=e.key.split(',');const x=+xs-GW/2,z=+zs-GH/2;
+      const q=t==='h'?[x,z,x+1,z]:[x,z,x,z+1];
+      [WALL_H,WALL_H+0.22].forEach(y=>pts.push(q[0],y,q[1],q[2],y,q[3]));});
+    if(pts.length){res.roofLineGeo=lineGeo(pts);root.add(new THREE.LineSegments(res.roofLineGeo,EDGE_MAT));}
+  }
+  return res;
+}
+function addSeg(root,key,w,an,paperOf,cut,pickArr){
+  const grp=new THREE.Group();placeEdge(grp,key,0);
+  const base=WALL_MAT[w.mat];
+  const sc=sideCells(key);
+  const pm=cell=>{const r=an.rAt(cell[0],cell[1]);const p=r>=0?paperOf[r]:null;return p&&p!=='none'?PAPER_MAT[p]:base;};
+  const mPlus=pm(sc.plus),mMinus=pm(sc.minus);
+  const mat=(mPlus===base&&mMinus===base)?base:[base,base,base,base,mPlus,mMinus];
+  const ms=[];
+  if(cut){
+    if(w.open==='door'){ms.push(boxE(grp,SEG,0.04,WALL_T,DOOR_MAT[w.door],0,0.02,0));}
+    else ms.push(boxE(grp,SEG,CUT_H,WALL_T,mat,0,CUT_H/2,0));
+    if(w.open==='window')ms.push(boxE(grp,SEG,0.06,0.2,SILL[w.win],0,CUT_H+0.03,0));
+  }
+  else if(!w.open){ms.push(boxE(grp,SEG,WALL_H,WALL_T,mat,0,WALL_H/2,0));}
+  else if(w.open==='window'){
+    ms.push(boxE(grp,SEG,0.9,WALL_T,mat,0,0.45,0),boxE(grp,SEG,0.6,WALL_T,mat,0,2.4,0));
+    ms.push(boxE(grp,SEG,1.2,0.04,GLASS[w.win],0,1.5,0));
+    ms.push(boxE(grp,SEG,0.05,0.26,SILL[w.win],0,0.925,0));
+    if(w.win!=='single'){const n=w.win==='double'?1:2;for(let i=1;i<=n;i++){ms.push(boxE(grp,0.025,1.2,0.06,SILL[w.win],-SEG/2+SEG*i/(n+1),1.5,0,false));}}
+  }else{
+    ms.push(boxE(grp,SEG,0.6,WALL_T,mat,0,2.4,0));
+    ms.push(boxE(grp,SEG-0.04,2.1,0.07,DOOR_MAT[w.door],0,1.05,0));
+    [-0.06,0.06].forEach(zz=>{const k=new THREE.Mesh(KNOB_GEO,KNOB_MAT);k.position.set(SEG/2-0.14,1.0,zz);grp.add(k);});
+  }
+  ms.forEach(m=>{m.userData.key=key;pickArr.push(m);});
+  root.add(grp);
+}
+const KNOB_MAT=new THREE.MeshLambertMaterial({color:'#e2b33c'});
+const CUT_H=0.9;
+function cutOn(){return state.cut&&!state.test;}
+function buildHud(h){
+  const an=h.an;
+  h.hud.innerHTML=`<div class="chip">🏗️ ${an.rooms.length} room${an.rooms.length===1?'':'s'}, ${an.area} m²</div>`;
+  h.card.style.display='none';
+  if(!Object.keys(h.walls).length)h.emptyEl.innerHTML='Empty lot. Draw walls with the 🧱 Wall tool, drop in a ready-made room with 🏷️ Rooms, or press <b>Start with an example house</b>.';
+  else if(!an.rooms.length)h.emptyEl.innerHTML='No closed rooms yet. Close the walls all the way around a space.';
+  else h.emptyEl.innerHTML='';
+  h.emptyEl.style.display=h.emptyEl.innerHTML?'block':'none';
+}
+function setRoomMap(h,map,r,val){
+  pushUndo(h);r.cells.forEach(c=>delete h[map][c[0]+','+c[1]]);
+  if(val)h[map][r.lx+','+r.lz]=val;
+  rebuild(h);
+}
+
+// ---------- sidebar ----------
+function bars(n,cls){let s='';for(let i=1;i<=5;i++)s+=`<i class="bar ${i<=n?cls:''}"></i>`;return s;}
+function heatBarsOf(U){const f=(Math.log(U)-Math.log(0.18))/(Math.log(7)-Math.log(0.18));return Math.max(1,Math.min(5,1+Math.round(f*4)));}
+function tagOf(U){return U>=3.5?['cond','Conductor']:U>=1.5?['poor','Poor insulator']:U>=0.6?['ok','OK insulator']:['great','Great insulator'];}
+function matCard(kind,key,o,sel,unit,swatch){
+  let meta='';
+  if(!state.challenge){
+    const [c,t]=tagOf(o.U);
+    meta=`<span class="meter"><span class="ml">Heat passes</span>${bars(heatBarsOf(o.U),'on')}</span>`;
+    if(o.shgc!==undefined)meta+=`<span class="meter"><span class="ml">Sun gets in</span>${bars(Math.round(o.shgc*5),'sun')}</span>`;
+    if(o.abs!==undefined)meta+=`<span class="meter"><span class="ml">Soaks up sun</span>${bars(Math.max(1,Math.round(o.abs*5)),'sun')}</span>`;
+    meta+=`<span class="tag ${c}">${t}</span>`;
+  }
+  return `<button class="mcard ${sel?'sel':''}" data-kind="${kind}" data-key="${key}"><span class="sw" style="${swatch}"></span><span class="mi"><b>${o.name}</b><small>${o.desc}</small>${meta}</span><span class="price">$${o.cost}<small>${unit}</small></span></button>`;
+}
+function budgetBar(label,val,max){
+  const pct=Math.min(100,val/max*100);
+  return`<div class="blabel">${label}</div><div class="budget"><div class="bfill" style="width:${pct}%;background:${val>max?'var(--axisR)':pct>85?'#e0a020':'var(--good)'}"></div></div>
+    <div class="bnum">$${fmtN(val)} of $${fmtN(max)}${val>max?' (over budget!)':''}</div>`;
+}
+function roomPanel(h){
+  const an=h.an,si=selRoomIdx(h);
+  let s='';
+  s+=`<h3>Ready-made rooms</h3>`+Object.entries(TEMPLATES).map(([k,t])=>`<button class="tcard ${state.stamp===k?'sel':''}" data-stamp="${k}"><span class="sw">${ROOM_TYPES[t.type].icon}</span><span><b>${t.name}</b><small>${t.w} × ${t.d} m, furnished. ${state.stamp===k?'Now click the lot to place it.':'Click, then click the lot.'}</small></span></button>`).join('');
+  s+=`<button class="btn wide" data-act="example">🏠 Start with an example house</button>`;
+  s+=`<h3>Your rooms</h3>`;
+  if(!an.rooms.length)return s+`<p class="hint">No closed rooms yet.</p>`;
+  s+=`<div class="rlist">`+an.rooms.map((r,i)=>{const inf=h.info[i],ty=inf.type,ok=ty&&!inf.missing.length&&inf.hasDoor;
+    return`<button class="${i===si?'sel':''}" data-room="${r.lx},${r.lz}"><span>${ty?ROOM_TYPES[ty].icon:'❔'} ${esc(roomName(h,r,i,an))}</span><span class="${ok?'':'no'}" style="color:${ok?'var(--good)':'var(--axisR)'}">${ok?'✔':'✘'}</span></button>`;}).join('')+`</div>`;
+  if(si<0)return s+`<p class="hint">Click a room's floor (or its label) to set it up.</p>`;
+  const r=an.rooms[si],inf=h.info[si],ty=inf.type,paper=roomMapGet(h.roomPaper,r)||'none';
+  s+=`<h3>Set up this room</h3><div class="rbox">
+    <input id="rName" value="${esc(roomName(h,r,si,an))}" maxlength="20" aria-label="Room name">
+    <div class="sub">Room type</div><div class="types">${Object.entries(ROOM_TYPES).map(([k,t])=>`<button class="${ty===k?'sel':''}" data-rtype="${k}">${t.icon} ${t.name}</button>`).join('')}</div>`;
+  if(ty){
+    const needs=ROOM_TYPES[ty].needs;
+    s+=`<div class="sub">What a ${ROOM_TYPES[ty].name.toLowerCase()} needs</div><ul class="checks">`+
+      needs.map(opts=>{const ok=opts.some(o=>inf.items[o]);return`<li><span class="${ok?'ok':'no'}">${ok?'✔':'✘'}</span>${opts.map(o=>FURN[o].icon+' '+FURN[o].name).join(' or ')}</li>`;}).join('')+
+      `<li><span class="${inf.hasDoor?'ok':'no'}">${inf.hasDoor?'✔':'✘'}</span>🚪 A door</li></ul>`;
+    if(!needs.length)s+=`<p class="hint" style="margin-top:4px">Other rooms (like a closet, office, or hallway) have no required equipment.</p>`;
+  }
+  s+=`<div class="sub">Wallpaper and paint ($${PAPER_COST})</div><div class="papers">${Object.entries(PAPERS).map(([k,p])=>`<button class="paper ${paper===k?'sel':''}" data-paper="${k}" title="${p.name}"><i style="${PAPER_SW[k]}"></i>${p.name}</button>`).join('')}</div>
+    <p class="hint">Wallpaper only changes how the room looks. It does not change how heat moves through the wall.</p></div>`;
+  return s;
+}
+function furnPanel(h){
+  const si=selRoomIdx(h);
+  let s=`<h3>Furniture and equipment</h3><div class="tabs">${['living','bedroom','bathroom','kitchen'].map(c=>`<button class="${state.furnCat===c?'sel':''}" data-fcat="${c}">${ROOM_TYPES[c].icon} ${ROOM_TYPES[c].name.replace(' room','')}</button>`).join('')}</div>`;
+  const needed=new Set(ROOM_TYPES[state.furnCat].needs.flat());
+  s+=`<div class="fgrid">`+Object.entries(FURN).filter(([k,f])=>f.cat===state.furnCat).map(([k,f])=>`<button class="fcard ${state.sel.furn===k?'sel':''}" data-furn="${k}"><span class="fi">${f.icon}</span><b>${f.name}</b><small>$${f.cost} · ${f.w}×${f.d} m</small>${needed.has(k)?'<span class="need">Required</span>':''}${f.heat?'<span class="tag heat">🔥 Gives off heat</span>':''}</button>`).join('')+`</div>`;
+  s+=`<button class="btn wide" data-act="rot">⟳ Turn before placing (R)</button>`;
+  return s;
+}
+function artPanel(h){
+  let s=`<h3>Your paintings</h3><button class="btn primary wide" data-act="newArt">🎨 Buy and paint a new painting ($${PAINTING_COST})</button><div style="height:8px"></div>`;
+  if(!h.paintings.length)s+=`<p class="hint">You have no paintings yet. Buy one, draw it with pixels, then hang it on a wall.</p>`;
+  s+=h.paintings.map(p=>{const hung=h.art.filter(a=>a.pid===p.id).length;return`<div class="art ${state.sel.art===p.id?'sel':''}" data-art="${p.id}"><img src="${paintingThumb(p)}" alt="" style="border-color:${FRAMES[p.frame]||FRAMES.wood}"><div><b>${esc(p.title||'Untitled')}</b><small style="font-size:11px;color:var(--muted)">${hung?'Hanging on '+hung+' wall'+(hung>1?'s':''):'Not hung yet'}</small><div class="row"><button class="btn" data-aedit="${p.id}">✏️ Edit</button><button class="btn" data-adel="${p.id}">🗑️</button></div></div></div>`;}).join('');
+  return s;
+}
+function renderSidebar(){
+  if(state.mode==='city'){renderCitySidebar();return;}
+  const h=act();if(!h||!h.an)return;
+  const t=state.tool;
+  let html=`<h3>Tools</h3><div class="tools"><div class="toolsplit">Build</div>${TOOLS.slice(0,6).map(toolBtn).join('')}<div class="toolsplit">Rooms and decor</div>${TOOLS.slice(6).map(toolBtn).join('')}</div><p class="hint">${HINTS[t]}</p>`;
+  if(t==='wall'||t==='paint'){
+    html+=`<h3>Wall material</h3>`+Object.entries(WALLS).map(([k,o])=>matCard('wall',k,o,state.sel.wall===k,'per wall',`background-image:url(${SWATCH[k]})`)).join('');
+    html+=`<button class="btn wide" data-act="paintAll">🎨 Use ${WALLS[state.sel.wall].name} on every wall</button>`;
+  }else if(t==='window'){
+    html+=`<h3>Window type</h3>`+Object.entries(WINDOWS).map(([k,o])=>matCard('window',k,o,state.sel.window===k,'each',`background:${o.color}`)).join('');
+  }else if(t==='door'){
+    html+=`<h3>Door type</h3>`+Object.entries(DOORS).map(([k,o])=>matCard('door',k,o,state.sel.door===k,'each',`background:${o.color}`)).join('');
+  }else if(t==='room')html+=roomPanel(h);
+  else if(t==='furn')html+=furnPanel(h);
+  else if(t==='art')html+=artPanel(h);
+  if(BUILD_TOOLS.includes(t)){
+    html+=`<h3>Roof for ${esc(h.name)}</h3>`+Object.entries(ROOFS).map(([k,o])=>matCard('roof',k,o,h.roof===k,'per m²',`background:${o.color}`)).join('');
+    html+=`<h3>Floor for ${esc(h.name)}</h3>`+Object.entries(FLOORS).map(([k,o])=>matCard('floor',k,o,h.floor===k,'per m²',`background:${o.color}`)).join('');
+  }
+  html+=`<h3>Budgets</h3>`+budgetBar('🏗️ Building (walls, windows, doors, roof, floor)',h.cost,BUDGET)+budgetBar('🛋️ Decor (furniture, wallpaper, paintings)',h.decor,DECOR_BUDGET);
+  html+=`<h3>Design rules</h3><ul class="checks">${rulesOf(h,h.an,h.cost,h.decor).map(r=>`<li><span class="${r.ok?'ok':'no'}">${r.ok?'✔':'✘'}</span>${r.text}</li>`).join('')}</ul>`;
+  html+=`<h3>House actions</h3><div class="row"><button class="btn" data-act="undo">↶ Undo</button><button class="btn" data-act="clear">🗑️ Clear lot</button></div>
+    <button class="btn wide" data-act="example">🏠 Start with an example house</button>
+    <button class="btn primary wide" data-act="publish">🏙️ Publish to the class city</button>
+    <div class="row" style="margin-top:4px"><button class="btn" data-act="login">🔑 Load my house</button><button class="btn" data-act="import">📂 Open a file</button></div>`;
+  const side=$('#side');const st=side.scrollTop;side.innerHTML=html;side.scrollTop=st;
+  const rn=$('#rName');
+  if(rn)rn.addEventListener('change',()=>{const si=selRoomIdx(h);if(si>=0&&rn.value.trim())setRoomMap(h,'roomNames',h.an.rooms[si],rn.value.trim().slice(0,20));});
+}
+function toolBtn(x){return`<button class="tool ${state.tool===x.id?'sel':''}" data-tool="${x.id}" title="${x.name} (key ${TOOLS.indexOf(x)+1})"><span>${x.icon}</span>${x.name}</button>`;}
+$('#side').addEventListener('click',e=>{
+  const b=e.target.closest('[data-tool],[data-kind],[data-act],[data-stamp],[data-room],[data-rtype],[data-paper],[data-fcat],[data-furn],[data-art],[data-aedit],[data-adel],[data-plot],[data-hood]');if(!b)return;
+  const h=act(),d=b.dataset;
+  if(d.plot!==undefined){visitPlot(+d.plot);return;}
+  if(d.hood!==undefined){flyToHood(+d.hood);return;}
+  if(['publish','cityRefresh','cityTab','import','login'].includes(d.act)){cityAct(d.act);return;}
+  if(d.tool){setTool(d.tool);return;}
+  if(d.fcat){state.furnCat=d.fcat;renderSidebar();return;}
+  if(d.furn){state.sel.furn=d.furn;state.furnRot=0;renderSidebar();return;}
+  if(d.room){h.selCell=d.room;refreshSelection(h);renderSidebar();return;}
+  if(d.kind&&!['roof','floor'].includes(d.kind)){state.sel[d.kind]=d.key;renderSidebar();return;}
+  if(d.aedit){e.stopPropagation();if(state.test){toast('Click "Back to building" first.');return;}openPainter(h,h.paintings.find(p=>p.id===d.aedit));return;}
+  if(d.art&&!d.adel){state.sel.art=d.art;renderSidebar();toast('Now click the inside of a wall to hang it.');return;}
+  if(state.test){toast('Click "Back to building" first to make changes.');return;}
+  if(d.kind){if(h[d.kind]!==d.key){pushUndo(h);h[d.kind]=d.key;rebuild(h);}return;}
+  if(d.stamp){state.stamp=state.stamp===d.stamp?null:d.stamp;clearGhost(h);renderSidebar();return;}
+  const si=selRoomIdx(h);
+  if(d.rtype&&si>=0){setRoomMap(h,'roomTypes',h.an.rooms[si],d.rtype);return;}
+  if(d.paper&&si>=0){setRoomMap(h,'roomPaper',h.an.rooms[si],d.paper==='none'?null:d.paper);return;}
+  if(d.adel){if(!confirm('Delete this painting? It will be taken off every wall.'))return;pushUndo(h);h.paintings=h.paintings.filter(p=>p.id!==d.adel);if(state.sel.art===d.adel)state.sel.art=null;rebuild(h);return;}
+  const a=d.act;
+  if(a==='paintAll'){if(!Object.keys(h.walls).length){toast('Build some walls first.');return;}pushUndo(h);for(const k in h.walls)h.walls[k].mat=state.sel.wall;rebuild(h);}
+  if(a==='undo')undo(h);
+  if(a==='clear'){if(confirm('Clear everything from '+h.name+'?')){pushUndo(h);Object.assign(h,{walls:{},roomNames:{},roomTypes:{},roomPaper:{},furn:[],art:[]});rebuild(h);}}
+  if(a==='example'){if(Object.keys(h.walls).length&&!confirm('Replace '+h.name+' with the example house?'))return;exampleHouse(h);}
+  if(a==='rot'){state.furnRot=(state.furnRot+1)%4;state.houses.forEach(clearGhost);toast('Turned. Move over the floor to see it.');}
+  if(a==='newArt')openPainter(h,null);
+});
+function setTool(t){
+  state.tool=t;if(t!=='room')state.stamp=null;
+  state.houses.forEach(h=>{h.view.classList.toggle('look',t==='look');h.hl.visible=false;clearGhost(h);refreshSelection(h);});
+  if((t==='furn'||t==='room')&&!state.cut&&!setTool.tipped){setTool.tipped=true;toast('Tip: turn on Cutaway at the top to lower the walls while you decorate.');}
+  if(t==='furn'){const h=act(),si=selRoomIdx(h);if(si>=0){const ty=h.info[si].type;if(ty&&ty!=='other')state.furnCat=ty;}}
+  renderSidebar();
+}
+
+// ---------- pixel painter ----------
+const pe={h:null,p:null,px:[],tool:'pen',color:8,down:false};
+const pcan=$('#pcan'),pctx=pcan.getContext('2d');
+$('#pPal').innerHTML=PAL.map((c,i)=>`<button data-pc="${i}" style="background:${c}" title="Color ${i+1}"></button>`).join('');
+function drawPainter(){
+  const s=21;
+  for(let i=0;i<256;i++){pctx.fillStyle=PAL[pe.px[i]];pctx.fillRect((i%16)*s,Math.floor(i/16)*s,s,s);}
+  pctx.strokeStyle='rgba(0,0,0,.12)';pctx.lineWidth=1;
+  for(let i=0;i<=16;i++){pctx.beginPath();pctx.moveTo(i*s+.5,0);pctx.lineTo(i*s+.5,336);pctx.stroke();pctx.beginPath();pctx.moveTo(0,i*s+.5);pctx.lineTo(336,i*s+.5);pctx.stroke();}
+  document.querySelectorAll('#pPal button').forEach(b=>b.classList.toggle('sel',+b.dataset.pc===pe.color));
+  document.querySelectorAll('[data-pt]').forEach(b=>b.classList.toggle('sel',b.dataset.pt===pe.tool));
+}
+function openPainter(h,p){
+  pe.h=h;pe.p=p;pe.px=p?p.px.split('').map(c=>parseInt(c,16)):new Array(256).fill(7);pe.tool='pen';
+  $('#pTitle').value=p?p.title:'';$('#pFrame').value=p?p.frame:'wood';
+  $('#mPaint h2').textContent=p?'Edit your painting':'Paint your picture';
+  drawPainter();$('#mPaint').classList.add('show');
+}
+function pcell(e){const r=pcan.getBoundingClientRect();const x=Math.floor((e.clientX-r.left)/r.width*16),y=Math.floor((e.clientY-r.top)/r.height*16);return(x<0||y<0||x>15||y>15)?-1:y*16+x;}
+function paintAt(e){
+  const i=pcell(e);if(i<0)return;
+  if(pe.tool==='fill'){const from=pe.px[i],to=pe.color;if(from===to)return;const st=[i];while(st.length){const j=st.pop();if(pe.px[j]!==from)continue;pe.px[j]=to;const x=j%16,y=Math.floor(j/16);if(x>0)st.push(j-1);if(x<15)st.push(j+1);if(y>0)st.push(j-16);if(y<15)st.push(j+16);}}
+  else pe.px[i]=pe.tool==='erase'?7:pe.color;
+  drawPainter();
+}
+pcan.addEventListener('pointerdown',e=>{pe.down=true;pcan.setPointerCapture(e.pointerId);paintAt(e);});
+pcan.addEventListener('pointermove',e=>{if(pe.down&&pe.tool!=='fill')paintAt(e);});
+pcan.addEventListener('pointerup',()=>{pe.down=false;});
+$('#pPal').addEventListener('click',e=>{const b=e.target.closest('[data-pc]');if(!b)return;pe.color=+b.dataset.pc;if(pe.tool==='erase')pe.tool='pen';drawPainter();});
+document.querySelectorAll('[data-pt]').forEach(b=>b.addEventListener('click',()=>{pe.tool=b.dataset.pt;drawPainter();}));
+$('#pClear').addEventListener('click',()=>{if(confirm('Clear the whole painting?')){pe.px.fill(7);drawPainter();}});
+$('#pCancel').addEventListener('click',()=>$('#mPaint').classList.remove('show'));
+$('#pSave').addEventListener('click',()=>{
+  const h=pe.h,px=pe.px.map(n=>n.toString(16)).join(''),title=$('#pTitle').value.trim()||'Untitled',frame=$('#pFrame').value;
+  pushUndo(h);
+  if(pe.p){Object.assign(pe.p,{px,title,frame,ver:(pe.p.ver||1)+1});}
+  else{const p={id:'p'+Date.now().toString(36)+Math.floor(Math.random()*1e4),title,frame,px,ver:1};h.paintings.push(p);state.sel.art=p.id;
+    if(h.decor+PAINTING_COST>DECOR_BUDGET)toast('Saved, but this puts you over your decor budget.');else toast('Saved! Now click the inside of a wall to hang it.');}
+  $('#mPaint').classList.remove('show');
+  if(state.tool!=='art')state.tool='art';
+  rebuild(h);setTool('art');
+});
+
+// ---------- house management ----------
+function layout(){
+  const n=state.houses.length,st=$('#stage');
+  st.style.gridTemplateColumns=n===1?'1fr':n===2?'1fr 1fr':n===3?'1fr 1fr 1fr':'1fr 1fr';
+  st.style.gridTemplateRows=n===4?'1fr 1fr':'1fr';
+  state.houses.forEach((h,i)=>{h.color=HOUSE_COLORS[i];h.panel.style.setProperty('--hc',h.color);h.panel.classList.toggle('active',i===state.active);h.panel.querySelector('.b-del').disabled=n===1;h.panel.querySelector('.b-dup').disabled=n>=4;});
+  $('#bAdd').disabled=n>=4||!!state.test;
+  $('#bAdd').textContent=`➕ Add house (${n}/4)`;
+}
+function houseData(h){return{uid:h.uid,name:h.name,walls:h.walls,roof:h.roof,floor:h.floor,roomNames:h.roomNames,roomTypes:h.roomTypes,roomPaper:h.roomPaper,furn:h.furn,paintings:h.paintings,art:h.art};}
+function addHouse(data){
+  if(state.houses.length>=4){toast('You can compare up to 4 houses.');return null;}
+  if(state.test){toast('Click "Back to building" first.');return null;}
+  const h=createHouse(data);state.active=state.houses.length-1;layout();rebuild(h);renderSidebar();return h;
+}
+function duplicate(h){
+  if(state.houses.length>=4){toast('You already have 4 houses. Remove one to make a copy.');return;}
+  const d=houseData(h);delete d.uid;d.name=('Copy of '+h.name).slice(0,28);d.cam=h.cam;
+  const c=addHouse(d);
+  if(c)toast('Copied! Now change just one thing and test both.');
+}
+function removeHouse(h){
+  if(state.houses.length<=1)return;
+  if(state.test){toast('Click "Back to building" first.');return;}
+  if(!confirm('Remove '+h.name+'? This cannot be undone.'))return;
+  const i=state.houses.indexOf(h);state.houses.splice(i,1);h.panel.remove();
+  state.active=Math.min(state.active,state.houses.length-1);layout();renderSidebar();save();
+}
+
+// ---------- tests ----------
+const SPEED={slow:60,normal:30,fast:12,instant:0};
+function tempColor(c){
+  const stops=[[2,[59,111,216]],[12,[127,182,240]],[18,[159,214,170]],[22,[141,205,120]],[26,[242,178,92]],[33,[224,83,63]]];
+  if(c<=stops[0][0])return`rgb(${stops[0][1]})`;
+  for(let i=1;i<stops.length;i++){if(c<=stops[i][0]){const [a,ca]=stops[i-1],[b,cb]=stops[i],f=(c-a)/(b-a);return`rgb(${ca.map((v,j)=>Math.round(v+(cb[j]-v)*f)).join(',')})`;}}
+  return`rgb(${stops[stops.length-1][1]})`;
+}
+function seasonGround(m){
+  const cl=CLIMATES[state.climate];const s=seasonOfMonth(m);
+  if(s===0)return cl.m[0]<34?'#eef2f5':cl.m[0]<50?'#cbc6ac':'#bfd29c';
+  return s===1?'#a9d18e':s===2?(cl.m[6]>88?'#d8c48e':'#bccd7a'):'#d9b77a';
+}
+function sunDir(day,hour){
+  const lat=WX.lat*Math.PI/180,decl=23.45*Math.PI/180*Math.sin(2*Math.PI*(284+day+1)/365),ha=(hour-12)*15*Math.PI/180;
+  const sa=Math.sin(lat)*Math.sin(decl)+Math.cos(lat)*Math.cos(decl)*Math.cos(ha);
+  const ca=Math.sqrt(Math.max(0,1-sa*sa));
+  let cz=ca>0?(Math.sin(decl)-sa*Math.sin(lat))/(ca*Math.cos(lat)):1;cz=Math.max(-1,Math.min(1,cz));
+  let az=Math.acos(cz);if(ha>0)az=2*Math.PI-az;
+  return{v:new THREE.Vector3(Math.sin(az)*ca,sa,-Math.cos(az)*ca),up:sa};
+}
+function readyHouses(){return state.houses.filter(h=>h.model);}
+function startTest(type){
+  if(!readyHouses().length){toast('Build at least one closed room before testing.');return;}
+  if(state.test)backToBuild(true);
+  const sp=$('#sSpeed').value;
+  if(type==='year'){
+    state.houses.forEach(h=>{h.yearRes=h.model?simulate(h.model,WX,0,8760,true,HEAT_SET_C+0.5):null;});
+    state.test={type,t:0,start:0,nH:8760,dur:SPEED[sp],done:false};
+    state.houses.forEach(h=>{h.agg=h.yearRes?{day:aggregate(h.yearRes,24),week:aggregate(h.yearRes,168)}:null;});
+    state.test.out={day:aggOut(24),week:aggOut(168)};
+    state.test.maxWeek=Math.max(0.1,...state.houses.filter(h=>h.agg).flatMap(h=>Array.from(h.agg.week.kwh)));
+  }else{
+    const s=+$('#sSeason').value;
+    state.houses.forEach(h=>{h.dayRes=h.model?simulate(h.model,WX,REP_DAY[s]*24,24,false,f2c(70)):null;});
+    state.test={type,t:0,start:REP_DAY[s]*24,nH:24,dur:sp==='slow'?24:sp==='fast'?7:sp==='instant'?0:14,done:false,season:s};
+  }
+  state.stamp=null;
+  state.houses.forEach(h=>{rebuild(h);h.hl.visible=false;clearGhost(h);h.card.style.display='none';h.emptyEl.style.display='none';const ch=type==='year'&&!!h.agg;h.chartEl.style.display=ch?'block':'none';h.chartKey=null;h.card.classList.toggle('up',ch);});
+  $('#sScrub').max=state.test.nH-1;$('#sScrub').value=0;
+  updateHeader();
+  if(!state.test.dur){state.test.t=state.test.nH-1;showFrame(state.test.nH-1);finishTest();}
+}
+function advanceTest(dt){
+  const T=state.test;if(T.paused)return;T.t+=dt*T.nH/T.dur;
+  if(T.t>=T.nH-1){T.t=T.nH-1;showFrame(T.nH-1);finishTest();return;}
+  showFrame(Math.floor(T.t));
+}
+function aggregate(res,win){
+  const n=res.n,nW=Math.ceil(res.nH/win);
+  const T=new Float32Array(nW*n),H=new Float32Array(nW*n),C=new Float32Array(nW*n),kwh=new Float32Array(nW),kh=new Float32Array(nW);
+  for(let w=0;w<nW;w++){
+    const a=w*win,b=Math.min(res.nH,a+win),L=b-a;
+    for(let i=a;i<b;i++)for(let r=0;r<n;r++){const j=i*n+r;T[w*n+r]+=res.temps[j]/L;const st=res.hv[j];if(st>0)H[w*n+r]+=1/L;else if(st<0)C[w*n+r]+=1/L;}
+    kwh[w]=res.kwh[b-1]-(a?res.kwh[a-1]:0);kh[w]=res.kh[b-1]-(a?res.kh[a-1]:0);
+  }
+  return{n,T,H,C,kwh,kh,win};
+}
+function aggOut(win){const nW=Math.ceil(8760/win),o=new Float32Array(nW);for(let w=0;w<nW;w++){const a=w*win,b=Math.min(8760,a+win);let s=0;for(let i=a;i<b;i++)s+=WX.T[i];o[w]=s/(b-a);}return o;}
+function dateOf(day){const m=monthOf(day);return MNAMES[m]+' '+(day-MSTART[m]+1);}
+function drawChart(h,i){
+  const cv=h.chartCv,rect=h.chartEl.getBoundingClientRect();if(rect.width<10)return;
+  const wk=Math.floor(i/168),key=wk+'|'+Math.round(rect.width)+'|'+state.units;if(h.chartKey===key)return;h.chartKey=key;
+  const dpr=Math.min(window.devicePixelRatio||1,2);cv.width=Math.round(rect.width*dpr);cv.height=Math.round(rect.height*dpr);
+  const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);const W=rect.width-4,H=rect.height-4;g.clearRect(0,0,W+4,H+4);
+  const L=34,R=10,T0=18,B=16,pw=W-L-R,ph=H-T0-B;
+  const A=h.agg.week,out=state.test.out.week,nW=A.kwh.length,bw=pw/nW,max=state.test.maxWeek;
+  g.font='600 10px Lexend, sans-serif';g.fillStyle='#22303a';g.textBaseline='alphabetic';
+  g.fillText('Electricity each week',L,12);
+  g.fillStyle='#e8762c';g.fillRect(L+128,4,9,9);g.fillStyle='#22303a';g.fillText('heating',L+140,12);
+  g.fillStyle='#2f7fd1';g.fillRect(L+188,4,9,9);g.fillStyle='#22303a';g.fillText('cooling',L+200,12);
+  g.strokeStyle='#61707a';g.lineWidth=2;g.beginPath();g.moveTo(L+250,8);g.lineTo(L+264,8);g.stroke();g.fillText('outside temp',L+268,12);
+  g.strokeStyle='#d4d9d2';g.lineWidth=1;g.beginPath();g.moveTo(L,T0+ph+.5);g.lineTo(L+pw,T0+ph+.5);g.stroke();
+  g.fillStyle='#61707a';g.fillText(fmtN(max),2,T0+8);g.fillText('kWh',2,T0+20);g.fillText('0',2,T0+ph);
+  for(let w=0;w<nW;w++){
+    const x=L+w*bw,done=w<=wk,tot=A.kwh[w],ht=A.kh[w],hc=Math.max(0,tot-ht);
+    const h1=ht/max*ph,h2=hc/max*ph;
+    g.globalAlpha=done?1:0.12;
+    g.fillStyle='#e8762c';g.fillRect(x+1,T0+ph-h1,Math.max(1,bw-2),h1);
+    g.fillStyle='#2f7fd1';g.fillRect(x+1,T0+ph-h1-h2,Math.max(1,bw-2),h2);
+  }
+  g.globalAlpha=1;
+  let mn=Infinity,mx=-Infinity;out.forEach(v=>{mn=Math.min(mn,v);mx=Math.max(mx,v);});const span=Math.max(1,mx-mn);
+  g.strokeStyle='#61707a';g.lineWidth=2;g.beginPath();
+  for(let w=0;w<=Math.min(wk,nW-1);w++){const x=L+(w+.5)*bw,y=T0+ph-(out[w]-mn)/span*ph*0.9-ph*0.05;w?g.lineTo(x,y):g.moveTo(x,y);}g.stroke();
+  const cx=L+(wk+.5)*bw;g.strokeStyle='#22303a';g.lineWidth=1.5;g.beginPath();g.moveTo(cx,T0);g.lineTo(cx,T0+ph);g.stroke();
+  g.fillStyle='#61707a';MNAMES.forEach((mn2,m)=>{g.fillText(mn2[0],L+(MSTART[m]/7)*bw+2,H-3);});
+}
+function hourLabel(hr){const a=hr%12===0?12:hr%12;return a+(hr<12?' AM':' PM');}
+function showFrame(i){
+  const T=state.test,k=(T.start+i)%8760,day=Math.floor(k/24),hr=k%24,m=monthOf(day),s=seasonOfMonth(m);
+  const mode=T.type==='year'?state.avg:'hour';
+  const win=mode==='day'?24:mode==='week'?168:1,w=Math.floor(i/win);
+  const sd=T.type==='year'?sunDir(day,12):sunDir(day,hr+0.5);
+  const night=sd.up<=0;
+  let when,outT=WX.T[k];
+  if(T.type==='year'){
+    if(mode==='week'){const d0=Math.floor(w*168/24);when=`${SEASON_ICON[s]} Week of ${dateOf(d0)}`;outT=T.out.week[w];}
+    else if(mode==='day'){when=`${SEASON_ICON[s]} ${dateOf(day)}`;outT=T.out.day[w];}
+    else when=`${SEASON_ICON[s]} ${SEASONS[s]}, ${dateOf(day)}, ${hourLabel(hr)}`;
+  }
+  $('#sScrub').value=i;$('#lScrub').textContent=T.type==='year'?dateOf(day):hourLabel(hr);
+  state.houses.forEach(h=>{
+    h.groundMat.color.set(seasonGround(m));
+    h.sun.position.copy(sd.v).multiplyScalar(20);h.sun.intensity=night?0.08:0.55;h.hemi.intensity=night?0.66:0.82;
+    const res=T.type==='year'?h.yearRes:h.dayRes;
+    if(!res){h.hud.innerHTML='<div class="chip">No closed rooms to test</div>';return;}
+    const avgWord=mode==='hour'?'':' (avg)';
+    const out=`<div class="chip">🌡️ Outside ${fmtT(outT)}${avgWord}</div>`;
+    if(T.type==='year'){
+      h.hud.innerHTML=out+`<div class="chip">${when}</div><div class="chip">⚡ ${fmtN(res.kwh[i])} kWh so far ($${fmtN(res.kwh[i]*PRICE_PER_KWH)})</div>`;
+      if(h.agg)drawChart(h,i);
+    }else{
+      h.hud.innerHTML=out+`<div class="chip">${night?'🌙':'🕒'} ${hourLabel(hr)}, ${SEASONS[s].toLowerCase()} day</div><div class="chip off">Heater and AC are off</div>`;
+    }
+    for(let r=0;r<res.n;r++){
+      let t,icon='';
+      if(mode==='hour'){t=res.temps[i*res.n+r];const st=res.hv[i*res.n+r];icon=st>0?' 🔥':st<0?' ❄️':'';}
+      else{const A=h.agg[mode];t=A.T[w*res.n+r];icon=A.H[w*res.n+r]>0.25?' 🔥':A.C[w*res.n+r]>0.25?' ❄️':'';}
+      const c=tempColor(t);
+      h.floorMats[r].color.set(c);
+      h.lab[r].rv.textContent=fmtT(t)+icon;
+      h.lab[r].el.style.borderColor=c;h.lab[r].el.style.boxShadow=`0 0 0 2px ${c}`;
+    }
+  });
+}
+function finishTest(){
+  const T=state.test;T.done=true;updateHeader();
+  if(T.type==='day'){
+    state.houses.forEach(h=>{
+      const res=h.dayRes;if(!res)return;
+      let mn=1e9,mx=-1e9,mnR=0,mxR=0;
+      for(let i=0;i<res.nH;i++)for(let r=0;r<res.n;r++){const t=res.temps[i*res.n+r];if(t<mn){mn=t;mnR=r;}if(t>mx){mx=t;mxR=r;}}
+      let omn=1e9,omx=-1e9;for(let i=0;i<24;i++){const t=WX.T[(T.start+i)%8760];omn=Math.min(omn,t);omx=Math.max(omx,t);}
+      h.card.innerHTML=`<button class="x" aria-label="Close">✕</button>Every room started at <b>${fmtT(f2c(70))}</b>. Outside went from ${fmtT(omn)} to ${fmtT(omx)}.<br>
+        Coldest: <b>${esc(h.lab[mnR].name)}</b> at <b style="color:${tempColor(mn)}">${fmtT(mn)}</b>. Warmest: <b>${esc(h.lab[mxR].name)}</b> at <b style="color:${tempColor(mx)}">${fmtT(mx)}</b>.`;
+      showCard(h);
+    });
+  }else{
+    const hs=readyHouses().sort((a,b)=>a.yearRes.totalKWh-b.yearRes.totalKWh);
+    const medals=['🥇','🥈','🥉','🏅'];
+    readyHouses().forEach(h=>{
+      const r=h.yearRes,rank=hs.indexOf(h);
+      h.card.innerHTML=`<button class="x" aria-label="Close">✕</button><span class="big">${hs.length>1?medals[rank]+' ':''}⚡ ${fmtN(r.totalKWh)} kWh</span> used in one year (about $${fmtN(r.totalKWh*PRICE_PER_KWH)}).
+        <button class="ib" data-rep style="margin-left:6px">📊 Full report</button>`;
+      showCard(h);h.card.querySelector('[data-rep]').addEventListener('click',showReport);
+    });
+    setTimeout(showReport,700);
+  }
+}
+function showCard(h){h.card.style.display='block';h.card.querySelector('.x').addEventListener('click',()=>h.card.style.display='none');h.card.addEventListener('pointerdown',e=>e.stopPropagation());}
+function backToBuild(){
+  state.test=null;
+  state.houses.forEach(h=>{h.chartEl.style.display='none';h.card.classList.remove('up');});
+  state.houses.forEach(h=>{h.groundMat.color.set(0xdfe3d6);h.sun.position.set(-7,14,9);h.sun.intensity=0.5;h.hemi.intensity=0.82;rebuild(h);});
+  updateHeader();
+}
+function updateHeader(){
+  const T=state.test,running=T&&!T.done,done=T&&T.done;
+  $('#bStop').hidden=!running;$('#bBack').hidden=!done;
+  $('#bReport').hidden=!state.houses.some(h=>h.yearRes)||running;
+  $('#gPlay').hidden=!T;$('#gDay').hidden=!!T;$('#gYear').hidden=!!T;
+  $('#sAvg').hidden=!(T&&T.type==='year');
+  if(T)$('#bPause').textContent=(running&&!T.paused)?'⏸ Pause':'▶ Play';
+  $('#bAdd').disabled=!!T||state.houses.length>=4;$('#bAdd').hidden=!!T;
+}
+
+// ---------- report ----------
+function stackHTML(obj,keys){
+  const tot=keys.reduce((s,k)=>s+obj[k],0)||1;
+  const segs=keys.map(k=>`<i style="width:${obj[k]/tot*100}%;background:${BREAK_COLORS[k]}" title="${BREAK_LABELS[k]}"></i>`).join('');
+  const leg=keys.filter(k=>obj[k]/tot>=0.01).sort((a,b)=>obj[b]-obj[a]).map(k=>`<span><em style="background:${BREAK_COLORS[k]}"></em>${BREAK_LABELS[k]}</span><b>${Math.round(obj[k]/tot*100)}%</b>`).join('');
+  return`<div class="stack">${segs}</div><div class="legend">${leg}</div>`;
+}
+function designSummary(h){
+  const counts={};let win={},door={};
+  for(const k in h.walls){const w=h.walls[k];counts[w.mat]=(counts[w.mat]||0)+1;if(w.open==='window')win[w.win]=(win[w.win]||0)+1;if(w.open==='door')door[w.door]=(door[w.door]||0)+1;}
+  const list=(o,ref)=>Object.entries(o).map(([k,n])=>`${n} ${ref[k].name}`).join(', ')||'none';
+  return`Walls: ${list(counts,WALLS)}<br>Windows: ${list(win,WINDOWS)}<br>Doors: ${list(door,DOORS)}<br>Roof: ${ROOFS[h.roof].name}. Floor: ${FLOORS[h.floor].name}.<br>Furniture: ${h.furn.length} items. Paintings: ${h.art.length} hanging.`;
+}
+function showReport(){
+  const hs=readyHouses().filter(h=>h.yearRes);
+  const box=$('#reportBox');
+  if(!hs.length){box.innerHTML='<button class="btn mclose" data-close>✕</button><h2>Year report</h2><p>Run the Year test first.</p>';$('#mReport').classList.add('show');return;}
+  const sorted=[...hs].sort((a,b)=>a.yearRes.totalKWh-b.yearRes.totalKWh);
+  const maxS=Math.max(1,...hs.flatMap(h=>h.yearRes.seasonKWh));
+  const medals=['🥇','🥈','🥉','🏅'];
+  const cols=hs.map(h=>{
+    const r=h.yearRes,rank=sorted.indexOf(h);
+    const fails=rulesOf(h,h.an,h.cost,h.decor).filter(x=>!x.ok);
+    const sb=r.seasonKWh.map((v,i)=>`<div class="sbar"><span>${fmtN(v)}</span><i style="height:${Math.max(2,v/maxS*70)}px;background:${['#7fb6f0','#a9d18e','#f2b25c','#d9b77a'][i]}"></i></div>`).join('');
+    const rooms=r.rs.map((x,i)=>`<tr><td>${esc(h.lab[i].name)}</td><td>${fmtT(x.avg)}</td><td>${fmtN(x.heatH)}</td><td>${fmtN(x.coolH)}</td></tr>`).join('');
+    return`<div class="rcol" style="--hc:${h.color}">
+      <h4><span class="dot"></span>${esc(h.name)} ${hs.length>1?medals[rank]:''}</h4>
+      <div class="rbig">${fmtN(r.totalKWh)} kWh</div>
+      <div class="rsub">of electricity in one year, about $${fmtN(r.totalKWh*PRICE_PER_KWH)}</div>
+      <div class="rsub">Heating: ${fmtN(r.heatKWh)} kWh. Cooling: ${fmtN(r.coolKWh)} kWh.</div>
+      <div class="rsub">Building cost: $${fmtN(h.cost)}. Decor cost: $${fmtN(h.decor)}.</div>
+      ${fails.map(f=>`<div class="warnline">✘ ${f.text}</div>`).join('')}
+      <div class="rsec"><b>Electricity used each season (kWh)</b><div class="sbars">${sb}</div><div class="slabels">${SEASONS.map((s,i)=>`<span>${SEASON_ICON[i]} ${s}</span>`).join('')}</div></div>
+      <div class="rsec"><b>Where heat flowed OUT of the house</b>${stackHTML(r.loss,['walls','windows','doors','roof','floor','air'])}</div>
+      <div class="rsec"><b>Where heat flowed IN to the house</b>${stackHTML(r.gain,['walls','windows','doors','roof','floor','air','sun'])}</div>
+      <div class="rsec"><b>Rooms</b><table class="rtable"><tr><th>Room</th><th>Avg</th><th>Heater hrs</th><th>AC hrs</th></tr>${rooms}</table></div>
+      <div class="rsec"><b>Design</b><div class="design">${designSummary(h)}</div></div>
+    </div>`;
+  }).join('');
+  box.innerHTML=`<button class="btn mclose noprint" data-close>✕</button>
+    <h2>Year report</h2>
+    <p style="margin:0">Climate: <b>${CLIMATES[state.climate].name}</b>. The heater turns on when a room drops below ${fmtT(HEAT_SET_C)}. The AC turns on when a room goes above ${fmtT(COOL_SET_C)}. Using less electricity means the house does a better job controlling how heat moves.</p>
+    <div class="rgrid">${cols}</div>
+    <div class="think"><h3>Think like an engineer</h3><ol>
+      <li>Which house used the least electricity? Which materials did it use for its walls, windows, and roof?</li>
+      <li>Look at <b>Where heat flowed OUT</b>. Which part of your house let the most heat escape? Is that part made of a conductor or an insulator?</li>
+      <li>Heat always moves from ________ places to ________ places. Use evidence from your test to explain how you know.</li>
+      <li>Look at the season bars. Why did your house need more electricity in some seasons than others?</li>
+      <li>Your fridge, stove, TV, and computer give off heat. Is that helpful in winter? Is it helpful in summer? Explain.</li>
+      <li>Pick one change you would make to use less electricity while staying within budget. Predict what will happen, then copy your house (⧉), make only that change, and test it.</li>
+    </ol></div>
+    <div class="noprint" style="margin-top:14px;display:flex;gap:8px"><button class="btn" onclick="window.print()">🖨️ Print report</button><button class="btn primary" data-close>Close</button></div>`;
+  $('#mReport').classList.add('show');
+}
+document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if((e.target===m&&!m.hasAttribute('data-sticky'))||e.target.closest('[data-close]'))m.classList.remove('show');}));
+
+// ---------- save / load ----------
+function save(){
+  try{localStorage.setItem('heatShieldHomes_v2',JSON.stringify({climate:state.climate,units:state.units,showRoof:state.showRoof,cut:state.cut,challenge:state.challenge,houses:state.houses.map(houseData)}));}catch(_){}
+}
+function load(){try{return JSON.parse(localStorage.getItem('heatShieldHomes_v2'))||JSON.parse(localStorage.getItem('heatShieldHomes_v1'));}catch(_){return null;}}
+
+// ---------- header controls ----------
+const sc=$('#sClimate');for(const k in CLIMATES){const o=document.createElement('option');o.value=k;o.textContent=CLIMATES[k].name;sc.appendChild(o);}
+sc.addEventListener('change',()=>{state.climate=sc.value;WX=makeWeather(CLIMATES[state.climate]);state.houses.forEach(h=>{h.yearRes=h.dayRes=null;});if(state.test)backToBuild();updateHeader();save();if(city.loaded&&city.plots.length)computeCityEnergy();toast('Climate changed. Run your tests again.');});
+$('#bUnits').addEventListener('click',()=>{state.units=state.units==='F'?'C':'F';$('#bUnits').textContent='°'+state.units;save();if(state.test)showFrame(Math.floor(state.test.t));});
+$('#cRoof').addEventListener('change',e=>{state.showRoof=e.target.checked;if(!state.test)state.houses.forEach(rebuild);save();});
+$('#cCut').addEventListener('change',e=>{state.cut=e.target.checked;if(!state.test)state.houses.forEach(rebuild);save();});
+$('#cChal').addEventListener('change',e=>{state.challenge=e.target.checked;renderSidebar();save();});
+$('#bAdd').addEventListener('click',()=>addHouse());
+$('#bDay').addEventListener('click',()=>startTest('day'));
+$('#bYear').addEventListener('click',()=>startTest('year'));
+$('#bStop').addEventListener('click',()=>backToBuild());
+$('#bBack').addEventListener('click',()=>backToBuild());
+$('#bReport').addEventListener('click',showReport);
+$('#bPause').addEventListener('click',()=>{
+  const T=state.test;if(!T)return;
+  if(T.done){T.done=false;T.paused=false;if(T.t>=T.nH-1)T.t=0;state.houses.forEach(h=>h.card.style.display='none');}
+  else T.paused=!T.paused;
+  updateHeader();
+});
+$('#sScrub').addEventListener('input',e=>{const T=state.test;if(!T)return;T.t=Math.min(T.nH-1,+e.target.value);showFrame(Math.floor(T.t));});
+$('#sAvg').addEventListener('change',e=>{state.avg=e.target.value;state.houses.forEach(h=>h.chartKey=null);if(state.test)showFrame(Math.floor(state.test.t));});
+$('#bHelp').addEventListener('click',()=>$('#mIntro').classList.add('show'));
+$('#bSide').addEventListener('click',()=>{state.sideOpen=!state.sideOpen;$('#app').classList.toggle('noside',!state.sideOpen);});
+addEventListener('keydown',e=>{
+  if(e.target.matches('input,select,textarea'))return;
+  if($('#mPaint').classList.contains('show')){if(e.key==='Escape')$('#mPaint').classList.remove('show');return;}
+  if(state.mode==='city'){if(e.key==='Escape'){if(document.querySelector('.modal.show'))document.querySelectorAll('.modal.show').forEach(m=>m.classList.remove('show'));else{leaveDetail();renderSidebar();}}return;}
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();if(!state.test)undo(act());return;}
+  const n=parseInt(e.key,10);if(n>=1&&n<=9)setTool(TOOLS[n-1].id);
+  if(e.key.toLowerCase()==='r'&&state.tool==='furn'){state.furnRot=(state.furnRot+1)%4;state.houses.forEach(clearGhost);}
+  if(e.key==='Escape'){if(state.stamp){state.stamp=null;state.houses.forEach(clearGhost);renderSidebar();}document.querySelectorAll('.modal.show').forEach(m=>m.classList.remove('show'));}
+});
+
+// ---------- class city ----------
+function lsGet(k){try{return localStorage.getItem(k);}catch(_){return null;}}
+function lsSet(k,v){try{localStorage.setItem(k,v);}catch(_){}}
+function newUid(){return 'h'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+const HOOD_COLORS=[0xcfe6b0,0xf1e2b6,0xcfe2f2,0xe9d3ea,0xd5ecd5,0xf2d6c9];
+const HOOD_CSS=['#cfe6b0','#f1e2b6','#cfe2f2','#e9d3ea','#d5ecd5','#f2d6c9'];
+const city={scene:null,camera:null,cam:{theta:-0.6,phi:0.95,r:90,tx:0,tz:0},entries:[],plots:[],blocks:[],visit:-1,peek:false,spin:false,
+  loaded:false,loading:false,filter:lsGet('hsh_cls')||CLASS_PERIODS[0]||'all',sort:'kwh',source:'',tween:null,energyRun:0};
+const ROAD_TEX=makeCanvasTex(g=>{g.fillStyle='#5d6268';g.fillRect(0,0,128,128);g.fillStyle='#f4f4f0';g.fillRect(0,61,64,6);g.fillStyle='#c9cdc4';g.fillRect(0,0,128,7);g.fillRect(0,121,128,7);});
+const LOT_MAT_C=new THREE.MeshLambertMaterial({color:0xe9ece4});
+const LOT_EMPTY=new THREE.MeshLambertMaterial({color:0xa9c98a});
+const V2=new THREE.Vector3();
+const clean=(v,n)=>String(v==null?'':v).trim().replace(/\s+/g,' ').slice(0,n);
+function accKey(cls,student){return clean(cls,20).toLowerCase()+'|'+clean(student,20).toLowerCase();}
+
+// ----- talking to the city (Apps Script online, or this computer offline) -----
+function cyrb53(str,seed=0){let h1=0xdeadbeef^seed,h2=0x41c6ce57^seed;for(let i=0;i<str.length;i++){const ch=str.charCodeAt(i);h1=Math.imul(h1^ch,2654435761);h2=Math.imul(h2^ch,1597334677);}
+  h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return (4294967296*(2097151&h2)+(h1>>>0)).toString(36);}
+function localDb(){try{return JSON.parse(lsGet('heatShieldCity_v2'))||{accounts:{}};}catch(_){return{accounts:{}};}}
+function localApi(action,p){
+  const db=localDb();
+  if(action==='list')return Object.values(db.accounts).map(a=>a.entry).filter(e=>e&&(!p.cls||e.cls===p.cls));
+  const student=clean(p.student,20),cls=clean(p.cls,20);
+  if(!student||!cls)return{ok:false,error:'Type your first name and pick your class.'};
+  const key=accKey(cls,student),acc=db.accounts[key],pw=String(p.password||'');
+  if(action==='publish'){
+    if(pw.length<4)return{ok:false,error:'Your password needs at least 4 characters.'};
+    if(acc&&acc.hash&&acc.hash!==cyrb53(pw))return{ok:false,error:'That password does not match the one you used before. Ask your teacher if you forgot it.'};
+    db.accounts[key]={hash:cyrb53(pw),entry:Object.assign({},p.entry,{id:key,student,cls})};
+    lsSet('heatShieldCity_v2',JSON.stringify(db));return{ok:true,replaced:!!acc};
+  }
+  if(action==='mine'){
+    if(!acc)return{ok:false,error:'No house was found for that name in that class.'};
+    if(acc.hash&&acc.hash!==cyrb53(pw))return{ok:false,error:'That password does not match.'};
+    return{ok:true,entry:acc.entry};
+  }
+  return{ok:false,error:'Unknown action.'};
+}
+async function cityApi(action,payload){
+  if(!CITY_URL)return localApi(action,payload);
+  if(action==='list'){
+    const r=await fetch(CITY_URL+(CITY_URL.includes('?')?'&':'?')+'action=list&cls='+encodeURIComponent(payload.cls||''));
+    return await r.json();
+  }
+  const r=await fetch(CITY_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({action},payload))});
+  return await r.json();
+}
+
+// Only keep data the game understands, so a broken or odd file can't crash the city
+function sanitizeData(d){
+  d=d||{};const walls={};
+  for(const k in (d.walls||{})){
+    const m=/^([hv]),(\d+),(\d+)$/.exec(k);if(!m)continue;
+    const x=+m[2],z=+m[3];if(m[1]==='h'?(x>=GW||z>GH):(x>GW||z>=GH))continue;
+    const w=d.walls[k];if(!w||!WALLS[w.mat])continue;
+    const o={mat:w.mat,open:null};
+    if(w.open==='window'&&WINDOWS[w.win]){o.open='window';o.win=w.win;}
+    else if(w.open==='door'&&DOORS[w.door]){o.open='door';o.door=w.door;}
+    walls[k]=o;
+  }
+  const pickMap=(src,ok)=>{const o={};for(const k in (src||{})){if(/^\d+,\d+$/.test(k)&&ok(src[k]))o[k]=typeof src[k]==='string'?src[k].slice(0,20):src[k];}return o;};
+  return{
+    walls,roof:ROOFS[d.roof]?d.roof:'shingle',floor:FLOORS[d.floor]?d.floor:'slab',
+    furn:(Array.isArray(d.furn)?d.furn:[]).filter(f=>f&&FURN[f.type]).map(f=>({type:f.type,x:f.x|0,z:f.z|0,rot:(((f.rot|0)%4)+4)%4})),
+    paintings:(Array.isArray(d.paintings)?d.paintings:[]).filter(p=>p&&typeof p.px==='string'&&/^[0-9a-f]{256}$/.test(p.px)).map(p=>({id:String(p.id),title:String(p.title||'Untitled').slice(0,24),frame:FRAMES[p.frame]?p.frame:'wood',px:p.px,ver:1})),
+    art:(Array.isArray(d.art)?d.art:[]).filter(a=>a&&typeof a.key==='string'&&(a.side===1||a.side===-1)).map(a=>({key:a.key,side:a.side,pid:String(a.pid)})),
+    roomTypes:pickMap(d.roomTypes,v=>!!ROOM_TYPES[v]),roomPaper:pickMap(d.roomPaper,v=>!!PAPERS[v]),roomNames:pickMap(d.roomNames,v=>typeof v==='string')
+  };
+}
+function sanitizeEntry(en){
+  if(!en||typeof en!=='object'||!en.data)return null;
+  return{id:String(en.id||newUid()).slice(0,60),student:clean(en.student||'Someone',20),cls:clean(en.cls,20),
+    name:clean(en.name||'House',28),time:+en.time||0,kwh:+en.kwh||0,climate:String(en.climate||''),
+    hood:Math.max(0,Math.min(NEIGHBOURHOODS.length-1,en.hood|0)),data:sanitizeData(en.data)};
+}
+
+function initCityScene(){
+  if(city.scene)return;
+  const s=new THREE.Scene();s.background=SKY;
+  s.add(new THREE.HemisphereLight(0xffffff,0xbdbcad,0.82));
+  const sun=new THREE.DirectionalLight(0xffffff,0.55);sun.position.set(-20,40,25);s.add(sun);
+  const ground=new THREE.Mesh(new THREE.PlaneGeometry(2000,2000),new THREE.MeshLambertMaterial({color:0xb9d39a}));ground.rotation.x=-Math.PI/2;ground.position.y=-0.02;s.add(ground);
+  city.world=new THREE.Group();s.add(city.world);
+  city.scene=s;city.camera=new THREE.PerspectiveCamera(40,1,0.5,2500);
+  city.view=$('#cityView');city.signs=$('#citySigns');city.card=$('#cityCard');
+  const v=city.view;
+  v.addEventListener('contextmenu',e=>e.preventDefault());
+  v.addEventListener('pointerdown',e=>{city.drag={x:e.clientX,y:e.clientY,moved:false,mode:(e.button===2||e.button===1||e.shiftKey)?'pan':'orbit'};v.setPointerCapture(e.pointerId);});
+  v.addEventListener('pointermove',e=>{
+    const d=city.drag;if(!d)return;const dx=e.clientX-d.x,dy=e.clientY-d.y;
+    if(Math.abs(dx)+Math.abs(dy)>4){d.moved=true;city.tween=null;}
+    if(!d.moved)return;
+    if(d.mode==='orbit'){city.cam.theta-=dx*0.008;city.cam.phi=Math.max(0.1,Math.min(1.45,city.cam.phi-dy*0.006));}
+    else{const sc=city.cam.r*0.0018,c=Math.cos(city.cam.theta),si=Math.sin(city.cam.theta);city.cam.tx=Math.max(-400,Math.min(400,city.cam.tx-(dx*c+dy*si)*sc));city.cam.tz=Math.max(-400,Math.min(400,city.cam.tz-(-dx*si+dy*c)*sc));}
+    d.x=e.clientX;d.y=e.clientY;
+  });
+  v.addEventListener('pointerup',e=>{
+    const d=city.drag;city.drag=null;try{v.releasePointerCapture(e.pointerId);}catch(_){}
+    if(!d||d.moved)return;
+    const r=v.getBoundingClientRect();
+    RAY.setFromCamera(new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1),city.camera);
+    const hits=RAY.intersectObject(city.world,true);
+    let pt=hits.length?hits[0].point:null;
+    if(!pt){const g=new THREE.Vector3();if(RAY.ray.intersectPlane(PLANE,g))pt=g;}
+    if(!pt)return;
+    const i=city.plots.findIndex(p=>Math.abs(pt.x-p.cx)<=GW/2+1&&Math.abs(pt.z-p.cz)<=GH/2+1);
+    if(i>=0)visitPlot(i);else{leaveDetail();renderSidebar();}
+  });
+  v.addEventListener('wheel',e=>{e.preventDefault();city.tween=null;city.cam.r=Math.max(8,Math.min(420,city.cam.r*Math.exp(e.deltaY*0.0012)));},{passive:false});
+  city.card.addEventListener('pointerdown',e=>e.stopPropagation());
+  city.card.addEventListener('click',e=>{
+    const b=e.target.closest('[data-cc]');if(!b)return;const p=city.plots[city.visit];if(!p)return;
+    const a=b.dataset.cc;
+    if(a==='close'){leaveDetail();renderSidebar();}
+    if(a==='peek'){city.peek=!city.peek;buildDetail(p);showCityCard(p);}
+    if(a==='spin'){city.spin=!city.spin;showCityCard(p);}
+    if(a==='copy'){
+      if(state.houses.length>=4){toast('You already have 4 houses. Remove one in the Build tab first.');return;}
+      const d=JSON.parse(JSON.stringify(p.ph));d.name=(p.en.name+' ('+p.en.student+')').slice(0,28);
+      if(addHouse(d))toast('Copied! Open the Build tab to see it next to your other houses.');
+    }
+  });
+}
+function addTree(x,z){cyl(city.world,.12,.16,1.1,'#7a4f27',x,0,z);ico(city.world,.75,'#4f9a4a',x,1.6,z);}
+function mergeGroup(src){
+  src.updateMatrixWorld(true);
+  const buckets=new Map(),linePos=[];
+  src.traverse(o=>{
+    if(o.isMesh){
+      const m=Array.isArray(o.material)?o.material[0]:o.material;
+      let g=o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone();g.applyMatrix4(o.matrixWorld);
+      if(!buckets.has(m))buckets.set(m,[]);buckets.get(m).push(g);
+    }else if(o.isLineSegments){
+      const g=o.geometry.clone();g.applyMatrix4(o.matrixWorld);const a=g.attributes.position.array;for(let i=0;i<a.length;i++)linePos.push(a[i]);g.dispose();
+    }
+  });
+  const out=new THREE.Group();
+  buckets.forEach((geos,m)=>{
+    let n=0;geos.forEach(g=>n+=g.attributes.position.count);
+    const pos=new Float32Array(n*3),nor=new Float32Array(n*3),uv=new Float32Array(n*2);let off=0;
+    geos.forEach(g=>{pos.set(g.attributes.position.array,off*3);if(g.attributes.normal)nor.set(g.attributes.normal.array,off*3);if(g.attributes.uv)uv.set(g.attributes.uv.array,off*2);off+=g.attributes.position.count;g.dispose();});
+    const bg=new THREE.BufferGeometry();bg.setAttribute('position',new THREE.BufferAttribute(pos,3));bg.setAttribute('normal',new THREE.BufferAttribute(nor,3));bg.setAttribute('uv',new THREE.BufferAttribute(uv,2));
+    out.add(new THREE.Mesh(bg,m));
+  });
+  if(linePos.length)out.add(new THREE.LineSegments(lineGeo(linePos),EDGE_MAT));
+  return out;
+}
+function cityList(){return city.entries.filter(e=>city.filter==='all'||e.cls===city.filter);}
+function layoutCity(){
+  initCityScene();leaveDetail();
+  city.world.traverse(o=>{if(o.userData.own){if(o.geometry)o.geometry.dispose();if(o.userData.ownMat)o.material.dispose();}});
+  while(city.world.children.length)city.world.remove(city.world.children[0]);
+  city.signs.innerHTML='';city.plots=[];city.blocks=[];
+  const list=cityList();
+  $('#cityEmpty').style.display=(!list.length&&!city.loading&&city.loaded)?'block':'none';
+  const SX=GW+6,SZ=GH+6,nb=NEIGHBOURHOODS.length;
+  const groups=NEIGHBOURHOODS.map((_,k)=>list.filter(e=>e.hood===k));
+  const dims=groups.map(g=>{const n=g.length,cols=Math.max(2,Math.ceil(Math.sqrt(n))),rows=Math.max(2,Math.ceil(n/cols));return{cols,rows,W:cols*SX,D:rows*SZ};});
+  const CW=Math.max(...dims.map(d=>d.W))+18,CD=Math.max(...dims.map(d=>d.D))+18;
+  const perRow=Math.ceil(nb/2),nRows=nb>perRow?2:1;
+  const road=(len,x,z,vert,wd)=>{const t=ROAD_TEX.clone();t.needsUpdate=true;t.repeat.set(len/2,1);
+    const m=new THREE.Mesh(new THREE.PlaneGeometry(len,wd||3.6),new THREE.MeshLambertMaterial({map:t}));m.userData.own=true;m.userData.ownMat=true;
+    m.rotation.x=-Math.PI/2;if(vert)m.rotation.z=Math.PI/2;m.position.set(x,vert?0.007:0.006,z);city.world.add(m);};
+  // main avenues between neighbourhoods
+  if(nRows>1)road(perRow*CW+20,0,0,false,6);
+  for(let r=0;r<nRows;r++){const cnt=r===0?perRow:nb-perRow,z=(r-(nRows-1)/2)*CD;for(let i=1;i<cnt;i++)road(CD,(i-cnt/2)*CW,z,true,6);}
+  NEIGHBOURHOODS.forEach((name,k)=>{
+    const r=k<perRow?0:1,idx=r===0?k:k-perRow,cnt=r===0?perRow:nb-perRow;
+    const bx=(idx-(cnt-1)/2)*CW,bz=(r-(nRows-1)/2)*CD,dm=dims[k],g=groups[k];
+    const pad=new THREE.Mesh(new THREE.PlaneGeometry(dm.W+8,dm.D+8),new THREE.MeshLambertMaterial({color:HOOD_COLORS[k%HOOD_COLORS.length]}));
+    pad.userData.own=true;pad.userData.ownMat=true;pad.rotation.x=-Math.PI/2;pad.position.set(bx,0.001,bz);city.world.add(pad);
+    for(let rr=0;rr<=dm.rows;rr++)road(dm.W+4,bx,bz+(rr-dm.rows/2)*SZ,false);
+    for(let cc=0;cc<=dm.cols;cc++)road(dm.D+4,bx+(cc-dm.cols/2)*SX,bz,true);
+    const el=document.createElement('div');el.className='hoodsign';el.style.setProperty('--hc',HOOD_CSS[k%HOOD_CSS.length]);
+    el.innerHTML=`${esc(name)}<small>${g.length} house${g.length===1?'':'s'}</small>`;
+    el.addEventListener('pointerdown',e=>e.stopPropagation());el.addEventListener('click',()=>flyToHood(k));
+    city.signs.appendChild(el);
+    city.blocks.push({k,name,bx,bz,W:dm.W,D:dm.D,el});
+    for(let s=0;s<dm.cols*dm.rows;s++){
+      const c=s%dm.cols,rw=Math.floor(s/dm.cols),cx=bx+(c-(dm.cols-1)/2)*SX,cz=bz+(rw-(dm.rows-1)/2)*SZ;
+      const en=g[s];
+      const lot=new THREE.Mesh(new THREE.PlaneGeometry(GW,GH),en?LOT_MAT_C:LOT_EMPTY);lot.userData.own=true;lot.rotation.x=-Math.PI/2;lot.position.set(cx,0.003,cz);city.world.add(lot);
+      addTree(cx-GW/2-0.6,cz-GH/2-0.6);
+      if(!en){addTree(cx+2,cz+1);continue;}
+      const ph=en.data,tmp=new THREE.Group();
+      const res=buildGeometry(ph,tmp,{cut:false,roof:'solid',furniture:false,art:false});
+      const merged=mergeGroup(tmp);merged.traverse(o=>{o.userData.own=true;});
+      if(res.roofLineGeo)res.roofLineGeo.dispose();
+      merged.position.set(cx,0,cz);city.world.add(merged);
+      addTree(cx+GW/2+0.6,cz+GH/2+0.6);
+      const an=res.an,cost=costOf(ph,an),decor=decorOf(ph,an);
+      const sign=document.createElement('div');sign.className='sign';
+      sign.addEventListener('pointerdown',e=>e.stopPropagation());
+      const idx2=city.plots.length;sign.addEventListener('click',()=>visitPlot(idx2));
+      city.signs.appendChild(sign);
+      const p={en,ph,cx,cz,merged,detail:null,detailMats:[],sign,area:an.area,kwh:null,rulesOk:rulesOf(ph,an,cost,decor).every(x=>x.ok)};
+      city.plots.push(p);updateSign(p);
+    }
+  });
+  Object.assign(city.cam,{tx:0,tz:0,r:Math.max(perRow*CW,nRows*CD)*0.85+20,phi:0.9});
+}
+function updateSign(p){p.sign.innerHTML=`<b>${esc(p.en.name)}</b>${esc(p.en.student)}<br><span class="k">${p.kwh==null?'⚡ figuring...':'⚡ '+fmtN(p.kwh)+' kWh'}</span>`;}
+function flyToHood(k){const b=city.blocks[k];if(!b)return;leaveDetail();city.tween={from:{...city.cam},to:{tx:b.bx,tz:b.bz,r:Math.max(b.W,b.D)*1.3+15,phi:0.9},t:0};renderSidebar();}
+function computeCityEnergy(){
+  const run=++city.energyRun;let i=0;
+  const step=()=>{
+    if(run!==city.energyRun)return;
+    const p=city.plots[i];
+    if(!p){renderSidebar();if(city.visit>=0)showCityCard(city.plots[city.visit]);return;}
+    const an=analyze(p.ph.walls);p.area=an.area;
+    p.kwh=an.rooms.length?simulate(buildModel(p.ph,an),WX,0,8760,true,HEAT_SET_C+0.5).totalKWh:null;
+    updateSign(p);i++;setTimeout(step,0);
+  };
+  city.plots.forEach(p=>{p.kwh=null;updateSign(p);});step();
+}
+async function loadCity(){
+  initCityScene();city.loading=true;renderSidebar();$('#cityEmpty').style.display='none';
+  let list=[];
+  try{list=await cityApi('list',{cls:city.filter==='all'?'':city.filter});city.source=CITY_URL?'online':'local';}
+  catch(err){list=[];city.source='error';}
+  city.entries=(Array.isArray(list)?list:[]).map(sanitizeEntry).filter(Boolean).sort((a,b)=>a.time-b.time);
+  city.loaded=true;city.loading=false;layoutCity();computeCityEnergy();renderSidebar();
+}
+function visitPlot(i){
+  const p=city.plots[i];if(!p)return;
+  if(city.visit!==i)leaveDetail();
+  city.visit=i;p.merged.visible=false;buildDetail(p);
+  city.tween={from:{...city.cam},to:{tx:p.cx,tz:p.cz,r:22,phi:Math.min(city.cam.phi,0.95)},t:0};
+  showCityCard(p);renderSidebar();
+}
+function buildDetail(p){
+  if(p.detail){city.world.remove(p.detail);p.detailMats.forEach(m=>m.dispose());}
+  const g=new THREE.Group();const res=buildGeometry(p.ph,g,{cut:city.peek,roof:'none',furniture:true,art:true});
+  if(res.roofLineGeo)res.roofLineGeo.dispose();
+  g.position.set(p.cx,0,p.cz);p.detail=g;p.detailMats=res.floorMats;city.world.add(g);
+}
+function leaveDetail(){
+  const p=city.plots[city.visit];
+  if(p){if(p.detail){city.world.remove(p.detail);p.detailMats.forEach(m=>m.dispose());p.detail=null;}p.merged.visible=true;}
+  city.visit=-1;city.spin=false;if(city.card)city.card.style.display='none';
+}
+function rankOf(p){const ok=city.plots.filter(x=>x.kwh!=null).sort((a,b)=>a.kwh-b.kwh);const i=ok.indexOf(p);return i<0?0:i+1;}
+function showCityCard(p){
+  if(!p)return;
+  const en=p.en,ph=p.ph,an=analyze(ph.walls),cost=costOf(ph,an),decor=decorOf(ph,an),rules=rulesOf(ph,an,cost,decor),fails=rules.filter(r=>!r.ok),info=roomInfo(ph,an),rank=rankOf(p);
+  const rooms=an.rooms.map((r,i)=>{const t=info[i].type;return(t?ROOM_TYPES[t].icon+' ':'')+esc(roomName(ph,r,i,an));}).join(', ')||'none';
+  city.card.innerHTML=`<button class="x" data-cc="close" aria-label="Back to the city">✕</button>
+    <h3 style="margin:0 0 2px;font-size:17px;padding-right:24px">${esc(en.name)}</h3>
+    <div class="rsub">Built by <b>${esc(en.student)}</b> in <b>${esc(NEIGHBOURHOODS[en.hood])}</b>${en.cls?', '+esc(en.cls):''}</div>
+    <div class="rbig" style="font-size:24px">${p.kwh==null?'Figuring...':fmtN(p.kwh)+' kWh'}</div>
+    <div class="rsub">of electricity per year${p.kwh!=null&&p.area?`, or ${fmtN(p.kwh/p.area)} kWh for each m²`:''}${rank?`. Ranked ${rank} of ${city.plots.length} for least electricity.`:''}</div>
+    <div class="rsub">${an.area} m² of floor. Building cost $${fmtN(cost)}. Decor cost $${fmtN(decor)}.</div>
+    <div class="rsec"><b>Rooms</b>${rooms}</div>
+    <div class="rsec"><b>Design rules: ${rules.length-fails.length} of ${rules.length} met</b>${fails.map(f=>`<div class="warnline">✘ ${f.text}</div>`).join('')}</div>
+    <div class="rsec"><b>Design</b><div class="design">${designSummary(ph)}</div></div>
+    <div class="row" style="margin-top:10px"><button class="btn" data-cc="peek">${city.peek?'🧱 Full walls':'👀 Peek inside'}</button><button class="btn" data-cc="spin">${city.spin?'⏹ Stop spin':'🎥 Spin'}</button></div>
+    <div class="row" style="margin-top:6px"><button class="btn" data-cc="copy">⧉ Copy to my houses</button></div>`;
+  city.card.style.display='block';
+}
+function renderCity(dt){
+  if(!city.scene)return;
+  const r=city.view.getBoundingClientRect();if(r.width<2||r.height<2)return;
+  if(city.tween){const T=city.tween;T.t=Math.min(1,T.t+dt/0.7);const k=T.t<.5?2*T.t*T.t:1-Math.pow(-2*T.t+2,2)/2;
+    for(const key of ['tx','tz','r','phi'])city.cam[key]=T.from[key]+(T.to[key]-T.from[key])*k;if(T.t>=1)city.tween=null;}
+  if(city.spin&&city.visit>=0)city.cam.theta+=dt*0.25;
+  const y=innerHeight-r.bottom;
+  renderer.setViewport(r.left,y,r.width,r.height);renderer.setScissor(r.left,y,r.width,r.height);
+  const c=city.cam,cam=city.camera;cam.aspect=r.width/r.height;cam.updateProjectionMatrix();
+  cam.position.set(c.tx+c.r*Math.sin(c.phi)*Math.sin(c.theta),c.r*Math.cos(c.phi)+0.8,c.tz+c.r*Math.sin(c.phi)*Math.cos(c.theta));cam.lookAt(c.tx,0.8,c.tz);
+  renderer.render(city.scene,cam);
+  const place=(el,x,yy,z,maxD)=>{V2.set(x,0,z);const dist=cam.position.distanceTo(V2);TMPV.set(x,yy,z).project(cam);
+    if(TMPV.z>1||dist>maxD||Math.abs(TMPV.x)>1.05||Math.abs(TMPV.y)>1.05){el.style.display='none';return;}
+    el.style.display='';el.style.left=((TMPV.x+1)/2*r.width)+'px';el.style.top=((1-TMPV.y)/2*r.height)+'px';};
+  city.plots.forEach((p,i)=>{if(i===city.visit){p.sign.style.display='none';return;}place(p.sign,p.cx,4.4,p.cz,140);});
+  city.blocks.forEach(b=>place(b.el,b.bx,8,b.bz-b.D/2-2,900));
+}
+function renderCitySidebar(){
+  const side=$('#side');
+  const src=city.loading?'Loading the city...':city.source==='online'?'This is your class city. Your classmates can visit these houses.'
+    :city.source==='error'?'Could not reach the class city right now. Check the internet and press Refresh.'
+    :'This city is saved on this computer only. Your teacher can connect a class city so everyone can share.';
+  const val=p=>city.sort==='kwh'?(p.kwh==null?Infinity:p.kwh):city.sort==='kwhm2'?(p.kwh==null||!p.area?Infinity:p.kwh/p.area):0;
+  const ranked=[...city.plots].filter(p=>p.kwh!=null).sort((a,b)=>val(a)-val(b));
+  const medals=['🥇','🥈','🥉'];
+  const item=(p,i)=>{const rk=(city.sort==='kwh'||city.sort==='kwhm2')?ranked.indexOf(p):-1;const md=rk>=0&&rk<3?medals[rk]+' ':'';
+    const num=p.kwh==null?'...':city.sort==='kwhm2'&&p.area?fmtN(p.kwh/p.area)+'/m²':fmtN(p.kwh);
+    return`<button class="${i===city.visit?'sel':''}" data-plot="${i}"><span>${md}${esc(p.en.name)}<br><small>${esc(p.en.student)}</small></span><span style="text-align:right">⚡ ${num}<br><small style="color:${p.rulesOk?'var(--good)':'var(--axisR)'}">${p.rulesOk?'✔ all rules':'⚠ rules'}</small></span></button>`;};
+  const sortFn=(a,b)=>city.sort==='name'?a.p.en.name.localeCompare(b.p.en.name):city.sort==='new'?b.p.en.time-a.p.en.time:val(a.p)-val(b.p);
+  const groups=NEIGHBOURHOODS.map((name,k)=>{
+    const its=city.plots.map((p,i)=>({p,i})).filter(o=>o.p.en.hood===k).sort(sortFn);
+    return`<button class="hoodbtn" data-hood="${k}" style="--hc:${HOOD_CSS[k%HOOD_CSS.length]}"><span>📍 ${esc(name)}</span><small>${its.length}</small></button>`+
+      (its.length?`<div class="rlist" style="margin:4px 0 10px">${its.map(o=>item(o.p,o.i)).join('')}</div>`:`<p class="hint" style="margin:4px 0 10px">No houses yet. Be the first!</p>`);
+  }).join('');
+  const classOpts=(CLASS_PERIODS.length?CLASS_PERIODS:[...new Set(city.entries.map(e=>e.cls))]).map(c=>`<option value="${esc(c)}" ${city.filter===c?'selected':''}>${esc(c)}</option>`).join('');
+  side.innerHTML=`<h3>Class city</h3><p class="hint" style="margin-top:0">${src}</p>
+    <div class="blabel" style="margin-top:10px">Your class</div>
+    <select id="cFilter" aria-label="Class" style="width:100%">${classOpts}<option value="all" ${city.filter==='all'?'selected':''}>All classes (teacher view)</option></select>
+    <div class="row" style="margin-top:8px"><button class="btn" data-act="cityRefresh">🔄 Refresh</button><button class="btn" data-act="cityTab">↗ Open in new tab</button></div>
+    <button class="btn primary wide" data-act="publish">🏙️ Publish ${esc(act()?act().name:'my house')}</button>
+    <div class="row" style="margin-top:4px"><button class="btn" data-act="login">🔑 Load my house</button><button class="btn" data-act="import">📂 Open a file</button></div>
+    <h3>Neighbourhoods</h3>
+    <div class="blabel">Sort houses by</div>
+    <select id="cSort" aria-label="Sort" style="width:100%;margin-bottom:10px"><option value="kwh">Least electricity</option><option value="kwhm2">Least electricity per m²</option><option value="name">Name</option><option value="new">Newest</option></select>
+    ${groups}
+    <p class="hint">Click a neighbourhood to fly there, or a house to visit it. Electricity is figured for the <b>${CLIMATES[state.climate].name}</b> climate, so every house is tested the same way.</p>`;
+  $('#cSort').value=city.sort;
+  $('#cFilter').addEventListener('change',e=>{city.filter=e.target.value;if(city.filter!=='all')lsSet('hsh_cls',city.filter);loadCity();});
+  $('#cSort').addEventListener('change',e=>{city.sort=e.target.value;renderSidebar();});
+}
+function setMode(m){
+  if(m===state.mode)return;
+  if(m==='city'&&state.test)backToBuild();
+  state.mode=m;$('#app').classList.toggle('city',m==='city');
+  $('#tBuild').classList.toggle('sel',m==='build');$('#tCity').classList.toggle('sel',m==='city');
+  if(m==='city'){initCityScene();if(!city.loaded)loadCity();}
+  else{leaveDetail();}
+  renderSidebar();
+  try{history.replaceState(null,'',m==='city'?'#city':location.pathname+location.search);}catch(_){}
+}
+$('#tBuild').addEventListener('click',()=>setMode('build'));
+$('#tCity').addEventListener('click',()=>setMode('city'));
+function cityAct(a){
+  if(a==='publish'){const h=act();if(h)openPublish(h);}
+  if(a==='cityRefresh')loadCity();
+  if(a==='cityTab')window.open(location.href.split('#')[0]+'#city','_blank');
+  if(a==='import')$('#fileIn').click();
+  if(a==='login')openLogin();
+}
+
+// ---------- class pickers, publishing, loading ----------
+function classPicker(id){return CLASS_PERIODS.length?`<select id="${id}">${CLASS_PERIODS.map(c=>`<option>${esc(c)}</option>`).join('')}</select>`:`<input id="${id}" maxlength="20" placeholder="Your class">`;}
+$('#pubClsWrap').innerHTML=classPicker('pubCls');
+$('#lgClsWrap').innerHTML=classPicker('lgCls');
+$('#pubHood').innerHTML=NEIGHBOURHOODS.map((n,k)=>`<option value="${k}">${esc(n)}</option>`).join('');
+const pub={h:null};
+function makeEntry(h){
+  const res=h.model?simulate(h.model,WX,0,8760,true,HEAT_SET_C+0.5):null;
+  const data=houseData(h);delete data.uid;
+  return{student:clean($('#pubName').value,20),cls:clean($('#pubCls').value,20),name:clean($('#pubHouse').value||h.name,28),
+    hood:+$('#pubHood').value||0,hoodName:NEIGHBOURHOODS[+$('#pubHood').value||0],time:Date.now(),climate:state.climate,kwh:res?Math.round(res.totalKWh):0,data};
+}
+function openPublish(h){
+  if(state.test){toast('Click "Back to building" first.');return;}
+  pub.h=h;
+  $('#pubName').value=lsGet('hsh_student')||'';$('#pubPw').value='';
+  const savedCls=lsGet('hsh_cls');if(savedCls)$('#pubCls').value=savedCls;
+  const savedHood=lsGet('hsh_hood');if(savedHood!=null)$('#pubHood').value=savedHood;
+  $('#pubHouse').value=h.name;
+  const fails=rulesOf(h,h.an,h.cost,h.decor).filter(r=>!r.ok);
+  $('#pubWarn').innerHTML=!h.an.rooms.length?'<div class="warnline">Your house has no closed rooms yet. Build some rooms before you publish.</div>'
+    :fails.length?`<div class="warnline">Your house does not meet ${fails.length} design rule${fails.length>1?'s':''} yet. You can still publish, and classmates will see which rules are missing.</div>`
+    :'<div style="color:var(--good);font-weight:600">✔ Your house meets every design rule.</div>';
+  $('#pubStatus').textContent=CITY_URL?'':'Your teacher has not connected a class city yet, so publishing saves to the city on this computer only.';
+  $('#mPub').classList.add('show');setTimeout(()=>($('#pubName').value?$('#pubPw'):$('#pubName')).focus(),50);
+}
+$('#pubGo').addEventListener('click',async()=>{
+  const h=pub.h;if(!h)return;
+  const name=clean($('#pubName').value,20),pw=$('#pubPw').value;
+  if(!name){$('#pubStatus').textContent='Type your first name first.';$('#pubName').focus();return;}
+  if(pw.length<4){$('#pubStatus').textContent='Type your password. It needs at least 4 characters.';$('#pubPw').focus();return;}
+  if(!h.an.rooms.length){$('#pubStatus').textContent='Build at least one closed room first.';return;}
+  const en=makeEntry(h);
+  $('#pubGo').disabled=true;$('#pubStatus').textContent='Publishing...';
+  try{
+    const res=await cityApi('publish',{student:en.student,cls:en.cls,password:pw,entry:en});
+    if(!res||!res.ok){$('#pubStatus').textContent=(res&&res.error)||'The city did not accept the house.';return;}
+    lsSet('hsh_student',en.student);lsSet('hsh_cls',en.cls);lsSet('hsh_hood',String(en.hood));
+    h.name=en.name;h.nameEl.value=en.name;save();
+    city.filter=en.cls;city.loaded=false;
+    $('#pubStatus').innerHTML=(res.replaced?'✔ Your house in the city was updated. You still have just one house there.':'✔ Published! Remember your password so you can update it later.')+' <button class="btn" id="pubSee">🏙️ See it in the city</button>';
+    $('#pubSee').addEventListener('click',()=>{$('#mPub').classList.remove('show');setMode('city');loadCity();});
+    if(state.mode==='city')loadCity();
+  }catch(err){
+    $('#pubStatus').textContent='Could not reach the class city. Check the internet and try again, or download your house file to save it.';
+  }finally{$('#pubGo').disabled=false;$('#pubPw').value='';}
+});
+$('#pubFile').addEventListener('click',()=>{
+  const h=pub.h;if(!h)return;
+  const en=makeEntry(h);if(!en.student)en.student='Someone';
+  const blob=new Blob([JSON.stringify(en)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=(en.student+'_'+en.name).replace(/[^\w\- ]+/g,'').replace(/\s+/g,'_')+'.house.json';
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+  $('#pubStatus').textContent='House file downloaded. Open it later with "Open a file", or turn it in.';
+});
+function openLogin(){
+  $('#lgName').value=lsGet('hsh_student')||'';$('#lgPw').value='';
+  const savedCls=lsGet('hsh_cls');if(savedCls)$('#lgCls').value=savedCls;
+  $('#lgStatus').textContent='';$('#mLogin').classList.add('show');
+  setTimeout(()=>($('#lgName').value?$('#lgPw'):$('#lgName')).focus(),50);
+}
+$('#lgGo').addEventListener('click',async()=>{
+  const name=clean($('#lgName').value,20),cls=clean($('#lgCls').value,20),pw=$('#lgPw').value;
+  if(!name||!pw){$('#lgStatus').textContent='Type your first name and password.';return;}
+  if(state.houses.length>=4){$('#lgStatus').textContent='You already have 4 houses open. Remove one in the Build tab first.';return;}
+  $('#lgGo').disabled=true;$('#lgStatus').textContent='Looking for your house...';
+  try{
+    const res=await cityApi('mine',{student:name,cls,password:pw});
+    if(!res||!res.ok){$('#lgStatus').textContent=(res&&res.error)||'Could not load your house.';return;}
+    const en=sanitizeEntry(res.entry);if(!en){$('#lgStatus').textContent='Your saved house could not be read.';return;}
+    lsSet('hsh_student',name);lsSet('hsh_cls',cls);lsSet('hsh_hood',String(en.hood));
+    const d=en.data;d.name=en.name;
+    if(state.test)backToBuild();
+    addHouse(d);
+    $('#mLogin').classList.remove('show');setMode('build');toast('Your house is loaded. Publishing it again will update your house in the city.');
+  }catch(err){$('#lgStatus').textContent='Could not reach the class city. Check the internet and try again.';}
+  finally{$('#lgGo').disabled=false;$('#lgPw').value='';}
+});
+$('#fileIn').addEventListener('change',async e=>{
+  const files=[...e.target.files];e.target.value='';if(!files.length)return;
+  let added=0,bad=0;
+  for(const f of files){
+    try{const j=JSON.parse(await f.text());const list=Array.isArray(j)?j:(j.entries||[j]);
+      for(const raw of list){
+        const en=sanitizeEntry(raw);if(!en){bad++;continue;}
+        if(state.houses.length>=4){bad++;continue;}
+        const d=en.data;d.name=en.name;if(state.test)backToBuild();addHouse(d);added++;
+      }}
+    catch(err){bad++;}
+  }
+  if(added)setMode('build');
+  toast(`Opened ${added} house${added===1?'':'s'}.`+(bad?` ${bad} could not be opened (you can have up to 4 houses).`:''));
+});
+
+// ---------- render loop ----------
+let last=performance.now();
+function updateCam(h){const c=h.cam;h.camera.position.set(c.tx+c.r*Math.sin(c.phi)*Math.sin(c.theta),c.r*Math.cos(c.phi)+0.8,c.tz+c.r*Math.sin(c.phi)*Math.cos(c.theta));h.camera.lookAt(c.tx,0.8,c.tz);}
+function frame(now){
+  requestAnimationFrame(frame);
+  const dt=Math.min(0.1,(now-last)/1000);last=now;
+  if(state.test&&!state.test.done)advanceTest(dt);
+  renderer.setScissorTest(false);renderer.setClearColor(0xf6f7f4,1);renderer.clear();renderer.setScissorTest(true);
+  if(state.mode==='city'){renderCity(dt);return;}
+  for(const h of state.houses){
+    const r=h.view.getBoundingClientRect();if(r.width<2||r.height<2)continue;
+    const y=innerHeight-r.bottom;
+    renderer.setViewport(r.left,y,r.width,r.height);renderer.setScissor(r.left,y,r.width,r.height);
+    h.camera.aspect=r.width/r.height;h.camera.updateProjectionMatrix();updateCam(h);
+    renderer.render(h.scene,h.camera);
+    (h.lab||[]).forEach(l=>{TMPV.copy(l.pos).project(h.camera);
+      if(TMPV.z>1||Math.abs(TMPV.x)>1.1||Math.abs(TMPV.y)>1.1){l.el.style.display='none';return;}
+      l.el.style.display='';l.el.style.left=((TMPV.x+1)/2*r.width)+'px';l.el.style.top=((1-TMPV.y)/2*r.height)+'px';});
+  }
+}
+
+// ---------- start ----------
+(function init(){
+  const saved=load();
+  if(saved){
+    if(CLIMATES[saved.climate]){state.climate=saved.climate;WX=makeWeather(CLIMATES[state.climate]);}
+    state.units=saved.units==='C'?'C':'F';state.showRoof=!!saved.showRoof;state.cut=!!saved.cut;state.challenge=!!saved.challenge;
+  }
+  sc.value=state.climate;$('#bUnits').textContent='°'+state.units;$('#cRoof').checked=state.showRoof;$('#cCut').checked=state.cut;$('#cChal').checked=state.challenge;
+  const list=saved&&Array.isArray(saved.houses)&&saved.houses.length?saved.houses.slice(0,4):[null];
+  list.forEach(d=>createHouse(d));
+  state.active=0;layout();state.houses.forEach(rebuild);setTool('wall');updateHeader();
+  if(location.hash==='#city')setMode('city');
+  if(!saved)$('#mIntro').classList.add('show');
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
