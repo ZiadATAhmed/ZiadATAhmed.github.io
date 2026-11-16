@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Soil Detectives: Testing Soil Samples</title>
+<style>
+:root{--g:#4f8a1f;--gd:#2f5e10;--gl:#eaf5dc;--ink:#1f2a1a;--warn:#c0392b;--ok:#2e7d32;--blue:#2b6cb0}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;background:#eef4e6;color:var(--ink)}
+header{background:var(--g);color:#fff;display:flex;align-items:center;gap:12px;padding:10px 18px;flex-wrap:wrap}
+header h1{font-size:21px;margin:0;flex:1;letter-spacing:.3px}
+.tag{background:rgba(255,255,255,.22);padding:4px 11px;border-radius:999px;font-size:13px;white-space:nowrap}
+#progress{display:flex;gap:6px;justify-content:center;padding:10px;flex-wrap:wrap}
+.pstep{padding:5px 12px;border-radius:999px;background:#d9e7c9;color:#55704a;font-size:13px;font-weight:600}
+.pstep.on{background:var(--g);color:#fff}
+.pstep.done{background:#b9d99a;color:var(--gd)}
+main{max-width:1180px;margin:0 auto;padding:6px 16px 30px}
+.screen{display:none}.screen.active{display:block}
+.card{background:#fff;border-radius:16px;box-shadow:0 2px 10px rgba(0,0,0,.08);padding:18px}
+h2{color:var(--gd);margin:4px 0 10px}
+h3{margin:6px 0 8px;color:var(--gd)}
+.btn{font:inherit;font-weight:700;border:none;border-radius:12px;padding:11px 18px;background:var(--g);color:#fff;cursor:pointer;box-shadow:0 3px 0 var(--gd);transition:transform .05s}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--gd)}
+.btn:disabled{background:#b7c4ad;box-shadow:0 3px 0 #98a68c;cursor:not-allowed}
+.btn.alt{background:#fff;color:var(--gd);border:2px solid var(--g);box-shadow:none}
+.btn.blue{background:var(--blue);box-shadow:0 3px 0 #1d4b7d}
+.btn.red{background:var(--warn);box-shadow:0 3px 0 #8e2a20}
+.btn.big{font-size:18px;padding:14px 24px}
+.row{display:flex;gap:16px;flex-wrap:wrap}
+.grow{flex:1;min-width:280px}
+.intro-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:18px}
+@media(max-width:900px){.intro-grid{grid-template-columns:1fr}}
+.names input{width:100%;padding:9px 11px;margin:4px 0;border:2px solid #cfdcc2;border-radius:10px;font:inherit}
+.fact{background:var(--gl);border-left:6px solid var(--g);padding:10px 14px;border-radius:10px;margin:8px 0}
+.gear{display:flex;gap:14px;flex-wrap:wrap;margin:12px 0}
+.gearitem{width:170px;border:3px dashed #b9cfa5;border-radius:16px;padding:10px;text-align:center;cursor:pointer;background:#fbfdf8;transition:.2s}
+.gearitem.on{border:3px solid var(--g);background:var(--gl)}
+.gearitem svg{width:120px;height:80px}
+.mapwrap{position:relative}
+#mapSvg{width:100%;height:auto;border-radius:16px;display:block;background:#bfe6ff}
+.pin{cursor:pointer}
+.pin:hover circle.pc{stroke-width:6}
+.notebook{background:#fffdf3;border:2px solid #e3d9b5;border-radius:14px;padding:12px 14px;background-image:repeating-linear-gradient(#fffdf3 0 27px,#e8e1c8 27px 28px)}
+.notebook h3{color:#7a5a1a}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin:6px 0 10px}
+.chip{border:2px solid #cfdcc2;background:#fff;border-radius:999px;padding:6px 12px;cursor:pointer;font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px}
+.chip.on{background:var(--g);border-color:var(--g);color:#fff}
+.sw{width:16px;height:16px;border-radius:50%;border:1px solid rgba(0,0,0,.3);display:inline-block}
+#digSvg{width:100%;height:auto;border-radius:14px;cursor:crosshair;display:block}
+.lens{position:relative;width:300px;height:300px;margin:auto}
+.lens canvas{width:270px;height:270px;border-radius:50%;position:absolute;left:15px;top:15px;border:10px solid #333;box-shadow:0 0 0 4px #888,0 6px 18px rgba(0,0,0,.35)}
+.lens .handle{position:absolute;width:26px;height:110px;background:#5a3b22;border-radius:12px;right:4px;bottom:-60px;transform:rotate(-45deg);transform-origin:top;z-index:-1}
+.labgrid{display:grid;grid-template-columns:minmax(0,560px) 1fr;gap:16px}
+@media(max-width:980px){.labgrid{grid-template-columns:1fr}}
+#labCanvas{width:100%;height:auto;border-radius:16px;display:block;background:#dfe9f1}
+.panel{display:flex;flex-direction:column;gap:12px}
+.stepbox{background:#fff;border-radius:14px;padding:12px 14px;border:2px solid #dbe8cf}
+.stepbox ol{margin:4px 0;padding-left:22px}
+.stepbox li{margin:3px 0;color:#7c8a72}
+.stepbox li.cur{color:var(--ink);font-weight:700}
+.stepbox li.dn{color:var(--ok);text-decoration:line-through}
+.watch{display:flex;align-items:center;gap:14px;background:#222;color:#7CFC7C;border-radius:16px;padding:10px 16px}
+.watch .time{font-family:"Courier New",monospace;font-size:40px;font-weight:700;min-width:140px}
+.watch .lab{color:#aaa;font-size:12px}
+.msg{padding:10px 14px;border-radius:12px;background:#fff7d6;border:2px solid #f0d77a;font-weight:600;min-height:44px}
+.msg.good{background:#e3f4dc;border-color:#9fd08a}
+.msg.bad{background:#fde3e0;border-color:#f0a59c}
+.holdbtn{user-select:none;-webkit-user-select:none;touch-action:none}
+.shelf{display:flex;gap:12px;flex-wrap:wrap}
+.bag{width:118px;cursor:pointer;text-align:center;border-radius:12px;padding:6px;border:2px solid transparent}
+.bag:hover{border-color:var(--g);background:var(--gl)}
+.bag.used{opacity:.35;cursor:default;pointer-events:none}
+.bag svg{width:90px;height:100px}
+.tl{width:100%;height:auto;background:#fff;border-radius:12px;border:2px solid #dbe8cf}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{border:1px solid #d5e2c7;padding:7px 8px;text-align:left;vertical-align:top}
+th{background:var(--gl)}
+.q{margin:14px 0;padding:12px;border-radius:12px;background:#fafdf6;border:2px solid #e1ecd4}
+.q .opts{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.q label{display:flex;gap:8px;align-items:flex-start;padding:7px 10px;border-radius:10px;border:2px solid #e1ecd4;background:#fff;cursor:pointer}
+.q label.right{border-color:#7cc36a;background:#e9f7e3}
+.q label.wrong{border-color:#ec8a7f;background:#fdecea}
+.q textarea{width:100%;min-height:80px;border:2px solid #cfdcc2;border-radius:10px;padding:8px;font:inherit}
+.fb{font-weight:700;margin-top:6px}
+footer{background:var(--g);color:#fff;display:flex;justify-content:space-between;padding:8px 18px;font-size:14px;margin-top:20px}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:50}
+.overlay.on{display:flex}
+.modal{background:#fff;border-radius:18px;padding:22px;max-width:520px;width:92%;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+input[type=range]{width:100%}
+.small{font-size:13px;color:#5f6d55}
+@media print{
+  header,#progress,footer,.noprint,.screen:not(#sResults){display:none!important}
+  body{background:#fff}
+  .card{box-shadow:none}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>🔬 Soil Detectives: Testing Soil Samples</h1>
+  <span class="tag">Grade 7 · NGSS MS-LS2-3</span>
+  <span class="tag">Digital Lab</span>
+</header>
+<div id="progress"></div>
+<main>
+
+<!-- INTRO -->
+<section class="screen active" id="sIntro">
+  <div class="intro-grid">
+    <div class="card">
+      <h2>Your mission</h2>
+      <p>The city wants to know which places around town have <b>healthy soil</b> and which places need help before anything new gets planted. Your team will collect soil from <b>5 different sites</b>, bring the samples back to the lab, and test each one for <b>organic matter</b>.</p>
+      <div class="fact">🍂 <b>Healthy soil contains organic matter:</b> the remains of once-living plants and animals. Organic matter contains <b>carbon</b>.</div>
+      <div class="fact">🧪 <b>We can test for organic matter using hydrogen peroxide.</b> When peroxide is added to soil with lots of organic matter, it reacts with the carbon and makes gas bubbles (carbon dioxide).</div>
+      <div class="fact">⏱️ <b>More organic matter = more bubbling for a longer time.</b> You will time how long each sample bubbles.</div>
+      <svg viewBox="0 0 560 120" style="width:100%;margin-top:6px">
+        <g font-size="13" font-weight="700" fill="#2f5e10" text-anchor="middle">
+          <g transform="translate(60,10)"><path d="M10 70 Q40 0 70 70 Z" fill="#6aa84f"/><rect x="36" y="60" width="8" height="30" fill="#7a4e2a"/><text x="40" y="108">Living plant</text></g>
+          <text x="150" y="60" font-size="30">➜</text>
+          <g transform="translate(180,10)"><ellipse cx="40" cy="60" rx="34" ry="14" fill="#a0612a" transform="rotate(-15 40 60)"/><ellipse cx="50" cy="72" rx="24" ry="10" fill="#6b4423"/><text x="40" y="108">Dead leaves</text></g>
+          <text x="290" y="60" font-size="30">➜</text>
+          <g transform="translate(320,10)"><rect x="0" y="40" width="90" height="45" rx="6" fill="#3a2617"/><circle cx="20" cy="55" r="3" fill="#7a5233"/><circle cx="60" cy="70" r="3" fill="#7a5233"/><path d="M30 75 q10 -12 20 0 q10 12 20 0" stroke="#e48c9b" stroke-width="5" fill="none" stroke-linecap="round"/><text x="45" y="108">Decomposers</text></g>
+          <text x="430" y="60" font-size="30">➜</text>
+          <g transform="translate(455,10)"><rect x="0" y="40" width="90" height="45" rx="6" fill="#2b1d12"/><text x="45" y="68" fill="#ffd27a" font-size="14">C C C</text><text x="45" y="108">Organic matter</text></g>
+        </g>
+      </svg>
+    </div>
+    <div class="card">
+      <h2>Your lab group (4 people)</h2>
+      <div class="names">
+        <input id="n1" placeholder="Name 1"><input id="n2" placeholder="Name 2">
+        <input id="n3" placeholder="Name 3"><input id="n4" placeholder="Name 4">
+        <input id="period" placeholder="Class period">
+      </div>
+      <h3 style="margin-top:14px">What you'll do</h3>
+      <ol>
+        <li>Suit up with lab safety gear.</li>
+        <li>Visit 5 sites, dig up soil, and record what you observe.</li>
+        <li>In the lab: pour soil into a cup, add hydrogen peroxide, and time the bubbles.</li>
+        <li>Mark the class timeline with an <b>X</b>.</li>
+        <li>Analyze your data and make a claim.</li>
+      </ol>
+      <button class="btn big" onclick="go('sSafety')">Let's go ➜</button>
+    </div>
+  </div>
+</section>
+
+<!-- SAFETY -->
+<section class="screen" id="sSafety">
+  <div class="card">
+    <h2>🥽 Safety first</h2>
+    <p>Hydrogen peroxide can irritate your eyes and skin. Click each item to put it on before you head out.</p>
+    <div class="gear">
+      <div class="gearitem" data-g="goggles" onclick="gear(this)">
+        <svg viewBox="0 0 120 80"><path d="M10 35 Q10 18 30 18 H90 Q110 18 110 35 V45 Q110 60 90 60 H72 Q66 46 60 46 Q54 46 48 60 H30 Q10 60 10 45 Z" fill="#9ed3f5" stroke="#246" stroke-width="4"/><rect x="2" y="32" width="10" height="8" fill="#333"/><rect x="108" y="32" width="10" height="8" fill="#333"/><path d="M24 28 l14 0" stroke="#fff" stroke-width="4" stroke-linecap="round"/></svg>
+        <div><b>Safety goggles</b></div><div class="small st">Click to put on</div>
+      </div>
+      <div class="gearitem" data-g="gloves" onclick="gear(this)">
+        <svg viewBox="0 0 120 80"><g fill="#7c5cff" stroke="#3b2a8c" stroke-width="3"><path d="M20 75 V40 Q20 30 26 30 V14 Q26 8 31 8 Q36 8 36 14 V30 H38 V8 Q38 2 43 2 Q48 2 48 8 V30 H50 V10 Q50 4 55 4 Q60 4 60 10 V32 Q66 26 70 30 Q72 34 66 44 L58 60 V75 Z"/><path d="M62 75 V40 Q62 30 68 30 V14 Q68 8 73 8 Q78 8 78 14 V30 H80 V8 Q80 2 85 2 Q90 2 90 8 V30 H92 V10 Q92 4 97 4 Q102 4 102 10 V32 Q108 26 112 30 Q114 34 108 44 L100 60 V75 Z"/></g></svg>
+        <div><b>Gloves</b></div><div class="small st">Click to put on</div>
+      </div>
+      <div class="gearitem" data-g="rules" onclick="gear(this)">
+        <svg viewBox="0 0 120 80"><rect x="25" y="5" width="70" height="70" rx="6" fill="#fff8d0" stroke="#b08a1a" stroke-width="3"/><g stroke="#b08a1a" stroke-width="3"><path d="M35 22h50M35 36h50M35 50h50M35 64h30"/></g></svg>
+        <div><b>Lab rules</b></div><div class="small st">Never taste or smell chemicals. Wash hands after.</div>
+      </div>
+    </div>
+    <div class="msg" id="safetyMsg">Put on all 3 to continue.</div><br>
+    <button class="btn big" id="safetyGo" disabled onclick="go('sMap')">Head out to the field ➜</button>
+  </div>
+</section>
+
+<!-- MAP -->
+<section class="screen" id="sMap">
+  <div class="row">
+    <div class="grow" style="flex:3">
+      <div class="card" style="padding:10px">
+        <h2 style="margin:4px 8px 8px">🗺️ Collect a soil sample from each site</h2>
+        <div class="mapwrap"><svg id="mapSvg" viewBox="0 0 1000 560"></svg></div>
+      </div>
+    </div>
+    <div class="grow" style="flex:1.2">
+      <div class="notebook">
+        <h3>📒 Sample bags</h3>
+        <div id="bagList"></div>
+      </div><br>
+      <button class="btn big" id="toLab" style="width:100%" disabled onclick="openLab()">Take samples to the lab 🧪</button>
+      <p class="small">Click a numbered pin on the map to travel to that site.</p>
+    </div>
+  </div>
+</section>
+
+<!-- DIG -->
+<section class="screen" id="sDig">
+  <div class="row">
+    <div class="grow" style="flex:1.4">
+      <div class="card">
+        <h2 id="digTitle"></h2>
+        <p id="digBlurb" class="small" style="font-size:15px"></p>
+        <svg id="digSvg" viewBox="0 0 600 360"></svg>
+        <div class="msg" id="digMsg" style="margin-top:10px">Click the ground 3 times with your trowel to dig up a sample.</div>
+      </div>
+    </div>
+    <div class="grow">
+      <div class="card" id="obsCard" style="opacity:.35;pointer-events:none">
+        <h3>🔎 Look closely at your sample</h3>
+        <div class="lens"><canvas id="closeup" width="400" height="400"></canvas><div class="handle"></div></div>
+        <div style="height:30px"></div>
+        <b>Color</b>
+        <div class="chips" id="obsColor"></div>
+        <b>Texture (how it feels)</b>
+        <div class="chips" id="obsTex"></div>
+        <b>I can see... (pick all that apply)</b>
+        <div class="chips" id="obsSee"></div>
+        <button class="btn" id="sealBtn" disabled onclick="sealBag()">Seal & label the bag ✔</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LAB -->
+<section class="screen" id="sLab">
+  <div class="card" id="shelfCard">
+    <h2>🧪 Lab bench: pick a sample to test</h2>
+    <div class="shelf" id="shelf"></div>
+    <p class="small">Each bag gets its own clean cup. Test all 5 samples.</p>
+  </div>
+  <div id="benchWrap" style="display:none">
+    <div class="labgrid">
+      <div>
+        <canvas id="labCanvas" width="560" height="470"></canvas>
+      </div>
+      <div class="panel">
+        <div class="stepbox">
+          <b id="benchTitle"></b>
+          <ol id="benchSteps">
+            <li>Predict how long it will bubble.</li>
+            <li>Pour soil in, just enough to cover the bottom.</li>
+            <li>Start the stopwatch.</li>
+            <li>Slowly pour hydrogen peroxide to moisten the soil.</li>
+            <li>Stop the stopwatch when the bubbles stop.</li>
+            <li>Mark the classroom timeline with an X.</li>
+          </ol>
+        </div>
+        <div class="watch"><div><div class="lab">STOPWATCH (min:sec)</div><div class="time" id="watchTime">0:00</div><div class="lab">⏩ time-lapse 6× faster</div></div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <button class="btn" id="watchStart" disabled onclick="watchStart()">Start</button>
+            <button class="btn red" id="watchStop" disabled onclick="watchStop()">Stop</button>
+          </div>
+        </div>
+        <div class="msg" id="labMsg"></div>
+        <div id="labControls"></div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h3>📏 Classroom timeline: How long did each soil bubble?</h3>
+      <div id="tlLab"></div>
+      <p class="small" id="tlHint"></p>
+    </div>
+  </div>
+</section>
+
+<!-- RESULTS -->
+<section class="screen" id="sResults">
+  <div class="card">
+    <h2>📊 Our results</h2>
+    <p id="resNames" class="small" style="font-size:15px"></p>
+    <div id="resTable"></div>
+    <h3 style="margin-top:16px">Classroom timeline</h3>
+    <div id="tlRes"></div>
+    <h3 style="margin-top:16px">Bubbling time by site</h3>
+    <div id="barRes"></div>
+  </div><br>
+  <div class="card">
+    <h2>🧠 Make sense of the data</h2>
+    <div id="questions"></div>
+    <div class="noprint" style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn" onclick="checkAll()">Check my answers</button>
+      <button class="btn blue" onclick="window.print()">🖨️ Print / save as PDF</button>
+      <button class="btn alt" onclick="if(confirm('Start over? All data will be erased.'))location.reload()">Start over</button>
+    </div>
+    <div class="msg" id="checkMsg" style="margin-top:10px;display:none"></div>
+  </div>
+</section>
+
+</main>
+<footer><span>Lesson 4.5 Soil: The Good and Not-So-Good</span><span>Activity 🧪</span></footer>
+
+<div class="overlay" id="ov"><div class="modal" id="ovBox"></div></div>
+
+<script>
+/* ---------------- DATA ---------------- */
+const SPEED = 6;          // time-lapse factor
+const MAXT = 300;         // timeline max (5 min)
+const SITES = [
+ {id:'beach', name:'Beach Dune', short:'Beach', mark:'#e67e22', baseT:12, pin:[135,430],
+  blurb:'Windy sand dunes next to the ocean. A few clumps of dune grass grow here.',
+  soil:'#e3cf9c', wet:'#c7b27c', grains:['#f1e2b8','#d6bd85','#c9ac6f','#fff4d6','#9a9a9a','#e8d5a2'], gsize:2.6,
+  f:{leaves:0,roots:1,worms:0,rocks:3,wood:1,shells:6,trash:0,grass:2}, surface:'beach'},
+ {id:'field', name:'School Field', short:'Field', mark:'#2980b9', baseT:128, pin:[385,350],
+  blurb:'Mowed grass that hundreds of students walk and run on every day.',
+  soil:'#6b4a2e', wet:'#4e3520', grains:['#5a3d25','#7d5836','#8a6542','#4a321f','#9b7a55'], gsize:3,
+  f:{leaves:0,roots:14,worms:1,rocks:5,wood:0,shells:0,trash:0,grass:8}, surface:'field'},
+ {id:'garden', name:'Community Garden', short:'Garden', mark:'#27ae60', baseT:268, pin:[620,330],
+  blurb:'Raised garden beds. Gardeners mix in compost (rotted food scraps and leaves) every season.',
+  soil:'#2b1d12', wet:'#1c120b', grains:['#1d130b','#3a2717','#4c331e','#2b1d12','#5e4027'], gsize:3.4,
+  f:{leaves:10,roots:6,worms:4,rocks:1,wood:6,shells:0,trash:0,grass:0,egg:4}, surface:'garden'},
+ {id:'forest', name:'Oak Forest Floor', short:'Forest', mark:'#8e44ad', baseT:232, pin:[840,215],
+  blurb:'A shady oak woodland. The ground is covered with fallen leaves, twigs, and rotting logs.',
+  soil:'#3a2617', wet:'#26180e', grains:['#2a1a0f','#4a3220','#5c3d24','#1d120a','#6b4a2e'], gsize:3.2,
+  f:{leaves:26,roots:7,worms:2,rocks:2,wood:9,shells:0,trash:0,grass:0,bugs:2}, surface:'forest'},
+ {id:'lot', name:'Empty Dirt Lot', short:'Dirt Lot', mark:'#c0392b', baseT:42, pin:[845,470],
+  blurb:'Hard, packed dirt next to a parking lot. Trucks used to park here. Almost nothing grows.',
+  soil:'#a08060', wet:'#7f6449', grains:['#b39470','#8c6d4f','#c2a684','#9a7b5c','#777'], gsize:2.8,
+  f:{leaves:0,roots:1,worms:0,rocks:16,wood:0,shells:0,trash:3,grass:0}, surface:'lot'}
+];
+SITES.forEach((s,i)=>{s.num=i+1; s.T=Math.round(s.baseT*(0.94+Math.random()*0.12)); s.seed=1000+i*7919+Math.floor(Math.random()*500);});
+const S = id => SITES.find(s=>s.id===id);
+const state = {gear:{}, collected:{}, tested:{}, order:[]};
+
+/* ---------------- NAV ---------------- */
+const STEPS=[['sIntro','Mission'],['sSafety','Safety'],['sMap','Collect'],['sLab','Test'],['sResults','Analyze']];
+function renderProgress(cur){
+  const i=STEPS.findIndex(s=>s[0]===cur || (cur==='sDig'&&s[0]==='sMap'));
+  document.getElementById('progress').innerHTML=STEPS.map((s,j)=>`<span class="pstep ${j<i?'done':''} ${j===i?'on':''}">${j+1}. ${s[1]}</span>`).join('');
+}
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',s.id===id));
+  renderProgress(id); window.scrollTo(0,0);
+  if(id==='sMap') drawMap();
+}
+renderProgress('sIntro');
+function fmt(t){t=Math.max(0,Math.round(t));return Math.floor(t/60)+':'+String(t%60).padStart(2,'0');}
+function rng(seed){let s=seed%2147483647;if(s<=0)s+=2147483646;return()=>{s=(s*16807)%2147483647;return(s-1)/2147483646;}}
+
+/* ---------------- SAFETY ---------------- */
+function gear(el){
+  el.classList.add('on'); state.gear[el.dataset.g]=1;
+  const st=el.querySelector('.st'); if(el.dataset.g!=='rules') st.textContent='✔ On!'; else st.textContent='✔ Got it! Never taste or smell chemicals. Wash hands after.';
+  const n=Object.keys(state.gear).length;
+  const m=document.getElementById('safetyMsg');
+  if(n>=3){m.textContent='All set! You are ready to collect samples.';m.className='msg good';document.getElementById('safetyGo').disabled=false;}
+  else m.textContent=`${n} of 3 done.`;
+}
+
+/* ---------------- MAP ---------------- */
+function tree(x,y,s,c){return `<g transform="translate(${x},${y}) scale(${s})"><rect x="-4" y="0" width="8" height="22" fill="#6b4423"/><circle cx="0" cy="-6" r="18" fill="${c}"/><circle cx="-10" cy="2" r="12" fill="${c}"/><circle cx="10" cy="2" r="12" fill="${c}"/></g>`;}
+function drawMap(){
+  const r=rng(42); let t='';
+  t+=`<defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fd6ff"/><stop offset="1" stop-color="#e6f6ff"/></linearGradient></defs>
+  <rect width="1000" height="560" fill="url(#sky)"/>
+  <circle cx="900" cy="70" r="38" fill="#ffd84d"/>
+  <path d="M0 200 Q150 120 300 180 T600 160 T1000 150 V560 H0Z" fill="#a7cf8a"/>
+  <path d="M220 230 Q500 190 1000 200 V560 H220Z" fill="#8cc063"/>
+  <path d="M0 290 Q120 270 240 300 L260 560 H0Z" fill="#4aa3df"/>
+  <path d="M0 330 Q100 318 200 340 M0 380 Q100 368 210 390 M0 440 Q90 428 220 450" stroke="#bfe3fa" stroke-width="4" fill="none"/>
+  <path d="M200 300 Q250 290 300 320 Q260 420 290 560 H230 Q190 430 200 300Z" fill="#f0dca0"/>
+  <path d="M90 470 Q140 420 200 470 Q170 500 90 470Z M40 520 Q100 480 170 525Z" fill="#ead196"/>`;
+  // dune grass
+  for(let i=0;i<14;i++){const x=90+r()*190,y=380+r()*150;t+=`<path d="M${x} ${y} l-4 -14 M${x} ${y} l0 -16 M${x} ${y} l5 -13" stroke="#7c9a45" stroke-width="2"/>`;}
+  // road
+  t+=`<path d="M300 560 Q420 450 560 420 T1000 400" stroke="#777" stroke-width="34" fill="none"/><path d="M300 560 Q420 450 560 420 T1000 400" stroke="#fff" stroke-width="3" stroke-dasharray="16 14" fill="none"/>`;
+  // school + field
+  t+=`<rect x="300" y="235" width="170" height="60" fill="#e9d8b4" stroke="#a88" stroke-width="2"/><path d="M290 238 L385 200 L480 238Z" fill="#b5523b"/>
+  ${[0,1,2,3,4].map(i=>`<rect x="${314+i*32}" y="250" width="18" height="16" fill="#9fd3ff" stroke="#557"/>`).join('')}
+  <rect x="373" y="270" width="24" height="25" fill="#6b4423"/>
+  <line x1="470" y1="185" x2="470" y2="235" stroke="#555" stroke-width="3"/><path d="M470 187 h26 v14 h-26z" fill="#2f5e10"/>
+  <text x="385" y="228" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">SCHOOL</text>
+  <rect x="300" y="305" width="175" height="95" rx="6" fill="#62b14a" stroke="#fff" stroke-width="3"/><line x1="387" y1="305" x2="387" y2="400" stroke="#fff" stroke-width="3"/><circle cx="387" cy="352" r="16" fill="none" stroke="#fff" stroke-width="3"/>`;
+  // garden
+  t+=`<rect x="555" y="290" width="135" height="90" fill="#9cc77a" stroke="#8b6b3e" stroke-width="3" stroke-dasharray="6 4"/>`;
+  for(let i=0;i<3;i++){t+=`<rect x="${565+i*42}" y="300" width="34" height="70" rx="3" fill="#3a2617" stroke="#8b5a2b" stroke-width="3"/>`;for(let j=0;j<4;j++)t+=`<circle cx="${582+i*42}" cy="${312+j*16}" r="5" fill="#4caf50"/>`;}
+  t+=`<rect x="660" y="352" width="22" height="22" fill="#5b3a1e"/><text x="671" y="368" font-size="9" fill="#fff" text-anchor="middle">♻</text>`;
+  // forest
+  for(let i=0;i<34;i++){t+=tree(700+r()*290,150+r()*130,0.8+r()*0.6,['#2e6b2e','#3a7d32','#24592a','#4b8b3b'][Math.floor(r()*4)]);}
+  // lot
+  t+=`<path d="M740 425 L990 412 L990 540 L730 545Z" fill="#c2a27a"/>`;
+  for(let i=0;i<9;i++){const x=750+r()*220,y=440+r()*90;t+=`<path d="M${x} ${y} l12 6 l-5 9" stroke="#8c6d4f" stroke-width="2" fill="none"/>`;}
+  for(let i=0;i<10;i++)t+=`<line x1="${735+i*26}" y1="${427-i*1.3}" x2="${735+i*26}" y2="${410-i*1.3}" stroke="#666" stroke-width="3"/>`;
+  t+=`<path d="M735 413 L990 400" stroke="#888" stroke-width="2"/><path d="M800 520 l8 -22 l8 22z M940 500 l8 -22 l8 22z" fill="#ff7a1a"/>`;
+  // pins
+  SITES.forEach(s=>{
+    const [x,y]=s.pin, done=state.collected[s.id];
+    t+=`<g class="pin" onclick="openSite('${s.id}')"><path d="M${x} ${y+30} L${x-12} ${y+8} A22 22 0 1 1 ${x+12} ${y+8}Z" fill="${s.mark}" stroke="#fff" stroke-width="3"/>
+      <circle class="pc" cx="${x}" cy="${y-6}" r="15" fill="#fff" stroke="${s.mark}" stroke-width="3"/>
+      <text x="${x}" y="${y}" text-anchor="middle" font-size="17" font-weight="800" fill="${s.mark}">${done?'✓':s.num}</text>
+      <rect x="${x-62}" y="${y+34}" width="124" height="22" rx="11" fill="${done?'#2e7d32':'#fff'}" opacity=".95"/>
+      <text x="${x}" y="${y+50}" text-anchor="middle" font-size="13" font-weight="700" fill="${done?'#fff':'#1f2a1a'}">${s.name}</text></g>`;
+  });
+  document.getElementById('mapSvg').innerHTML=t;
+  // bag list
+  const n=Object.keys(state.collected).length;
+  document.getElementById('bagList').innerHTML=SITES.map(s=>{const c=state.collected[s.id];
+    return `<div style="display:flex;gap:8px;align-items:center;margin:6px 0"><span class="sw" style="background:${s.mark}"></span><b>${s.num}. ${s.name}</b> ${c?'<span style="color:#2e7d32">✔ bagged</span>':'<span class="small">not yet</span>'}</div>`;}).join('')+`<p><b>${n}/5</b> samples collected</p>`;
+  document.getElementById('toLab').disabled=n<5;
+}
+
+/* ---------------- DIG ---------------- */
+let dig={};
+const OBS={
+  color:[['Black / very dark','#1f150d'],['Dark brown','#4a3220'],['Medium brown','#7d5836'],['Light brown / tan','#b39470'],['Pale / sandy','#e3cf9c']],
+  tex:['Crumbly & soft','Gritty / sandy','Hard & packed','Sticky / clumpy'],
+  see:['Roots','Leaf bits','Worms or bugs','Rocks or pebbles','Wood bits','Shells','Trash','Eggshell bits','Nothing living']
+};
+function openSite(id){
+  const s=S(id);
+  dig={site:s,clicks:0,holes:[],obs:state.collected[id]?{...state.collected[id]}:{color:null,tex:null,see:[]}};
+  document.getElementById('digTitle').innerHTML=`<span class="sw" style="background:${s.mark}"></span> Site ${s.num}: ${s.name}`;
+  document.getElementById('digBlurb').textContent=s.blurb;
+  const m=document.getElementById('digMsg'); m.className='msg'; m.textContent='Click the ground 3 times with your trowel to dig up a sample.';
+  const oc=document.getElementById('obsCard'); oc.style.opacity=.35; oc.style.pointerEvents='none';
+  drawCloseupBlank();
+  renderObs();
+  drawDig();
+  go('sDig');
+  if(state.collected[id]){dig.clicks=3;finishDig(true);}
+}
+function surfaceArt(s,r){
+  let t='';
+  if(s.surface==='forest'){
+    t+=`<rect width="600" height="150" fill="#cfe7c4"/>`;
+    for(let i=0;i<7;i++){const x=20+i*90+r()*30;t+=`<rect x="${x}" y="0" width="${24+r()*14}" height="150" fill="#5b3d24"/>`;}
+    t+=`<rect x="0" y="0" width="600" height="60" fill="#2e6b2e" opacity=".85"/>`;
+    t+=`<rect y="128" width="600" height="34" fill="#6b4423"/><rect x="380" y="110" width="160" height="30" rx="15" fill="#7a5233" stroke="#4a3220" stroke-width="3"/><circle cx="392" cy="125" r="11" fill="#a07850"/>`;
+    for(let i=0;i<70;i++){const x=r()*600,y=125+r()*35;t+=`<ellipse cx="${x}" cy="${y}" rx="${8+r()*6}" ry="${4+r()*2}" fill="${['#a0612a','#c27c2c','#7a4a1e','#8b5a2b','#d39b3b'][Math.floor(r()*5)]}" transform="rotate(${r()*180} ${x} ${y})"/>`;}
+  }else if(s.surface==='garden'){
+    t+=`<rect width="600" height="150" fill="#d8efff"/><rect y="90" width="600" height="60" fill="#a6d38a"/>`;
+    t+=`<rect x="20" y="118" width="560" height="44" fill="#2b1d12"/><rect x="10" y="110" width="580" height="14" fill="#9b6a3a" stroke="#6b4423" stroke-width="2"/>`;
+    for(let i=0;i<10;i++){const x=40+i*56;t+=`<path d="M${x} 118 v-30" stroke="#3c8d2f" stroke-width="4"/><ellipse cx="${x-9}" cy="94" rx="11" ry="6" fill="#58b043"/><ellipse cx="${x+9}" cy="98" rx="11" ry="6" fill="#4caf50"/>`;}
+    t+=`<rect x="500" y="40" width="70" height="60" fill="#5b3a1e"/><text x="535" y="78" fill="#fff" font-size="12" text-anchor="middle" font-weight="700">COMPOST</text>`;
+  }else if(s.surface==='field'){
+    t+=`<rect width="600" height="150" fill="#d8efff"/><rect y="70" width="600" height="92" fill="#62b14a"/><path d="M0 100 H600" stroke="#fff" stroke-width="5"/>`;
+    for(let i=0;i<260;i++){const x=r()*600,y=110+r()*50;t+=`<path d="M${x} ${y} l${r()*6-3} -${8+r()*8}" stroke="${['#3e8e2e','#56a83c','#2f7a24'][Math.floor(r()*3)]}" stroke-width="2"/>`;}
+    t+=`<circle cx="470" cy="80" r="14" fill="#fff" stroke="#333" stroke-width="2"/><path d="M462 74 l8 4 l8 -4 M470 78 v10" stroke="#333" stroke-width="2" fill="none"/>`;
+  }else if(s.surface==='lot'){
+    t+=`<rect width="600" height="150" fill="#e8eef2"/><rect y="60" width="600" height="40" fill="#777"/><path d="M60 80 h60 M200 80 h60 M340 80 h60 M480 80 h60" stroke="#fff" stroke-width="4"/>`;
+    t+=`<rect y="100" width="600" height="62" fill="#c2a27a"/>`;
+    for(let i=0;i<14;i++){const x=r()*600,y=110+r()*45;t+=`<path d="M${x} ${y} l14 5 l-6 10 l10 4" stroke="#8c6d4f" stroke-width="2" fill="none"/>`;}
+    for(let i=0;i<18;i++){const x=r()*600,y=105+r()*55;t+=`<ellipse cx="${x}" cy="${y}" rx="${4+r()*5}" ry="${3+r()*3}" fill="#8f8f8f"/>`;}
+    t+=`<path d="M520 150 l12 -38 l12 38z" fill="#ff7a1a"/><rect x="516" y="146" width="32" height="6" fill="#333"/><rect x="120" y="136" width="18" height="8" fill="#3b7dd8" transform="rotate(-20 120 136)"/>`;
+  }else{
+    t+=`<rect width="600" height="150" fill="#cfefff"/><rect y="40" width="600" height="40" fill="#4aa3df"/><path d="M0 60 q30 -8 60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0" stroke="#bfe3fa" stroke-width="4" fill="none"/>`;
+    t+=`<path d="M0 85 Q150 60 300 90 T600 80 V162 H0Z" fill="#f0dca0"/>`;
+    for(let i=0;i<10;i++){const y=105+i*6;t+=`<path d="M0 ${y} q40 -5 80 0 t80 0 t80 0 t80 0 t80 0 t80 0 t80 0 t80 0" stroke="#d9bf82" stroke-width="2" fill="none" opacity=".6"/>`;}
+    for(let i=0;i<5;i++){const x=60+r()*480,y=100+r()*30;for(let k=0;k<6;k++)t+=`<path d="M${x} ${y} q${(k-3)*4} -15 ${(k-3)*7} -26" stroke="#7c9a45" stroke-width="2.5" fill="none"/>`;}
+    t+=`<path d="M420 140 a10 10 0 0 1 20 0z" fill="#fff" stroke="#d9bf82"/>`;
+  }
+  return t;
+}
+function drawDig(){
+  const s=dig.site, r=rng(s.seed);
+  let t=surfaceArt(s,r);
+  // cross-section
+  t+=`<rect y="160" width="600" height="200" fill="${s.soil}"/>`;
+  const r2=rng(s.seed+5);
+  for(let i=0;i<500;i++){t+=`<circle cx="${r2()*600}" cy="${162+r2()*196}" r="${1+r2()*s.gsize*0.8}" fill="${s.grains[Math.floor(r2()*s.grains.length)]}"/>`;}
+  if(s.f.roots>3)for(let i=0;i<s.f.roots;i++){const x=r2()*600;t+=`<path d="M${x} 160 q${r2()*40-20} 40 ${r2()*30-15} ${60+r2()*80}" stroke="#d9c9a3" stroke-width="2" fill="none" opacity=".8"/>`;}
+  if(s.f.worms)for(let i=0;i<s.f.worms;i++){const x=60+r2()*480,y=220+r2()*110;t+=`<path d="M${x} ${y} q12 -12 24 0 t24 0 t24 0" stroke="#e48c9b" stroke-width="7" fill="none" stroke-linecap="round"/>`;}
+  t+=`<line x1="0" y1="160" x2="600" y2="160" stroke="rgba(0,0,0,.25)" stroke-width="3"/>`;
+  t+=`<text x="10" y="352" font-size="13" fill="#fff" font-weight="700" opacity=".8">soil cross-section</text>`;
+  dig.holes.forEach((h,i)=>{t+=`<ellipse cx="${h[0]}" cy="${h[1]}" rx="${26+i*4}" ry="${12+i*2}" fill="#140c06" opacity=".85"/><ellipse cx="${h[0]}" cy="${h[1]-12-i*2}" rx="${18}" ry="5" fill="${s.soil}" />`;});
+  // bag
+  const fill=dig.clicks/3;
+  t+=`<g transform="translate(520,186)"><path d="M0 0 h64 l-4 140 h-56z" fill="rgba(255,255,255,.85)" stroke="#555" stroke-width="2"/>
+    <rect x="4" y="${4+136*(1-fill)}" width="56" height="${136*fill}" fill="${s.soil}"/>
+    <rect x="-2" y="-8" width="68" height="10" fill="#2b6cb0"/><text x="32" y="30" text-anchor="middle" font-size="11" font-weight="700" fill="#333">${s.short}</text></g>`;
+  document.getElementById('digSvg').innerHTML=t;
+}
+document.getElementById('digSvg').addEventListener('click',e=>{
+  if(dig.clicks>=3)return;
+  const svg=e.currentTarget, pt=svg.createSVGPoint(); pt.x=e.clientX; pt.y=e.clientY;
+  const p=pt.matrixTransform(svg.getScreenCTM().inverse());
+  if(p.y<110||p.x>500){document.getElementById('digMsg').textContent='Dig in the ground (left of the bag)!';return;}
+  dig.clicks++; dig.holes.push([Math.max(40,Math.min(470,p.x)),Math.max(150,Math.min(300,p.y+20))]);
+  drawDig();
+  // trowel animation
+  const g=document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.innerHTML=`<g transform="translate(${p.x},${p.y-10}) rotate(-35)"><path d="M0 0 q18 -8 36 0 q-4 30 -18 44 q-14 -14 -18 -44z" fill="#b8c2cc" stroke="#555" stroke-width="2"/><rect x="14" y="-40" width="8" height="40" rx="3" fill="#a0522d"/></g>`;
+  svg.appendChild(g); setTimeout(()=>g.remove(),450);
+  const m=document.getElementById('digMsg');
+  if(dig.clicks<3) m.textContent=`Scoop ${dig.clicks} of 3...`;
+  else finishDig(false);
+});
+function finishDig(again){
+  const m=document.getElementById('digMsg'); m.className='msg good';
+  m.textContent=again?'You already have this sample. You can update your observations.':'Got it! Now look closely at your sample and record your observations →';
+  const oc=document.getElementById('obsCard'); oc.style.opacity=1; oc.style.pointerEvents='auto';
+  drawCloseup(document.getElementById('closeup'),dig.site);
+  drawDig();
+}
+function renderObs(){
+  const o=dig.obs;
+  document.getElementById('obsColor').innerHTML=OBS.color.map(c=>`<span class="chip ${o.color===c[0]?'on':''}" onclick="setObs('color','${c[0]}')"><span class="sw" style="background:${c[1]}"></span>${c[0]}</span>`).join('');
+  document.getElementById('obsTex').innerHTML=OBS.tex.map(c=>`<span class="chip ${o.tex===c?'on':''}" onclick="setObs('tex','${c}')">${c}</span>`).join('');
+  document.getElementById('obsSee').innerHTML=OBS.see.map(c=>`<span class="chip ${o.see.includes(c)?'on':''}" onclick="setObs('see','${c}')">${c}</span>`).join('');
+  document.getElementById('sealBtn').disabled=!(o.color&&o.tex&&o.see.length);
+}
+function setObs(k,v){
+  const o=dig.obs;
+  if(k==='see'){o.see=o.see.includes(v)?o.see.filter(x=>x!==v):[...o.see,v];}
+  else o[k]=v;
+  renderObs();
+}
+function sealBag(){
+  state.collected[dig.site.id]=JSON.parse(JSON.stringify(dig.obs));
+  go('sMap');
+}
+function drawCloseupBlank(){const c=document.getElementById('closeup').getContext('2d');c.fillStyle='#ddd';c.fillRect(0,0,400,400);c.fillStyle='#888';c.font='bold 22px sans-serif';c.textAlign='center';c.fillText('Dig first!',200,205);}
+function drawCloseup(cv,s){
+  const c=cv.getContext('2d'),W=cv.width,H=cv.height,r=rng(s.seed+99);
+  c.fillStyle=s.soil;c.fillRect(0,0,W,H);
+  const g=s.gsize*3;
+  for(let i=0;i<2600;i++){c.fillStyle=s.grains[Math.floor(r()*s.grains.length)];c.beginPath();c.ellipse(r()*W,r()*H,1+r()*g,1+r()*g*0.8,r()*3,0,7);c.fill();}
+  const F=s.f;
+  for(let i=0;i<(F.wood||0);i++){c.save();c.translate(r()*W,r()*H);c.rotate(r()*3);c.fillStyle=['#7a4e2a','#8b5a2b','#5e3b1e'][i%3];c.fillRect(-14,-4,28+r()*16,8);c.restore();}
+  for(let i=0;i<(F.leaves||0);i++){c.save();c.translate(r()*W,r()*H);c.rotate(r()*6);const col=['#a0612a','#c27c2c','#7a4a1e','#8b5a2b','#6e7a2a'][Math.floor(r()*5)];c.fillStyle=col;c.beginPath();c.ellipse(0,0,18+r()*12,8+r()*5,0,0,7);c.fill();c.strokeStyle='rgba(0,0,0,.35)';c.lineWidth=1.5;c.beginPath();c.moveTo(-18,0);c.lineTo(18,0);c.stroke();
+    // decomposed holes
+    c.fillStyle=s.soil;for(let k=0;k<3;k++){c.beginPath();c.arc(r()*24-12,r()*8-4,2+r()*3,0,7);c.fill();}c.restore();}
+  for(let i=0;i<(F.roots||0);i++){c.strokeStyle='#e2d3ad';c.lineWidth=1.5+r()*2;c.beginPath();let x=r()*W,y=r()*H;c.moveTo(x,y);for(let k=0;k<4;k++){x+=r()*80-40;y+=r()*80-20;c.quadraticCurveTo(x+r()*30-15,y-20,x,y);}c.stroke();}
+  for(let i=0;i<(F.grass||0);i++){c.strokeStyle='#5ea04a';c.lineWidth=3;c.beginPath();const x=r()*W,y=r()*H;c.moveTo(x,y);c.lineTo(x+r()*40-20,y-30-r()*20);c.stroke();}
+  for(let i=0;i<(F.rocks||0);i++){c.fillStyle=['#8f8f8f','#a3a3a3','#6f6f6f','#b0a090'][i%4];c.beginPath();const x=r()*W,y=r()*H,rr=6+r()*14;for(let k=0;k<7;k++){const a=k/7*6.28;c.lineTo(x+Math.cos(a)*rr*(0.7+r()*0.4),y+Math.sin(a)*rr*(0.7+r()*0.4));}c.closePath();c.fill();c.strokeStyle='rgba(0,0,0,.2)';c.stroke();}
+  for(let i=0;i<(F.shells||0);i++){c.save();c.translate(r()*W,r()*H);c.rotate(r()*6);c.fillStyle='#fff3e6';c.beginPath();c.moveTo(0,10);c.arc(0,10,16,3.6,5.8);c.closePath();c.fill();c.strokeStyle='#d8b89a';for(let k=0;k<5;k++){c.beginPath();c.moveTo(0,10);c.lineTo(Math.cos(3.7+k*0.5)*16,10+Math.sin(3.7+k*0.5)*16);c.stroke();}c.restore();}
+  for(let i=0;i<(F.egg||0);i++){c.fillStyle='#f6efe2';c.beginPath();const x=r()*W,y=r()*H;c.moveTo(x,y);c.lineTo(x+12,y+3);c.lineTo(x+7,y+12);c.closePath();c.fill();}
+  for(let i=0;i<(F.trash||0);i++){const x=r()*W,y=r()*H;if(i%2){c.fillStyle='#c0392b';c.beginPath();c.arc(x,y,10,0,7);c.fill();c.strokeStyle='#922';c.lineWidth=2;c.stroke();}else{c.fillStyle='rgba(60,140,230,.8)';c.fillRect(x,y,26,12);}}
+  for(let i=0;i<(F.worms||0);i++){c.strokeStyle='#e48c9b';c.lineWidth=9;c.lineCap='round';c.beginPath();const x=40+r()*(W-120),y=40+r()*(H-80);c.moveTo(x,y);c.bezierCurveTo(x+30,y-30,x+50,y+30,x+90,y);c.stroke();c.strokeStyle='#c96b7c';c.lineWidth=2;c.beginPath();c.moveTo(x+20,y-9);c.lineTo(x+22,y+1);c.stroke();}
+  for(let i=0;i<(F.bugs||0);i++){const x=r()*W,y=r()*H;c.fillStyle='#222';c.beginPath();c.ellipse(x,y,7,5,0,0,7);c.fill();c.strokeStyle='#222';c.lineWidth=1.5;for(let k=-1;k<=1;k++){c.beginPath();c.moveTo(x-6,y+k*3);c.lineTo(x-12,y+k*6);c.moveTo(x+6,y+k*3);c.lineTo(x+12,y+k*6);c.stroke();}}
+  // lens shine
+  const gr=c.createRadialGradient(W*0.3,H*0.25,10,W*0.3,H*0.25,W*0.5);gr.addColorStop(0,'rgba(255,255,255,.22)');gr.addColorStop(1,'rgba(255,255,255,0)');c.fillStyle=gr;c.fillRect(0,0,W,H);
+}
+
+/* ---------------- LAB ---------------- */
+const cv=document.getElementById('labCanvas'), ctx=cv.getContext('2d');
+const CUP={cx:250,by:420,H:230,bw:150,tw:215};
+const hw=h=>CUP.bw/2+(CUP.tw-CUP.bw)/2*h/CUP.H;
+let lab=null, raf=null, lastT=0;
+const SOIL_MIN=14, SOIL_MAX=42, SOIL_TOO=70;
+
+function openLab(){go('sLab');renderShelf();document.getElementById('shelfCard').style.display='block';document.getElementById('benchWrap').style.display='none';}
+function bagSVG(s){return `<svg viewBox="0 0 90 100"><path d="M10 12 h70 l-4 84 h-62z" fill="rgba(255,255,255,.9)" stroke="#555" stroke-width="2"/><rect x="14" y="40" width="62" height="54" fill="${s.soil}"/><rect x="8" y="4" width="74" height="10" fill="${s.mark}"/><rect x="20" y="18" width="50" height="18" fill="#fff" stroke="#999"/><text x="45" y="31" font-size="10" font-weight="700" text-anchor="middle">#${s.num}</text></svg>`;}
+function renderShelf(){
+  document.getElementById('shelf').innerHTML=SITES.map(s=>`<div class="bag ${state.tested[s.id]?'used':''}" onclick="startBench('${s.id}')">${bagSVG(s)}<div style="font-weight:700;font-size:13px">${s.name}</div><div class="small">${state.tested[s.id]?'✔ '+fmt(state.tested[s.id].time):'ready'}</div></div>`).join('');
+}
+function startBench(id){
+  const s=S(id), r=rng(s.seed+3);
+  lab={site:s,phase:'pred',soil:0,liq:0,pourSoil:false,pourLiq:false,react:null,bubbles:[],foam:0,foamMax:Math.min(60,6+s.T/5),
+       watch:{run:false,acc:0,t0:0},specks:[],pred:60,time:null,x:null,warned:false};
+  for(let i=0;i<260;i++)lab.specks.push([r()*2-1,r(),1+r()*2.2,s.grains[Math.floor(r()*s.grains.length)]]);
+  document.getElementById('shelfCard').style.display='none';
+  document.getElementById('benchWrap').style.display='block';
+  document.getElementById('benchTitle').innerHTML=`<span class="sw" style="background:${s.mark}"></span> Sample #${s.num}: ${s.name}`;
+  document.getElementById('watchTime').textContent='0:00';
+  setWatchBtns(false,false);
+  setPhase('pred');
+  drawTimeline('tlLab',false);
+  if(!raf){lastT=performance.now();raf=requestAnimationFrame(loop);}
+  window.scrollTo(0,0);
+}
+function stepIdx(p){return {pred:0,soil:1,watch:2,liq:3,timing:4,stopped:4,record:4,mark:5,done:6}[p];}
+function setPhase(p){
+  lab.phase=p;
+  const k=stepIdx(p);
+  [...document.querySelectorAll('#benchSteps li')].forEach((li,i)=>{li.className=i<k?'dn':(i===k?'cur':'');});
+  const C=document.getElementById('labControls'), m=document.getElementById('labMsg'); m.className='msg';
+  const s=lab.site, obs=state.collected[s.id];
+  if(p==='pred'){
+    m.innerHTML=`Your notes: <i>${obs.color}, ${obs.tex.toLowerCase()}; saw ${obs.see.join(', ').toLowerCase()}</i>.<br>Based on what you saw, how long do you think this soil will bubble?`;
+    C.innerHTML=`<div class="stepbox"><b>My prediction: <span id="pv">${fmt(lab.pred)}</span></b><input type="range" min="0" max="300" step="5" value="${lab.pred}" oninput="lab.pred=+this.value;document.getElementById('pv').textContent=fmt(this.value)"><div class="small" style="display:flex;justify-content:space-between"><span>0:00</span><span>5:00</span></div><br><button class="btn" onclick="setPhase('soil')">Lock in prediction 🔒</button></div>`;
+  }
+  if(p==='soil'){
+    m.textContent='Hold the button to pour soil into the cup. Stop when the bottom is covered.';
+    C.innerHTML=`<div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn big holdbtn" id="holdSoil">⬇ Hold to pour soil</button><button class="btn alt" onclick="lab.soil=0;setPhase('soil')">Dump & redo</button><button class="btn" id="soilNext" disabled onclick="setPhase('watch')">Next ➜</button></div>`;
+    hold('holdSoil',v=>lab.pourSoil=v,checkSoil);
+  }
+  if(p==='watch'){
+    m.textContent='Get ready! Start the stopwatch, then pour the peroxide right away.';
+    C.innerHTML=`<button class="btn big blue holdbtn" id="holdLiq" disabled>💧 Hold to pour hydrogen peroxide</button>`;
+    setWatchBtns(true,false);
+    hold('holdLiq',v=>{lab.pourLiq=v;},checkLiq);
+  }
+  if(p==='timing'){
+    m.innerHTML='Watch the cup closely 👀 Press <b>Stop</b> on the stopwatch when the bubbles stop.';
+  }
+  if(p==='stopped'){
+    const t=lab.watch.acc;
+    m.className='msg';
+    m.innerHTML=`Stopwatch reads <b>${fmt(t)}</b>. Look at the cup: are bubbles still forming?`;
+    C.innerHTML=`<div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" onclick="recordTime()">Bubbles stopped. Record it ✔</button><button class="btn alt" onclick="resumeWatch()">Still bubbling. Keep timing</button></div>`;
+  }
+  if(p==='mark'){
+    m.className='msg good';
+    m.innerHTML=`Recorded: <b>${fmt(lab.time)}</b> (you predicted ${fmt(lab.pred)}). Now click the <b>classroom timeline</b> below to mark your X at ${fmt(lab.time)}.`;
+    C.innerHTML='';
+    drawTimeline('tlLab',true);
+    document.getElementById('tlHint').textContent='Click on the timeline where your time belongs.';
+    document.getElementById('tlLab').scrollIntoView({behavior:'smooth',block:'center'});
+  }
+  if(p==='done'){
+    const left=SITES.filter(x=>!state.tested[x.id]).length;
+    m.className='msg good';
+    m.innerHTML=`X marked! ${left?`${left} sample${left>1?'s':''} left.`:'All 5 samples tested! 🎉'}`;
+    C.innerHTML=left?`<button class="btn big" onclick="cleanUp()">Clean up & test next sample ➜</button>`:`<button class="btn big" onclick="toResults()">Analyze our results 📊</button>`;
+    document.getElementById('tlHint').textContent='';
+  }
+}
+function hold(id,set,after){
+  const b=document.getElementById(id);
+  const on=e=>{if(b.disabled)return;e.preventDefault();set(true);};
+  const off=()=>{if(b.disabled)return;set(false);after&&after();};
+  b.addEventListener('pointerdown',on);b.addEventListener('pointerup',off);b.addEventListener('pointerleave',()=>{set(false);});
+  b.addEventListener('keydown',e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();set(true);}});
+  b.addEventListener('keyup',e=>{if(e.key===' '||e.key==='Enter'){set(false);after&&after();}});
+}
+function checkSoil(){
+  if(lab.phase!=='soil')return;
+  const m=document.getElementById('labMsg'), nx=document.getElementById('soilNext');
+  if(lab.soil<SOIL_MIN){m.className='msg';m.textContent='The bottom isn\'t fully covered yet. Pour a little more.';nx.disabled=true;}
+  else if(lab.soil<=SOIL_MAX){m.className='msg good';m.textContent='Perfect! The bottom of the cup is covered. Click Next.';nx.disabled=false;}
+  else if(lab.soil<=SOIL_TOO){m.className='msg';m.textContent='That\'s a bit more than needed, but it will work. (Real tip: a small amount saves sample!) Click Next.';nx.disabled=false;}
+  else{m.className='msg bad';m.textContent='Way too much soil! The peroxide won\'t reach it all. Click "Dump & redo".';nx.disabled=true;}
+}
+function checkLiq(){
+  if(!lab.react)return;
+  const m=document.getElementById('labMsg'), extra=lab.liq-lab.soil;
+  if(extra<4){m.className='msg';m.textContent='Keep pouring slowly... the soil isn\'t moist yet.';return;}
+  if(lab.phase==='watch'||lab.phase==='liq'){
+    setPhase('timing');
+    if(extra>70){const mm=document.getElementById('labMsg');mm.className='msg';mm.innerHTML='That\'s a lot of peroxide! You only need to <i>moisten</i> the soil. Now watch the bubbles and press <b>Stop</b> when they stop.';}
+  }
+}
+function setWatchBtns(a,b){document.getElementById('watchStart').disabled=!a;document.getElementById('watchStop').disabled=!b;}
+function watchStart(){
+  lab.watch.run=true;lab.watch.t0=performance.now();
+  setWatchBtns(false,true);
+  if(lab.phase==='watch'){document.getElementById('holdLiq').disabled=false;lab.phase='liq';
+    const m=document.getElementById('labMsg');m.textContent='Stopwatch running! Hold the button to SLOWLY pour peroxide until the soil is moist.';
+    [...document.querySelectorAll('#benchSteps li')].forEach((li,i)=>{li.className=i<3?'dn':(i===3?'cur':'');});}
+}
+function watchStop(){
+  if(!lab.watch.run)return;
+  lab.watch.acc+= (performance.now()-lab.watch.t0)/1000*SPEED; lab.watch.run=false;
+  setWatchBtns(false,false);
+  if(!lab.react){document.getElementById('labMsg').textContent='You stopped before pouring! Resetting stopwatch.';lab.watch.acc=0;setWatchBtns(true,false);return;}
+  const holdL=document.getElementById('holdLiq'); if(holdL)holdL.disabled=true; lab.pourLiq=false;
+  setPhase('stopped');
+}
+function resumeWatch(){lab.watch.run=true;lab.watch.t0=performance.now();setWatchBtns(false,true);setPhase('timing');document.getElementById('labControls').innerHTML='';}
+function recordTime(){
+  lab.time=Math.round(lab.watch.acc);
+  setPhase('mark');
+}
+function cleanUp(){renderShelf();document.getElementById('shelfCard').style.display='block';document.getElementById('benchWrap').style.display='none';lab=null;window.scrollTo(0,0);}
+
+function rxTime(){return lab.react?(performance.now()-lab.react)/1000*SPEED:0;}
+function intensity(){
+  if(!lab.react)return 0; const t=rxTime(), T=lab.site.T;
+  if(t>=T)return 0; return Math.pow(1-t/T,1.15);
+}
+function loop(now){
+  raf=requestAnimationFrame(loop);
+  const dt=Math.min(0.05,(now-lastT)/1000); lastT=now;
+  if(!lab||!document.getElementById('sLab').classList.contains('active'))return;
+  // pouring
+  if(lab.pourSoil&&lab.phase==='soil'){lab.soil=Math.min(CUP.H-10,lab.soil+28*dt);if(lab.soil>SOIL_TOO+2)checkSoil();}
+  if(lab.pourLiq&&(lab.phase==='liq'||lab.phase==='timing')){
+    lab.liq=Math.max(lab.liq,lab.soil-2); lab.liq=Math.min(CUP.H-8,lab.liq+22*dt);
+    if(!lab.react&&lab.liq>=lab.soil-1){lab.react=performance.now();}
+    if(lab.liq>=CUP.H-10){lab.pourLiq=false;const m=document.getElementById('labMsg');m.className='msg bad';m.textContent='Whoa, the cup is almost overflowing! Pour slowly, only enough to moisten the soil.';}
+  }
+  // watch
+  if(lab.watch.run){const t=lab.watch.acc+(now-lab.watch.t0)/1000*SPEED;document.getElementById('watchTime').textContent=fmt(t);
+    if(lab.phase==='timing'&&!lab.warned&&lab.react&&rxTime()>lab.site.T+45){lab.warned=true;const m=document.getElementById('labMsg');m.className='msg';m.innerHTML='Hmm... look closely. Has anything happened in the cup lately? 🤔';}
+    if(t>=420){watchStop();}
+  }
+  // bubbles
+  const I=intensity(), s=lab.site;
+  if(I>0){
+    const rate=(4+90*(s.T/280))*I; let n=rate*dt; while(n>0){if(Math.random()<n)spawnBubble(I);n-=1;}
+    lab.foam=Math.min(lab.foamMax*I+2,lab.foam+ (s.T/280)*30*I*dt);
+  } else if(lab.react){lab.foam=Math.max(0,lab.foam-1.2*dt);}
+  const top=CUP.by-Math.max(lab.liq,lab.soil);
+  lab.bubbles.forEach(b=>{b.y-=b.v*dt;b.x+=Math.sin((now/200)+b.p)*0.25;if(b.y<top-lab.foam*0.6)b.dead=true;});
+  lab.bubbles=lab.bubbles.filter(b=>!b.dead);
+  drawBench(now);
+}
+function spawnBubble(I){
+  const h=lab.soil*Math.random()*0.9+2, w=hw(h)-8;
+  lab.bubbles.push({x:CUP.cx+(Math.random()*2-1)*w,y:CUP.by-h,r:1.5+Math.random()*(2+3*I),v:25+Math.random()*45,p:Math.random()*6});
+}
+function cupPath(h0,h1){
+  ctx.beginPath();ctx.moveTo(CUP.cx-hw(h0),CUP.by-h0);ctx.lineTo(CUP.cx+hw(h0),CUP.by-h0);ctx.lineTo(CUP.cx+hw(h1),CUP.by-h1);ctx.lineTo(CUP.cx-hw(h1),CUP.by-h1);ctx.closePath();
+}
+function drawBench(now){
+  const s=lab.site;
+  ctx.clearRect(0,0,560,470);
+  // wall & bench
+  const g=ctx.createLinearGradient(0,0,0,470);g.addColorStop(0,'#e7f0f6');g.addColorStop(1,'#cfdde8');ctx.fillStyle=g;ctx.fillRect(0,0,560,470);
+  ctx.fillStyle='#fff';ctx.fillRect(30,30,140,70);ctx.strokeStyle='#bbb';ctx.strokeRect(30,30,140,70);
+  ctx.fillStyle='#2f5e10';ctx.font='bold 13px sans-serif';ctx.fillText('Lab Station',60,55);ctx.fillStyle='#555';ctx.font='12px sans-serif';ctx.fillText('Sample #'+s.num+': '+s.short,48,78);
+  ctx.fillStyle='#8a6a4a';ctx.fillRect(0,420,560,50);ctx.fillStyle='#6d5238';ctx.fillRect(0,420,560,6);
+  // shadow
+  ctx.fillStyle='rgba(0,0,0,.15)';ctx.beginPath();ctx.ellipse(CUP.cx,CUP.by+4,hw(0)+10,8,0,0,7);ctx.fill();
+  // cup interior clip
+  ctx.save();cupPath(0,CUP.H);ctx.clip();
+  ctx.fillStyle='rgba(255,255,255,.35)';ctx.fillRect(0,0,560,470);
+  // liquid
+  const wet=lab.liq>lab.soil;
+  if(lab.liq>0){ctx.fillStyle='rgba(190,225,245,.55)';cupPath(0,Math.max(lab.liq,lab.soil));ctx.fill();}
+  // soil
+  if(lab.soil>0){
+    ctx.fillStyle=lab.liq>2?s.wet:s.soil;cupPath(0,lab.soil);ctx.fill();
+    lab.specks.forEach(([fx,fy,sz,col])=>{const h=fy*lab.soil; if(h>lab.soil-1)return; ctx.fillStyle=col;ctx.beginPath();ctx.arc(CUP.cx+fx*(hw(h)-3),CUP.by-h,sz,0,7);ctx.fill();});
+  }
+  // bubbles
+  lab.bubbles.forEach(b=>{ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,7);ctx.fillStyle='rgba(255,255,255,.75)';ctx.fill();ctx.strokeStyle='rgba(120,160,190,.9)';ctx.lineWidth=1;ctx.stroke();});
+  // foam
+  if(lab.foam>0.5){
+    const top=CUP.by-Math.max(lab.liq,lab.soil), h=Math.max(lab.liq,lab.soil);
+    const rr=rng(7);
+    for(let i=0;i<Math.floor(lab.foam*3);i++){
+      const fy=rr()*lab.foam, w=hw(h+fy)-4, x=CUP.cx+(rr()*2-1)*w, y=top-fy+ (lab.foam>0?3:0);
+      ctx.beginPath();ctx.arc(x,y,2+rr()*5,0,7);ctx.fillStyle='rgba(250,250,240,.92)';ctx.fill();ctx.strokeStyle='rgba(170,170,150,.6)';ctx.stroke();
+    }
+  }
+  ctx.restore();
+  // cup outline + gloss
+  cupPath(0,CUP.H);ctx.strokeStyle='rgba(90,110,130,.9)';ctx.lineWidth=3;ctx.stroke();
+  ctx.beginPath();ctx.ellipse(CUP.cx,CUP.by-CUP.H,hw(CUP.H),9,0,0,7);ctx.strokeStyle='rgba(90,110,130,.9)';ctx.stroke();
+  ctx.fillStyle='rgba(255,255,255,.35)';ctx.beginPath();ctx.moveTo(CUP.cx-hw(CUP.H)+14,CUP.by-CUP.H+12);ctx.lineTo(CUP.cx-hw(20)+12,CUP.by-20);ctx.lineTo(CUP.cx-hw(20)+24,CUP.by-20);ctx.lineTo(CUP.cx-hw(CUP.H)+30,CUP.by-CUP.H+12);ctx.fill();
+  // label tape
+  ctx.fillStyle=s.mark;ctx.fillRect(CUP.cx+30,CUP.by-150,60,22);ctx.fillStyle='#fff';ctx.font='bold 13px sans-serif';ctx.fillText('#'+s.num+' '+s.short.slice(0,6),CUP.cx+34,CUP.by-134);
+  // bag (pouring soil)
+  if(lab.phase==='soil'||lab.phase==='pred'){
+    const pour=lab.pourSoil; ctx.save();
+    if(pour){ctx.translate(CUP.cx+40,CUP.by-CUP.H-50);ctx.rotate(-2.2);}else{ctx.translate(460,330);}
+    ctx.fillStyle='rgba(255,255,255,.9)';ctx.strokeStyle='#555';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-30,-45);ctx.lineTo(30,-45);ctx.lineTo(27,45);ctx.lineTo(-27,45);ctx.closePath();ctx.fill();ctx.stroke();
+    ctx.fillStyle=s.soil;ctx.fillRect(-25,0,50,43);ctx.fillStyle=s.mark;ctx.fillRect(-32,-52,64,9);
+    ctx.restore();
+    if(pour){for(let i=0;i<14;i++){ctx.fillStyle=s.grains[i%s.grains.length];ctx.beginPath();ctx.arc(CUP.cx+8+Math.random()*16,CUP.by-CUP.H-30+Math.random()*(CUP.H+30-lab.soil),2+Math.random()*2,0,7);ctx.fill();}}
+  }
+  // peroxide bottle
+  const pouringL=lab.pourLiq&&(lab.phase==='liq'||lab.phase==='timing');
+  ctx.save();
+  if(pouringL){ctx.translate(CUP.cx+70,CUP.by-CUP.H-40);ctx.rotate(-1.95);}else{ctx.translate(470,335);}
+  ctx.fillStyle='#5a2d0c';ctx.beginPath();ctx.roundRect?ctx.roundRect(-26,-40,52,95,10):ctx.rect(-26,-40,52,95);ctx.fill();
+  ctx.fillStyle='#4a240a';ctx.fillRect(-10,-58,20,20);ctx.fillStyle='#fff';ctx.fillRect(-20,-10,40,38);
+  ctx.fillStyle='#1d4b7d';ctx.font='bold 11px sans-serif';ctx.textAlign='center';ctx.fillText('H₂O₂',0,6);ctx.font='9px sans-serif';ctx.fillText('3%',0,20);ctx.textAlign='left';
+  ctx.restore();
+  if(pouringL){ctx.strokeStyle='rgba(170,210,240,.9)';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(CUP.cx+18,CUP.by-CUP.H-30);ctx.quadraticCurveTo(CUP.cx+10,CUP.by-CUP.H,CUP.cx+8,CUP.by-Math.max(lab.liq,lab.soil));ctx.stroke();}
+  if(lab.phase==='pred'||lab.phase==='soil'){/* bottle shown at rest only if not overlapping bag */}
+  // fizz sound lines (visual) when strong
+  const I=intensity();
+  if(I>0.4){ctx.fillStyle='#2b6cb0';ctx.font='bold 16px sans-serif';const top=CUP.by-Math.max(lab.liq,lab.soil)-lab.foam-20;if(Math.floor(now/300)%2)ctx.fillText('fizz',CUP.cx-hw(CUP.H)-38,top);else ctx.fillText('fizz',CUP.cx+hw(CUP.H)+6,top+14);}
+  // soil level guide during soil phase
+  if(lab.phase==='soil'){
+    ctx.setLineDash([5,4]);ctx.strokeStyle='rgba(47,94,16,.8)';ctx.lineWidth=2;
+    [SOIL_MIN,SOIL_MAX].forEach(h=>{ctx.beginPath();ctx.moveTo(CUP.cx-hw(h)-26,CUP.by-h);ctx.lineTo(CUP.cx-hw(h)-6,CUP.by-h);ctx.stroke();});
+    ctx.setLineDash([]);ctx.fillStyle='#2f5e10';ctx.font='bold 11px sans-serif';ctx.fillText('cover',CUP.cx-hw(30)-62,CUP.by-30);ctx.fillText('bottom',CUP.cx-hw(30)-64,CUP.by-18);
+  }
+}
+
+/* ---------------- TIMELINE ---------------- */
+function drawTimeline(el,clickable){
+  const W=860,H=150,L=50,R=30,y=95, X=t=>L+(W-L-R)*Math.min(t,MAXT)/MAXT;
+  let t=`<svg class="tl" viewBox="0 0 ${W} ${H}" id="${el}Svg" style="${clickable?'cursor:crosshair;outline:3px solid #f0d77a':''}">`;
+  t+=`<line x1="${L}" y1="${y}" x2="${W-R}" y2="${y}" stroke="#333" stroke-width="3"/>`;
+  for(let s=0;s<=MAXT;s+=30){const big=s%60===0;t+=`<line x1="${X(s)}" y1="${y-(big?12:6)}" x2="${X(s)}" y2="${y+(big?12:6)}" stroke="#333" stroke-width="${big?2.5:1.5}"/>`;if(big)t+=`<text x="${X(s)}" y="${y+32}" text-anchor="middle" font-size="15" font-weight="700">${s/60}</text>`;}
+  t+=`<text x="${(W)/2}" y="${H-4}" text-anchor="middle" font-size="13">Time (minutes)</text>`;
+  const marks=Object.entries(state.tested).sort((a,b)=>a[1].x-b[1].x);
+  let lastX=-99,lvl=0;
+  marks.forEach(([id,d])=>{const s=S(id),x=X(d.x);lvl=(x-lastX<60)?lvl+1:0;lastX=x;const ly=y-22-lvl*26;
+    t+=`<text x="${x}" y="${y+7}" text-anchor="middle" font-size="26" font-weight="900" fill="${s.mark}">✕</text><text x="${x}" y="${ly}" text-anchor="middle" font-size="12" font-weight="700" fill="${s.mark}">${s.short}</text>`;});
+  t+=`</svg>`;
+  const c=document.getElementById(el); c.innerHTML=t;
+  if(clickable){
+    const svg=document.getElementById(el+'Svg');
+    svg.addEventListener('click',e=>{
+      const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;const p=pt.matrixTransform(svg.getScreenCTM().inverse());
+      const sec=Math.max(0,Math.min(MAXT,(p.x-L)/(W-L-R)*MAXT));
+      const target=Math.min(lab.time,MAXT), hint=document.getElementById('tlHint');
+      if(Math.abs(sec-target)<=15){
+        state.tested[lab.site.id]={time:lab.time,pred:lab.pred,x:sec,obs:state.collected[lab.site.id]};
+        state.order.push(lab.site.id);
+        drawTimeline(el,false); setPhase('done');
+      } else {hint.innerHTML=`<b style="color:#c0392b">Not quite: you clicked about ${fmt(sec)}. Your time was ${fmt(lab.time)}. Try again!</b>`;}
+    });
+  }
+}
+
+/* ---------------- RESULTS ---------------- */
+function toResults(){
+  cancelAnimationFrame(raf);raf=null;
+  const names=['n1','n2','n3','n4'].map(i=>document.getElementById(i).value.trim()).filter(Boolean);
+  const per=document.getElementById('period').value.trim();
+  document.getElementById('resNames').innerHTML=`<b>Lab group:</b> ${names.join(', ')||'(no names entered)'} ${per?'· <b>Period:</b> '+per:''}`;
+  const rows=SITES.map(s=>{const d=state.tested[s.id],o=d.obs;return `<tr><td><span class="sw" style="background:${s.mark}"></span> <b>${s.name}</b></td><td>${o.color}</td><td>${o.tex}</td><td>${o.see.join(', ')}</td><td>${fmt(d.pred)}</td><td><b>${fmt(d.time)}</b></td></tr>`;}).join('');
+  document.getElementById('resTable').innerHTML=`<table><tr><th>Site</th><th>Color</th><th>Texture</th><th>I saw</th><th>Prediction</th><th>Bubble time</th></tr>${rows}</table>`;
+  drawTimeline('tlRes',false);
+  // bar chart
+  const sorted=[...SITES].sort((a,b)=>state.tested[b.id].time-state.tested[a.id].time), mx=Math.max(60,...sorted.map(s=>state.tested[s.id].time));
+  let b=`<svg viewBox="0 0 760 ${sorted.length*44+30}" style="width:100%;max-width:760px">`;
+  sorted.forEach((s,i)=>{const t=state.tested[s.id].time,w=Math.max(4,520*t/mx);
+    b+=`<text x="150" y="${i*44+28}" text-anchor="end" font-size="14" font-weight="700">${s.name}</text><rect x="160" y="${i*44+10}" width="${w}" height="26" rx="5" fill="${s.mark}"/><text x="${166+w}" y="${i*44+28}" font-size="14" font-weight="700">${fmt(t)}</text>`;});
+  b+=`<text x="160" y="${sorted.length*44+22}" font-size="12" fill="#555">longer bar = longer bubbling = more organic matter</text></svg>`;
+  document.getElementById('barRes').innerHTML=b;
+  buildQuestions(sorted);
+  go('sResults');
+}
+let QS=[];
+function buildQuestions(sorted){
+  const most=sorted[0], least=sorted[sorted.length-1];
+  const opts=SITES.map(s=>s.name);
+  QS=[
+    {q:'1. According to YOUR data, which soil had the MOST organic matter?',o:opts,a:most.name},
+    {q:'2. According to YOUR data, which soil had the LEAST organic matter?',o:opts,a:least.name},
+    {q:'3. Why did some soils bubble longer than others?',o:['They had more water in them','They had more organic matter (carbon from once-living things) for the peroxide to react with','They were warmer','Their cups were bigger'],a:1},
+    {q:'4. Where did most of the organic matter in the forest and garden soil come from?',o:['Rocks that broke into small pieces','Rain that soaked into the ground','Dead leaves, roots, food scraps, and animals that were broken down by decomposers','The hydrogen peroxide'],a:2},
+    {q:'5. Worms, fungi, and bacteria help make organic matter in soil. What is their job in the ecosystem?',o:['Producers: they make food from sunlight','Decomposers: they break down dead things and return matter to the soil','Predators: they hunt other animals','They don\'t have a job'],a:1},
+    {q:'6. When the soil bubbled, carbon from the organic matter left as a gas. Where did that carbon go?',o:['It disappeared forever','It turned into rocks','Into the air, where plants can take it in again','Into the cup and stayed there'],a:2},
+    {w:'7. Pattern: Look at your observations table. What did the soils that bubbled the longest have in common? What did the soils with short times have in common?'},
+    {w:'8. Claim, Evidence, Reasoning: The city wants to plant a native garden at the Empty Dirt Lot. Is the soil there healthy? What would you tell the city to do to help the soil? Use your data as evidence.'}
+  ];
+  document.getElementById('questions').innerHTML=QS.map((x,i)=>x.w?`<div class="q"><b>${x.w}</b><textarea id="w${i}" placeholder="Type your answer..."></textarea></div>`:
+    `<div class="q" id="q${i}"><b>${x.q}</b><div class="opts">${x.o.map((o,j)=>`<label><input type="radio" name="r${i}" value="${typeof x.a==='number'?j:o}"> ${o}</label>`).join('')}</div><div class="fb" id="fb${i}"></div></div>`).join('');
+}
+function checkAll(){
+  let right=0,total=0,blank=0;
+  QS.forEach((x,i)=>{if(x.w){if(!document.getElementById('w'+i).value.trim())blank++;return;}
+    total++;const sel=document.querySelector(`input[name=r${i}]:checked`);const fb=document.getElementById('fb'+i);
+    document.querySelectorAll(`#q${i} label`).forEach(l=>l.className='');
+    if(!sel){fb.textContent='Pick an answer.';fb.style.color='#b7791f';blank++;return;}
+    const ok=String(sel.value)===String(x.a);
+    sel.parentElement.className=ok?'right':'wrong';
+    if(ok){right++;fb.textContent='✔ Correct!';fb.style.color='#2e7d32';}
+    else{fb.style.color='#c0392b';fb.textContent=i<2?'✘ Check your bar chart again.':'✘ Not quite. Try again!';}
+  });
+  const m=document.getElementById('checkMsg');m.style.display='block';
+  m.className='msg '+(right===total&&!blank?'good':'');
+  m.innerHTML=`<b>${right} / ${total}</b> multiple choice correct.${blank?` ${blank} question(s) still blank.`:''} ${right===total&&!blank?'Great work, scientists! Print or save your results.':''}`;
+}
+</script>
+</body>
+</html>
