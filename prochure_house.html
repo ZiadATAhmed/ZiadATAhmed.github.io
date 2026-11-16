@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eco Home Brochure Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f3f7ef; --ink:#1f2d24; --muted:#5d6e62; --line:#d6e2d2; --card:#fff;
+  --green:#2f7d4a; --green2:#e3f1e6; --sun:#f2b134; --red:#c0392b;
+  --accent:#2f7d4a; --accentSoft:#e3f1e6;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Nunito,system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:16px}
+h1,h2,h3,.fred{font-family:Fredoka,Nunito,sans-serif;font-weight:600;margin:0}
+button{font-family:inherit;font-size:15px;font-weight:700;border:0;border-radius:10px;padding:10px 16px;cursor:pointer;background:var(--green);color:#fff}
+button:hover{filter:brightness(1.07)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.ghost{background:#fff;color:var(--green);border:2px solid var(--green)}
+button.small{padding:6px 10px;font-size:13px}
+button.sun{background:var(--sun);color:#3a2a00}
+input,textarea,select{font-family:inherit;font-size:15px;border:2px solid var(--line);border-radius:10px;padding:9px 11px;width:100%;background:#fff;color:var(--ink)}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--green)}
+textarea{min-height:76px;resize:vertical;line-height:1.4}
+label{font-weight:700;display:block;margin:12px 0 5px}
+.wrap{max-width:1180px;margin:0 auto;padding:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 2px 0 rgba(0,0,0,.03)}
+.muted{color:var(--muted)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.hidden{display:none!important}
+
+/* home */
+.hero{text-align:center;padding:30px 10px 10px}
+.hero h1{font-size:40px;color:var(--green)}
+.hero p{max-width:620px;margin:10px auto 0}
+.homeGrid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:22px}
+.homeGrid h2{font-size:24px;margin-bottom:4px}
+.badge{display:inline-block;background:var(--green2);color:var(--green);font-weight:800;border-radius:999px;padding:3px 10px;font-size:12px;letter-spacing:.04em;text-transform:uppercase}
+.resume{margin-top:18px;text-align:center}
+.teacherLink{text-align:center;margin-top:26px}
+.teacherLink a{color:var(--muted);font-size:14px}
+.demo{background:#fff6dd;border:1px solid #f0d58a;border-radius:12px;padding:10px 14px;font-size:14px;margin-top:14px}
+
+/* workspace */
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.topbar h1{font-size:26px}
+.pass{background:#fff;border:2px dashed var(--green);border-radius:12px;padding:6px 12px;font-family:Fredoka;font-size:20px;color:var(--green)}
+.pass small{font-family:Nunito;font-size:12px;color:var(--muted);display:block;line-height:1}
+.bigPass{text-align:center;padding:16px;background:var(--green2);border-radius:14px;margin-bottom:14px}
+.bigPass .code{font-family:Fredoka;font-size:44px;letter-spacing:.06em;color:var(--green)}
+.layout{display:grid;grid-template-columns:290px 1fr;gap:16px;align-items:start}
+.members{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{background:var(--green2);border-radius:999px;padding:4px 10px;font-size:13px;font-weight:700}
+.chip.lead::before{content:"👑 "}
+.chip.me{outline:2px solid var(--green)}
+.plist{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.pitem{border:2px solid var(--line);border-radius:12px;padding:9px 10px;cursor:pointer;background:#fff}
+.pitem.active{border-color:var(--green);background:#f6fbf6}
+.pitem .t{display:flex;justify-content:space-between;align-items:center;font-weight:800}
+.pitem .who{font-size:13px;color:var(--muted);margin-top:3px}
+.pitem select{margin-top:6px;padding:5px 8px;font-size:13px}
+.tick{font-size:13px;border-radius:999px;padding:2px 8px;background:#eee;color:#666}
+.tick.done{background:#d7f0dc;color:#1d6b38}
+.tick.mine{background:#fff0c7;color:#7a5600}
+.progress{height:10px;background:#e5ece3;border-radius:999px;overflow:hidden;margin:8px 0}
+.progress div{height:100%;background:var(--green);transition:width .3s}
+.editorHead{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.editorHead h2{font-size:24px}
+.hint{background:#f6fbf6;border-left:4px solid var(--green);padding:8px 12px;border-radius:8px;margin-top:10px}
+.save{font-size:13px;color:var(--muted);min-height:18px}
+.choices{display:flex;gap:8px;flex-wrap:wrap}
+.choices button{background:#fff;color:var(--ink);border:2px solid var(--line);font-size:20px;padding:6px 10px}
+.choices button.on{border-color:var(--green);background:var(--green2)}
+.choices button.txt{font-size:14px}
+.swatch{width:40px;height:34px;border-radius:9px!important}
+.swatch.on{outline:3px solid var(--ink);outline-offset:2px}
+.wordbank{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.word{border:2px solid var(--line);border-radius:999px;padding:3px 10px;font-size:13px;font-weight:700;color:var(--muted)}
+.word.used{border-color:var(--green);background:var(--green2);color:var(--green)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:0 10px}
+.donebox{display:flex;gap:10px;align-items:center;margin-top:16px;background:#f6fbf6;padding:10px 12px;border-radius:10px;font-weight:700}
+.donebox input{width:22px;height:22px}
+.readonly{opacity:.75}
+.lock{background:#fff6dd;border:1px solid #f0d58a;border-radius:10px;padding:8px 12px;margin-top:10px;font-size:14px}
+.submitted{background:#d7f0dc;border:1px solid #9fd3ad;border-radius:12px;padding:12px 14px;margin-bottom:14px;font-weight:700}
+
+/* brochure */
+.previewHead{display:flex;justify-content:space-between;align-items:center;margin:20px 0 10px;gap:10px;flex-wrap:wrap}
+.previewHead h2{font-size:22px}
+.seg{display:inline-flex;background:#e5ece3;border-radius:12px;padding:3px}
+.seg button{background:transparent;color:var(--ink);padding:7px 14px}
+.seg button.on{background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.brochure{container-type:inline-size;display:grid;grid-template-columns:repeat(3,1fr);aspect-ratio:11/8.5;background:#fff;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.12);overflow:hidden}
+.bp{position:relative;padding:2.2cqw 2cqw;font-size:1.25cqw;line-height:1.35;overflow:auto;border-right:1px dashed #cfd8cc}
+.bp:last-child{border-right:0}
+.bp h3{font-size:2.1cqw;color:var(--accent);margin-bottom:.8cqw}
+.bp h4{font-family:Fredoka;font-weight:600;font-size:1.4cqw;margin:1cqw 0 .3cqw;color:var(--accent)}
+.bp p{margin:0 0 .6cqw}
+.bp .empty{color:#a7b2a9;font-style:italic}
+.bp .num{position:absolute;top:.6cqw;right:.9cqw;font-size:.95cqw;color:#a7b2a9;font-weight:800}
+.bp.cover{background:var(--accent);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.bp.cover .num{color:rgba(255,255,255,.6)}
+.cover .ic{font-size:7cqw;line-height:1}
+.cover .nm{font-family:Fredoka;font-size:3.2cqw;margin-top:1.4cqw;line-height:1.1}
+.cover .sl{font-size:1.6cqw;margin-top:1cqw;font-style:italic;opacity:.95}
+.cover .by{margin-top:3cqw;font-size:1.15cqw;opacity:.9}
+.cover .empty{color:rgba(255,255,255,.7)}
+.blk{background:var(--accentSoft);border-radius:.8cqw;padding:.8cqw 1cqw;margin-bottom:.9cqw}
+.temps{display:flex;gap:1cqw;margin-bottom:1cqw}
+.temps div{flex:1;text-align:center;background:var(--accentSoft);border-radius:.8cqw;padding:.8cqw .4cqw}
+.temps b{display:block;font-family:Fredoka;font-size:2.4cqw;color:var(--accent)}
+.bars{display:flex;align-items:flex-end;gap:.8cqw;height:9cqw;border-bottom:2px solid #cfd8cc;padding:0 .4cqw;margin-top:.6cqw}
+.bars .b{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+.bars .b i{display:block;width:100%;background:var(--accent);border-radius:.5cqw .5cqw 0 0;min-height:2px}
+.bars .b span{font-size:.95cqw;font-weight:800}
+.blabels{display:flex;gap:.8cqw;padding:0 .4cqw;font-size:.95cqw;text-align:center;margin-bottom:.8cqw}
+.blabels span{flex:1}
+.reasons p::before{content:"✔ ";color:var(--accent);font-weight:800}
+.team{margin-top:1cqw;font-size:1.05cqw;color:var(--muted)}
+
+/* teacher */
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-top:14px}
+.tcard{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;cursor:pointer}
+.tcard:hover{border-color:var(--green)}
+.tcard h3{font-size:19px}
+.status{font-size:12px;font-weight:800;border-radius:999px;padding:3px 9px;text-transform:uppercase}
+.status.submitted{background:#d7f0dc;color:#1d6b38}
+.status.editing{background:#fff0c7;color:#7a5600}
+.modal{position:fixed;inset:0;background:rgba(20,30,22,.55);display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:24px;z-index:20}
+.modal .card{width:min(1100px,100%)}
+.sideLbl{font-weight:800;color:var(--muted);margin:14px 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.05em}
+
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#24342a;color:#fff;padding:10px 18px;border-radius:12px;font-weight:700;z-index:50;max-width:90vw}
+.toast.err{background:var(--red)}
+
+@media (max-width:860px){
+  .homeGrid,.layout{grid-template-columns:1fr}
+  .grid4{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div id="toast" class="toast hidden"></div>
+
+<script>
+/* ===== SETTINGS ===== */
+// Paste your Apps Script Web App URL here. Leave '' to run in demo mode (saves only in this browser).
+const API_URL = 'https://script.google.com/macros/s/AKfycbza5hiL6bXp6srOXFw_A7wN2mU9T744dV9j7qTCJHYLmzjCN4jQw1J9F012zK8SgNtM/exec';
+const POLL_MS = 6000;
+
+/* ===== PANELS ===== */
+const PANELS = [
+  { title:'Cover', icon:'🏡', hint:'Grab attention! Give your eco home a name and a catchy slogan.',
+    fields:[
+      {k:'homeName', label:'Name of your eco home', type:'text', ph:'e.g. The Cozy Cave', max:40},
+      {k:'slogan', label:'Slogan', type:'text', ph:'e.g. Warm in winter, cool in summer!', max:70},
+      {k:'icon', label:'Cover icon', type:'emoji', opts:['🏡','🌿','☀️','🌎','❄️','🌲','💧','🪟','🔥','🍃']},
+      {k:'color', label:'Brochure color', type:'color', opts:[['green','#2f7d4a','#e3f1e6'],['ocean','#1f6f8b','#dff0f6'],['sunset','#c8612b','#fbe9de'],['berry','#7a3f8f','#f1e4f5'],['night','#2c3e66','#e2e7f3']]}
+    ]},
+  { title:'Our Design', icon:'📐', hint:'Describe the materials you chose for your 3D house and explain WHY you chose each one.',
+    fields:[
+      {k:'walls', label:'Walls', ph:'We used ___ for the walls because it is a good insulator/conductor, so...'},
+      {k:'roof', label:'Roof', ph:'Our roof is made of ___ because...'},
+      {k:'windows', label:'Windows and doors', ph:'For the windows we chose ___ because...'},
+      {k:'feature', label:'Our best feature', ph:'The best thing about our design is...'}
+    ]},
+  { title:'The Science', icon:'🔬', hint:'Explain how thermal energy moves and how your home controls it. Try to use every word in the word bank!',
+    words:['thermal energy','transfer','temperature','insulator','conductor','particles','warmer','cooler'],
+    fields:[
+      {k:'insulator', label:'What is an insulator?', ph:'An insulator is a material that...'},
+      {k:'conductor', label:'What is a conductor?', ph:'A conductor is a material that...'},
+      {k:'flow', label:'How does thermal energy move in and out of your home?', ph:'In winter, thermal energy moves from the warmer ___ to the cooler ___. Our home slows this down by...'}
+    ]},
+  { title:'Test Results', icon:'📊', hint:'Use the numbers from your inside/outside temperature test and your seasons report.',
+    fields:[
+      {k:'tUnit', label:'Temperature unit', type:'pick', opts:['°F','°C']},
+      {k:'outTemp', label:'Outside temperature', type:'num', half:true},
+      {k:'inTemp', label:'Inside temperature', type:'num', half:true},
+      {k:'eUnit', label:'Energy unit from your seasons report', type:'text', ph:'e.g. kWh', max:14},
+      {k:'winter', label:'Winter energy', type:'num', quarter:true},
+      {k:'spring', label:'Spring energy', type:'num', quarter:true},
+      {k:'summer', label:'Summer energy', type:'num', quarter:true},
+      {k:'fall', label:'Fall energy', type:'num', quarter:true},
+      {k:'learned', label:'What do your results show?', ph:'Our home used the most energy in ___ because... The data shows...'}
+    ]},
+  { title:'Eco Impact', icon:'🌎', hint:'Compare designs and explain why saving energy matters for the planet.',
+    fields:[
+      {k:'compare', label:'Compare with another design', ph:'Compared to our first design (or another team\'s house), our home used more/less energy because...'},
+      {k:'change', label:'A change we made after testing', ph:'After testing, we changed ___ to ___ because...'},
+      {k:'planet', label:'How does this help the planet?', ph:'Using less electricity helps the environment because...'}
+    ]},
+  { title:'Why Choose Us', icon:'⭐', hint:'Convince a family to pick your home. Good engineers are honest about trade-offs too!',
+    fields:[
+      {k:'r1', label:'Reason 1', type:'text', ph:'It stays warm without using much electricity', max:90},
+      {k:'r2', label:'Reason 2', type:'text', max:90},
+      {k:'r3', label:'Reason 3', type:'text', max:90},
+      {k:'tradeoff', label:'One trade-off or limitation', ph:'One downside of our design is ___, but we chose it because...'}
+    ]}
+];
+// tri-fold order: outside = [inside flap, back, cover], inside = [2,3,4]
+const SIDES = { outside:[4,5,0], inside:[1,2,3] };
+const COLORS = Object.fromEntries(PANELS[0].fields[3].opts.map(o=>[o[0],[o[1],o[2]]]));
+
+/* ===== STATE ===== */
+const S = { me:null, group:null, panel:0, side:'inside', lastEdit:{}, saveTimers:{}, poll:null, teacherPass:null, groups:[], tFilter:'' };
+
+/* ===== UTIL ===== */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const nl = s => esc(s).replace(/\n/g,'<br>');
+const same = (a,b) => String(a||'').trim().toLowerCase() === String(b||'').trim().toLowerCase();
+function toast(msg, err){ const t=$('#toast'); t.textContent=msg; t.className='toast'+(err?' err':''); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.add('hidden'), 3200); }
+function store(k,v){ try{ v==null ? localStorage.removeItem(k) : localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+function load(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ return null; } }
+
+/* ===== API ===== */
+async function api(req){
+  try{
+    let res;
+    if(!API_URL) res = Mock.route(JSON.parse(JSON.stringify(req)));
+    else {
+      const r = await fetch(API_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(req)});
+      res = await r.json();
+    }
+    if(!res.ok) throw new Error(res.error || 'Something went wrong.');
+    return res;
+  }catch(e){
+    throw new Error(e.message === 'Failed to fetch' ? 'Could not reach the server. Check your internet.' : e.message);
+  }
+}
+
+/* demo backend (same rules as Code.gs), stored in this browser only */
+const Mock = {
+  WORDS:['LEAF','SOLAR','WIND','MOSS','FERN','RAIN','OAK','PINE','CLAY','EARTH','RIVER','CEDAR','SEED','BLOOM','STONE','OCEAN','CLOUD','MAPLE','BREEZE','SPROUT'],
+  db(){ return load('ecoDemoDB') || {groups:{}}; },
+  key(s){ return String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,''); },
+  clean(s,m){ return String(s||'').replace(/\s+/g,' ').trim().slice(0,m); },
+  route(req){
+    try{
+      const db=this.db(), a=req.action, k=this.key(req.code), g=db.groups[k];
+      const save=()=>{ if(g) g.updated=new Date().toISOString(); store('ecoDemoDB',db); };
+      if(a==='create'){
+        const leader=this.clean(req.leader,30), groupName=this.clean(req.groupName,40), period=this.clean(req.period,20);
+        if(!leader) throw new Error('Type your name.'); if(!groupName) throw new Error('Type a group name.');
+        let code; do{ code=this.WORDS[Math.floor(Math.random()*this.WORDS.length)]+'-'+(10+Math.floor(Math.random()*90)); }while(db.groups[this.key(code)]);
+        const ng={code,period,groupName,leader,members:[leader],assign:{},panels:[{},{},{},{},{},{}],status:'editing',updated:new Date().toISOString()};
+        db.groups[this.key(code)]=ng; store('ecoDemoDB',db); return {ok:true,group:ng,name:leader};
+      }
+      if(a==='teacher'){ if(req.pass!=='demo') throw new Error('Wrong teacher password. (Demo password: demo)'); return {ok:true,groups:Object.values(db.groups)}; }
+      if(a==='reopen'){ if(req.pass!=='demo') throw new Error('Wrong teacher password.'); if(!g) throw new Error('Group not found.'); g.status='editing'; save(); return {ok:true}; }
+      if(!g) throw new Error('No group found with that password. Check the spelling!');
+      if(a==='get') return {ok:true,group:g};
+      if(a==='join'){
+        const name=this.clean(req.name,30); if(!name) throw new Error('Type your name first.');
+        const ex=g.members.find(m=>same(m,name));
+        if(!ex){ if(g.members.length>=6) throw new Error('This group is full (6 members max).'); g.members.push(name); save(); }
+        return {ok:true,group:g,name:ex||name};
+      }
+      if(a==='assign'){
+        if(!same(g.leader,req.name)) throw new Error('Only the leader can do that.');
+        const c={}; for(let i=0;i<6;i++){ const w=req.assign&&req.assign[i]; const m=w&&g.members.find(x=>same(x,w)); if(m) c[i]=m; }
+        g.assign=c; save(); return {ok:true,group:g};
+      }
+      if(a==='save'){
+        if(g.status==='submitted') throw new Error('This brochure was already submitted.');
+        const p=Number(req.panel); if(!(p>=0&&p<6)) throw new Error('Bad panel.');
+        if(!same(g.leader,req.name) && !same(g.assign[p],req.name)) throw new Error('That panel belongs to someone else.');
+        g.panels[p]=req.data||{}; save(); return {ok:true,group:g};
+      }
+      if(a==='submit'){ if(!same(g.leader,req.name)) throw new Error('Only the leader can do that.'); g.status='submitted'; save(); return {ok:true,group:g}; }
+      throw new Error('Unknown action.');
+    }catch(e){ return {ok:false,error:e.message}; }
+  }
+};
+
+/* ===== HELPERS ===== */
+const isLeader = () => S.group && S.me && same(S.group.leader, S.me.name);
+const ownerOf = i => (S.group.assign||{})[i] || '';
+const canEdit = i => S.group.status!=='submitted' && (isLeader() || same(ownerOf(i), S.me.name));
+const doneCount = g => g.panels.filter(p=>p&&p.done).length;
+function setAccent(g){
+  const c = COLORS[(g && g.panels[0] && g.panels[0].color) || 'green'] || COLORS.green;
+  document.documentElement.style.setProperty('--accent', c[0]);
+  document.documentElement.style.setProperty('--accentSoft', c[1]);
+}
+
+/* ===== HOME ===== */
+function showHome(){
+  stopPoll(); S.group=null;
+  const saved = load('ecoMe');
+  $('#app').innerHTML = `
+    <div class="hero">
+      <div style="font-size:52px">🏡🌿</div>
+      <h1>Eco Home Brochure Studio</h1>
+      <p class="muted">Your team designed an energy-saving home. Now make a 6-panel brochure to sell it! The leader creates the brochure and shares the password. Everyone else joins with that password.</p>
+      ${API_URL ? '' : '<div class="demo">⚠️ <b>Demo mode:</b> no server connected, so everything saves only in this browser. Paste your Apps Script URL into <code>API_URL</code> to use it with a class.</div>'}
+    </div>
+    ${saved ? `<div class="resume"><button class="sun" id="resumeBtn">↩ Continue as ${esc(saved.name)} in ${esc(saved.code)}</button></div>` : ''}
+    <div class="homeGrid">
+      <div class="card">
+        <span class="badge">Leader</span>
+        <h2 style="margin-top:8px">Create our brochure</h2>
+        <p class="muted" style="margin:4px 0 0">Only ONE person per group does this.</p>
+        <label>Your name</label><input id="cLeader" maxlength="30" placeholder="First name and last initial">
+        <label>Group name</label><input id="cGroup" maxlength="40" placeholder="e.g. The Thermal Titans">
+        <label>Class period</label><input id="cPeriod" maxlength="20" placeholder="e.g. Period 3">
+        <div style="margin-top:16px"><button id="createBtn">Create brochure + get password</button></div>
+      </div>
+      <div class="card">
+        <span class="badge">Team member</span>
+        <h2 style="margin-top:8px">Join my group</h2>
+        <p class="muted" style="margin:4px 0 0">Get the password from your group leader.</p>
+        <label>Group password</label><input id="jCode" maxlength="14" placeholder="e.g. FERN-47" style="text-transform:uppercase;font-family:Fredoka;font-size:20px;letter-spacing:.05em">
+        <label>Your name</label><input id="jName" maxlength="30" placeholder="First name and last initial">
+        <div style="margin-top:16px"><button id="joinBtn">Join group</button></div>
+      </div>
+    </div>
+    <div class="teacherLink"><a href="#" id="tLink">Teacher view</a></div>`;
+  $('#createBtn').onclick = async e => {
+    e.target.disabled = true;
+    try{
+      const r = await api({action:'create', leader:$('#cLeader').value, groupName:$('#cGroup').value, period:$('#cPeriod').value});
+      enter(r.group, r.name, true);
+    }catch(err){ toast(err.message, true); e.target.disabled = false; }
+  };
+  $('#joinBtn').onclick = async e => {
+    e.target.disabled = true;
+    try{
+      const r = await api({action:'join', code:$('#jCode').value, name:$('#jName').value});
+      enter(r.group, r.name, false);
+    }catch(err){ toast(err.message, true); e.target.disabled = false; }
+  };
+  if(saved) $('#resumeBtn').onclick = async e => {
+    e.target.disabled = true;
+    try{ const r = await api({action:'join', code:saved.code, name:saved.name}); enter(r.group, r.name, false); }
+    catch(err){ toast(err.message, true); store('ecoMe', null); showHome(); }
+  };
+  $('#tLink').onclick = e => { e.preventDefault(); showTeacherLogin(); };
+}
+
+function enter(group, name, isNew){
+  S.me = {code:group.code, name};
+  store('ecoMe', S.me);
+  S.group = group;
+  S.justCreated = isNew;
+  const mine = Object.keys(group.assign||{}).find(i=>same(group.assign[i], name));
+  S.panel = mine!=null ? Number(mine) : 0;
+  S.side = SIDES.outside.includes(S.panel) ? 'outside' : 'inside';
+  showWorkspace();
+  startPoll();
+}
+
+/* ===== WORKSPACE ===== */
+function showWorkspace(){
+  const g = S.group; setAccent(g);
+  const lead = isLeader();
+  $('#app').innerHTML = `
+    <div class="topbar">
+      <div>
+        <h1>${esc(g.groupName)}</h1>
+        <div class="muted">${esc(g.period)} · You are <b>${esc(S.me.name)}</b>${lead?' (leader)':''}</div>
+      </div>
+      <div class="row">
+        <div class="pass"><small>GROUP PASSWORD</small>${esc(g.code)}</div>
+        <button class="ghost small" id="leaveBtn">Leave</button>
+      </div>
+    </div>
+    ${S.justCreated ? `<div class="bigPass"><div class="muted" style="font-weight:800">Share this password with your group:</div><div class="code">${esc(g.code)}</div><div class="muted">Once they join, assign each person their panels on the left.</div></div>` : ''}
+    <div id="subBanner"></div>
+    <div class="layout">
+      <div>
+        <div class="card">
+          <h3>Team</h3>
+          <div class="members" id="members"></div>
+          <div style="margin-top:14px"><b>Progress</b> <span id="progTxt" class="muted"></span></div>
+          <div class="progress"><div id="progBar"></div></div>
+          ${lead ? `<div class="row" style="margin-top:6px"><button class="small ghost" id="autoBtn">Auto-split panels</button></div>` : ''}
+          <div class="plist" id="plist"></div>
+          ${lead ? `<div style="margin-top:16px"><button class="sun" id="submitBtn" style="width:100%">Submit brochure to Mr. Z</button></div>` : ''}
+        </div>
+      </div>
+      <div class="card" id="editor"></div>
+    </div>
+    <div class="previewHead">
+      <h2>Brochure preview</h2>
+      <div class="seg"><button data-side="outside">Outside (cover side)</button><button data-side="inside">Inside</button></div>
+    </div>
+    <div id="preview"></div>
+    <p class="muted" style="font-size:13px;margin-top:8px">Fold it like a real tri-fold: the outside has the inside flap, the back, and the cover. Open it up to see panels 2, 3 and 4.</p>`;
+  $('#leaveBtn').onclick = () => { if(confirm('Leave this brochure? You can rejoin with the password.')){ store('ecoMe',null); showHome(); } };
+  document.querySelectorAll('.seg button').forEach(b => b.onclick = () => { S.side = b.dataset.side; renderPreview(); });
+  if(lead){
+    $('#autoBtn').onclick = autoSplit;
+    $('#submitBtn').onclick = submit;
+  }
+  renderSide(); renderEditor(); renderPreview(); renderBanner();
+}
+
+function renderBanner(){
+  $('#subBanner').innerHTML = S.group.status==='submitted' ? `<div class="submitted">✅ Submitted! Mr. Z can see your brochure. Editing is locked.</div>` : '';
+  const sb = $('#submitBtn'); if(sb) sb.disabled = S.group.status==='submitted';
+}
+
+function renderSide(){
+  const g = S.group, lead = isLeader();
+  $('#members').innerHTML = g.members.map(m=>`<span class="chip ${same(m,g.leader)?'lead':''} ${same(m,S.me.name)?'me':''}">${esc(m)}</span>`).join('');
+  const d = doneCount(g);
+  $('#progTxt').textContent = `${d}/6 panels done`;
+  $('#progBar').style.width = (d/6*100)+'%';
+  const active = document.activeElement && document.activeElement.closest && document.activeElement.closest('#plist');
+  if(active) return; // don't rebuild while leader is using a dropdown
+  $('#plist').innerHTML = PANELS.map((p,i)=>{
+    const owner = ownerOf(i), done = g.panels[i] && g.panels[i].done, mine = same(owner, S.me.name);
+    const tag = done ? '<span class="tick done">✓ done</span>' : mine ? '<span class="tick mine">your job</span>' : '<span class="tick">to do</span>';
+    const who = lead && g.status!=='submitted'
+      ? `<select data-assign="${i}" onclick="event.stopPropagation()"><option value="">Not assigned</option>${g.members.map(m=>`<option ${same(m,owner)?'selected':''}>${esc(m)}</option>`).join('')}</select>`
+      : `<div class="who">${owner ? '👤 '+esc(owner) : 'Not assigned yet'}</div>`;
+    return `<div class="pitem ${i===S.panel?'active':''}" data-p="${i}"><div class="t"><span>${p.icon} ${i+1}. ${p.title}</span>${tag}</div>${who}</div>`;
+  }).join('');
+  document.querySelectorAll('.pitem').forEach(el => el.onclick = () => {
+    S.panel = Number(el.dataset.p);
+    if(!SIDES[S.side].includes(S.panel)) S.side = SIDES.outside.includes(S.panel) ? 'outside' : 'inside';
+    renderSide(); renderEditor(); renderPreview();
+  });
+  document.querySelectorAll('[data-assign]').forEach(sel => sel.onchange = async () => {
+    const assign = Object.assign({}, g.assign);
+    if(sel.value) assign[sel.dataset.assign] = sel.value; else delete assign[sel.dataset.assign];
+    try{ const r = await api({action:'assign', code:g.code, name:S.me.name, assign}); S.group = r.group; sel.blur(); renderSide(); renderEditor(); }
+    catch(err){ toast(err.message, true); }
+  });
+}
+
+async function autoSplit(){
+  const g = S.group, assign = {};
+  for(let i=0;i<6;i++) assign[i] = g.members[i % g.members.length];
+  try{ const r = await api({action:'assign', code:g.code, name:S.me.name, assign}); S.group = r.group; renderSide(); renderEditor(); toast('Panels split between ' + g.members.length + ' member(s).'); }
+  catch(err){ toast(err.message, true); }
+}
+
+async function submit(){
+  const d = doneCount(S.group);
+  const msg = d < 6 ? `Only ${d}/6 panels are marked done. Submit anyway? You won't be able to edit after.` : 'Submit your brochure to Mr. Z? Editing will lock.';
+  if(!confirm(msg)) return;
+  try{ const r = await api({action:'submit', code:S.group.code, name:S.me.name}); S.group = r.group; renderBanner(); renderSide(); renderEditor(); toast('Submitted! 🎉'); }
+  catch(err){ toast(err.message, true); }
+}
+
+/* ===== EDITOR ===== */
+function renderEditor(){
+  const i = S.panel, p = PANELS[i], g = S.group, data = g.panels[i] || {}, edit = canEdit(i), owner = ownerOf(i);
+  let lockMsg = '';
+  if(!edit) lockMsg = g.status==='submitted' ? 'This brochure is submitted, so it is locked.' : owner ? `This panel is ${esc(owner)}'s job. You can read it but not change it.` : 'Your leader has not assigned this panel yet.';
+  else if(isLeader() && owner && !same(owner, S.me.name)) lockMsg = `This is ${esc(owner)}'s panel. As leader you can help edit it, but try not to type at the same time.`;
+  const dis = edit ? '' : 'disabled';
+  let h = '';
+  let quarterOpen = false, halfOpen = false;
+  p.fields.forEach(f => {
+    const v = data[f.k] ?? '';
+    if(f.quarter && !quarterOpen){ h += '<div class="grid4">'; quarterOpen = true; }
+    if(!f.quarter && quarterOpen){ h += '</div>'; quarterOpen = false; }
+    if(f.half && !halfOpen){ h += '<div class="grid2">'; halfOpen = true; }
+    if(!f.half && halfOpen){ h += '</div>'; halfOpen = false; }
+    h += `<div><label>${esc(f.label)}</label>`;
+    if(f.type==='text') h += `<input data-k="${f.k}" maxlength="${f.max||80}" placeholder="${esc(f.ph||'')}" value="${esc(v)}" ${dis}>`;
+    else if(f.type==='num') h += `<input data-k="${f.k}" type="number" step="any" value="${esc(v)}" ${dis}>`;
+    else if(f.type==='emoji') h += `<div class="choices">${f.opts.map(o=>`<button type="button" data-pick="${f.k}" data-v="${o}" class="${v===o?'on':''}" ${dis}>${o}</button>`).join('')}</div>`;
+    else if(f.type==='pick') h += `<div class="choices">${f.opts.map(o=>`<button type="button" class="txt ${(v||f.opts[0])===o?'on':''}" data-pick="${f.k}" data-v="${o}" ${dis}>${o}</button>`).join('')}</div>`;
+    else if(f.type==='color') h += `<div class="choices">${f.opts.map(o=>`<button type="button" title="${o[0]}" class="swatch ${(v||'green')===o[0]?'on':''}" style="background:${o[1]}" data-pick="${f.k}" data-v="${o[0]}" ${dis}></button>`).join('')}</div>`;
+    else h += `<textarea data-k="${f.k}" maxlength="600" placeholder="${esc(f.ph||'')}" ${dis}>${esc(v)}</textarea>`;
+    h += '</div>';
+  });
+  if(quarterOpen || halfOpen) h += '</div>';
+  $('#editor').innerHTML = `
+    <div class="editorHead">
+      <div><span class="badge">Panel ${i+1} of 6</span><h2 style="margin-top:6px">${p.icon} ${p.title}</h2></div>
+      <div class="save" id="saveState"></div>
+    </div>
+    <div class="hint">${esc(p.hint)}</div>
+    ${p.words ? `<div class="wordbank" id="wordbank"></div>` : ''}
+    ${lockMsg ? `<div class="lock">🔒 ${lockMsg}</div>` : ''}
+    <div class="${edit?'':'readonly'}">${h}</div>
+    <label class="donebox"><input type="checkbox" id="doneChk" ${data.done?'checked':''} ${dis}> This panel is finished and checked for spelling</label>`;
+  $('#editor').querySelectorAll('[data-k]').forEach(el => el.oninput = () => queueSave(i));
+  $('#editor').querySelectorAll('[data-pick]').forEach(b => b.onclick = () => {
+    $('#editor').querySelectorAll(`[data-pick="${b.dataset.pick}"]`).forEach(x => x.classList.remove('on'));
+    b.classList.add('on'); queueSave(i, true);
+  });
+  $('#doneChk').onchange = () => queueSave(i, true);
+  updateWordbank();
+}
+
+function collect(i){
+  const d = Object.assign({}, S.group.panels[i] || {});
+  $('#editor').querySelectorAll('[data-k]').forEach(el => {
+    if(el.type==='number'){ d[el.dataset.k] = el.value==='' ? '' : Number(el.value); }
+    else d[el.dataset.k] = el.value;
+  });
+  $('#editor').querySelectorAll('[data-pick].on').forEach(b => d[b.dataset.pick] = b.dataset.v);
+  d.done = $('#doneChk').checked;
+  return d;
+}
+
+function updateWordbank(){
+  const p = PANELS[S.panel]; if(!p.words || !$('#wordbank')) return;
+  const text = Object.values(S.group.panels[S.panel]||{}).join(' ').toLowerCase();
+  $('#wordbank').innerHTML = '<b style="font-size:13px;margin-right:4px">Word bank:</b>' + p.words.map(w=>`<span class="word ${text.includes(w)?'used':''}">${w}</span>`).join('');
+}
+
+function queueSave(i, now){
+  const data = collect(i);
+  S.group.panels[i] = data;
+  S.lastEdit[i] = Date.now();
+  if(i===0) setAccent(S.group);
+  renderPreview(); updateWordbank();
+  $('#saveState').textContent = 'Typing…';
+  clearTimeout(S.saveTimers[i]);
+  S.saveTimers[i] = setTimeout(() => doSave(i), now ? 100 : 1200);
+}
+
+async function doSave(i){
+  const st = $('#saveState');
+  if(st && S.panel===i) st.textContent = 'Saving…';
+  try{
+    const r = await api({action:'save', code:S.group.code, name:S.me.name, panel:i, data:S.group.panels[i]});
+    mergeGroup(r.group);
+    if($('#saveState') && S.panel===i) $('#saveState').textContent = 'Saved ✓';
+    renderSide();
+  }catch(err){
+    if($('#saveState') && S.panel===i) $('#saveState').textContent = 'Not saved!';
+    toast(err.message, true);
+  }
+}
+
+/* keep my recent local edits, take everything else from the server */
+function mergeGroup(fresh){
+  const now = Date.now();
+  fresh.panels = fresh.panels.map((p,i) => (S.lastEdit[i] && now - S.lastEdit[i] < 8000) ? S.group.panels[i] : p);
+  S.group = fresh;
+}
+
+/* ===== POLLING ===== */
+function startPoll(){ stopPoll(); S.poll = setInterval(pollOnce, POLL_MS); }
+function stopPoll(){ if(S.poll) clearInterval(S.poll); S.poll = null; }
+async function pollOnce(){
+  if(!S.group || document.hidden) return;
+  try{
+    const r = await api({action:'get', code:S.group.code});
+    const before = JSON.stringify(S.group.panels[S.panel]) + JSON.stringify(S.group.assign) + S.group.status;
+    mergeGroup(r.group);
+    const after = JSON.stringify(S.group.panels[S.panel]) + JSON.stringify(S.group.assign) + S.group.status;
+    renderSide(); renderPreview(); renderBanner(); setAccent(S.group);
+    const typing = document.activeElement && document.activeElement.closest && document.activeElement.closest('#editor');
+    if(before !== after && !typing) renderEditor();
+  }catch(e){ /* quiet; next poll will retry */ }
+}
+
+/* ===== BROCHURE RENDER ===== */
+function val(d,k){ const v = d && d[k]; return (v===undefined || v===null || v==='') ? '' : v; }
+function txt(d,k,empty){ const v = val(d,k); return v==='' ? `<span class="empty">${empty||'(not written yet)'}</span>` : nl(v); }
+
+function panelHTML(i, g){
+  const d = g.panels[i] || {}, p = PANELS[i];
+  const num = `<span class="num">${i+1}</span>`;
+  const team = esc(g.members.join(', '));
+  if(i===0) return `<div class="bp cover">${num}
+      <div class="ic">${esc(val(d,'icon') || '🏡')}</div>
+      <div class="nm">${val(d,'homeName') ? esc(d.homeName) : '<span class="empty">Your Home Name</span>'}</div>
+      <div class="sl">${val(d,'slogan') ? esc(d.slogan) : '<span class="empty">Your slogan here</span>'}</div>
+      <div class="by">Designed by ${esc(g.groupName)}<br>${team}</div></div>`;
+  if(i===1) return `<div class="bp">${num}<h3>${p.icon} Our Design</h3>
+      <h4>Walls</h4><p>${txt(d,'walls')}</p><h4>Roof</h4><p>${txt(d,'roof')}</p>
+      <h4>Windows &amp; Doors</h4><p>${txt(d,'windows')}</p><div class="blk"><h4 style="margin-top:0">★ Best Feature</h4>${txt(d,'feature')}</div></div>`;
+  if(i===2) return `<div class="bp">${num}<h3>${p.icon} The Science</h3>
+      <div class="blk"><h4 style="margin-top:0">Insulators</h4>${txt(d,'insulator')}</div>
+      <div class="blk"><h4 style="margin-top:0">Conductors</h4>${txt(d,'conductor')}</div>
+      <h4>How Thermal Energy Moves</h4><p>${txt(d,'flow')}</p></div>`;
+  if(i===3){
+    const tu = val(d,'tUnit') || '°F', eu = esc(val(d,'eUnit'));
+    const seasons = [['winter','❄️'],['spring','🌱'],['summer','☀️'],['fall','🍂']];
+    const nums = seasons.map(s => Number(val(d,s[0])) || 0), max = Math.max(...nums, 1);
+    const hasBars = nums.some(n => n > 0);
+    const t = k => val(d,k)==='' ? '–' : esc(d[k]) + tu;
+    return `<div class="bp">${num}<h3>${p.icon} Test Results</h3>
+      <div class="temps"><div>Outside<b>${t('outTemp')}</b></div><div>Inside<b>${t('inTemp')}</b></div></div>
+      <h4>Energy Used by Season${eu ? ' ('+eu+')' : ''}</h4>
+      ${hasBars ? `<div class="bars">${nums.map(n=>`<div class="b"><span>${n||''}</span><i style="height:${n/max*85}%"></i></div>`).join('')}</div>
+      <div class="blabels">${seasons.map(s=>`<span>${s[1]}<br>${s[0]}</span>`).join('')}</div>` : '<p class="empty">(add your season numbers to see the graph)</p>'}
+      <h4>What It Shows</h4><p>${txt(d,'learned')}</p></div>`;
+  }
+  if(i===4) return `<div class="bp">${num}<h3>${p.icon} Eco Impact</h3>
+      <h4>How We Compare</h4><p>${txt(d,'compare')}</p>
+      <h4>What We Improved</h4><p>${txt(d,'change')}</p>
+      <div class="blk"><h4 style="margin-top:0">🌱 Good for the Planet</h4>${txt(d,'planet')}</div></div>`;
+  if(i===5) return `<div class="bp">${num}<h3>${p.icon} Why Choose Us?</h3>
+      <div class="reasons"><p>${txt(d,'r1','(reason 1)')}</p><p>${txt(d,'r2','(reason 2)')}</p><p>${txt(d,'r3','(reason 3)')}</p></div>
+      <div class="blk"><h4 style="margin-top:0">⚖️ Trade-off</h4>${txt(d,'tradeoff')}</div>
+      <div class="team"><b>${esc(g.groupName)}</b> · ${esc(g.period)}<br>${team}</div></div>`;
+}
+
+function brochureHTML(g, side){ return `<div class="brochure">${SIDES[side].map(i=>panelHTML(i,g)).join('')}</div>`; }
+
+function renderPreview(){
+  if(!$('#preview')) return;
+  $('#preview').innerHTML = brochureHTML(S.group, S.side);
+  document.querySelectorAll('.seg button').forEach(b => b.classList.toggle('on', b.dataset.side===S.side));
+}
+
+/* ===== TEACHER ===== */
+function showTeacherLogin(){
+  stopPoll();
+  $('#app').innerHTML = `
+    <div class="card" style="max-width:420px;margin:60px auto">
+      <h2>Teacher view</h2>
+      <label>Teacher password</label><input id="tPass" type="password">
+      <div class="row" style="margin-top:14px"><button id="tGo">Open</button><button class="ghost" id="tBack">Back</button></div>
+      ${API_URL ? '' : '<p class="muted" style="font-size:13px">Demo password: <b>demo</b></p>'}
+    </div>`;
+  $('#tBack').onclick = showHome;
+  const go = async () => {
+    try{ const r = await api({action:'teacher', pass:$('#tPass').value}); S.teacherPass = $('#tPass').value; S.groups = r.groups; showTeacher(); }
+    catch(err){ toast(err.message, true); }
+  };
+  $('#tGo').onclick = go;
+  $('#tPass').onkeydown = e => { if(e.key==='Enter') go(); };
+}
+
+function showTeacher(){
+  const periods = [...new Set(S.groups.map(g=>g.period).filter(Boolean))].sort();
+  const list = S.groups.filter(g => !S.tFilter || g.period===S.tFilter);
+  const sub = list.filter(g=>g.status==='submitted').length;
+  $('#app').innerHTML = `
+    <div class="topbar">
+      <div><h1>Teacher view</h1><div class="muted">${list.length} group(s) · ${sub} submitted</div></div>
+      <div class="row">
+        <select id="tFilter" style="width:auto"><option value="">All periods</option>${periods.map(p=>`<option ${p===S.tFilter?'selected':''}>${esc(p)}</option>`).join('')}</select>
+        <button class="small" id="tRefresh">Refresh</button>
+        <button class="small ghost" id="tExit">Exit</button>
+      </div>
+    </div>
+    <div class="tgrid">${list.map(g=>`
+      <div class="tcard" data-code="${esc(g.code)}">
+        <div class="row" style="justify-content:space-between"><h3>${esc(g.groupName)}</h3><span class="status ${g.status}">${g.status}</span></div>
+        <div class="muted" style="font-size:14px;margin-top:4px">${esc(g.period)} · ${esc(g.code)}</div>
+        <div style="font-size:14px;margin-top:6px">👑 ${esc(g.leader)}${g.members.length>1 ? ', '+esc(g.members.filter(m=>!same(m,g.leader)).join(', ')) : ''}</div>
+        <div class="progress"><div style="width:${doneCount(g)/6*100}%"></div></div>
+        <div class="muted" style="font-size:13px">${doneCount(g)}/6 panels done</div>
+      </div>`).join('') || '<p class="muted">No groups yet.</p>'}</div>
+    <div id="tModal"></div>`;
+  $('#tFilter').onchange = e => { S.tFilter = e.target.value; showTeacher(); };
+  $('#tRefresh').onclick = async () => { try{ const r = await api({action:'teacher', pass:S.teacherPass}); S.groups = r.groups; showTeacher(); toast('Refreshed'); }catch(err){ toast(err.message, true); } };
+  $('#tExit').onclick = () => { S.teacherPass = null; showHome(); };
+  document.querySelectorAll('.tcard').forEach(c => c.onclick = () => openGroup(c.dataset.code));
+}
+
+function openGroup(code){
+  const g = S.groups.find(x=>x.code===code); if(!g) return;
+  setAccent(g);
+  const rows = PANELS.map((p,i)=>`<span class="chip">${i+1}. ${p.title}: ${esc((g.assign||{})[i]||'unassigned')}${g.panels[i]&&g.panels[i].done?' ✓':''}</span>`).join(' ');
+  $('#tModal').innerHTML = `
+    <div class="modal" id="mBg"><div class="card">
+      <div class="topbar" style="margin-bottom:6px">
+        <div><h2>${esc(g.groupName)}</h2><div class="muted">${esc(g.period)} · ${esc(g.code)} · <span class="status ${g.status}">${g.status}</span></div></div>
+        <div class="row">${g.status==='submitted' ? '<button class="small ghost" id="reopenBtn">Reopen for editing</button>' : ''}<button class="small" id="mClose">Close</button></div>
+      </div>
+      <div class="members">${rows}</div>
+      <div class="sideLbl">Outside</div>${brochureHTML(g,'outside')}
+      <div class="sideLbl">Inside</div>${brochureHTML(g,'inside')}
+    </div></div>`;
+  $('#mClose').onclick = () => $('#tModal').innerHTML = '';
+  $('#mBg').onclick = e => { if(e.target.id==='mBg') $('#tModal').innerHTML = ''; };
+  const ro = $('#reopenBtn');
+  if(ro) ro.onclick = async () => {
+    try{ await api({action:'reopen', pass:S.teacherPass, code:g.code}); g.status='editing'; toast('Reopened'); showTeacher(); }
+    catch(err){ toast(err.message, true); }
+  };
+}
+
+showHome();
+</script>
+</body>
+</html>
