@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Soil Detectives</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Lexend:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#2B2118;--paper:#F6F0E4;--card:#FFFDF8;--muted:#6B5A48;--line:#E7DCC6;--accent:#D9822B;--good:#2F6430;--bad:#B03A2E;--A:#2F6E9E;--B:#6A4C93;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Lexend',system-ui,sans-serif;font-size:18px;line-height:1.55}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 24px;background:var(--ink);color:var(--paper)}
+  header h1{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:26px;margin:0}
+  .lang{display:flex;gap:6px}
+  .lang button{background:transparent;color:var(--paper);border:2px solid var(--paper);border-radius:20px;padding:4px 14px;font:inherit;font-size:15px;cursor:pointer}
+  .lang button.on{background:var(--paper);color:var(--ink)}
+  main{max-width:900px;margin:0 auto;padding:24px 20px 60px}
+  h2{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:32px;line-height:1.15;margin:0 0 8px}
+  h3{font-size:20px;margin:0 0 6px}
+  p{margin:0 0 10px}
+  .sub{color:var(--muted);margin:0 0 18px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+  .tile{background:var(--card);border:3px solid var(--ink);border-radius:18px;padding:18px;cursor:pointer;text-align:left;font:inherit;color:inherit;transition:transform .12s}
+  .tile:hover{transform:translateY(-3px)}
+  .tile .ico{font-size:36px}
+  .tile.locked{opacity:.7;cursor:default}
+  .tile.done{border-color:var(--good);background:#EEF5EA}
+  .card{background:var(--card);border:3px solid var(--ink);border-radius:18px;padding:20px;margin:0 0 16px}
+  .story{border-left:10px solid var(--accent)}
+  .question{background:var(--ink);color:var(--paper);border-radius:18px;padding:16px 20px;margin:0 0 16px;font-weight:600;font-size:20px}
+  .reading{border-width:4px}
+  .tag{display:inline-block;font-size:13px;font-weight:700;letter-spacing:1.5px;padding:3px 10px;border-radius:12px;color:#fff;margin-bottom:10px}
+  .secret{font-size:14px;color:var(--bad);font-weight:700;margin:10px 0 0}
+  .opts{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+  .opt{background:var(--paper);border:2px solid var(--ink);border-radius:12px;padding:12px 16px;font:inherit;text-align:left;cursor:pointer;color:inherit}
+  .opt:hover{background:var(--line)}
+  .opt.wrong{border-color:var(--bad);background:#F6DCD8;opacity:.6;cursor:default}
+  .opt.shake{animation:shake .35s}
+  @keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  .opt.sel{background:#E3EEDD;border-color:var(--good);font-weight:600}
+  .feedback{margin-top:12px;font-weight:600;padding:12px 14px;border-radius:12px;background:#F6DCD8;color:var(--bad)}
+  .partner{background:#FFF1DD;border:2px dashed var(--accent);border-radius:12px;padding:10px 14px;font-weight:600;margin:6px 0 4px}
+  .evidence{border-color:var(--good);background:#EEF5EA}
+  .letter{display:flex;align-items:center;gap:18px;margin:10px 0}
+  .letter .big{font-family:'Bricolage Grotesque',sans-serif;font-size:64px;font-weight:800;width:96px;height:96px;border-radius:20px;background:var(--good);color:var(--paper);display:flex;align-items:center;justify-content:center;animation:pop .4s both}
+  @keyframes pop{from{transform:scale(.4);opacity:0}}
+  .slots{display:flex;gap:8px;margin:6px 0 4px}
+  .slot{width:46px;height:54px;border:2px dashed var(--muted);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:800;font-size:22px;line-height:1}
+  .slot small{font-size:11px;font-weight:600;color:var(--muted)}
+  .slot.filled{border:2px solid var(--good);background:#E3EEDD}
+  .btn{background:var(--accent);color:var(--ink);border:none;border-radius:14px;padding:12px 22px;font:inherit;font-weight:700;cursor:pointer}
+  .btn.ghost{background:transparent;border:2px solid var(--ink)}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  input.code{font:inherit;font-size:28px;font-weight:800;letter-spacing:10px;text-transform:uppercase;width:200px;padding:8px 14px;border:3px solid var(--ink);border-radius:12px;text-align:center}
+  table{border-collapse:collapse;margin:8px 0;width:100%}
+  th,td{border:2px solid var(--ink);padding:8px 10px;text-align:left}
+  th{background:var(--ink);color:var(--paper)}
+  .frame{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:10px 0}
+  .frame div{border:3px solid var(--ink);border-radius:14px;padding:14px;background:var(--paper)}
+  .frame b{display:block;letter-spacing:2px;color:var(--good)}
+  .nav{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+  .note{font-size:14px;color:var(--muted)}
+  .steps{display:flex;gap:8px;margin:0 0 16px;flex-wrap:wrap}
+  .steps span{font-size:14px;font-weight:700;padding:4px 12px;border-radius:12px;background:var(--line)}
+  .steps span.on{background:var(--ink);color:var(--paper)}
+  .ev-list p{background:#EEF5EA;border-left:6px solid var(--good);padding:8px 12px;border-radius:8px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🔎 Soil Detectives</h1>
+  <div class="lang"><button id="len" onclick="setLang('en')">English</button><button id="les" onclick="setLang('es')">Español</button></div>
+</header>
+<main id="app"></main>
+<script>
+const PARTNERS = {
+  A:{ico:'🕵️', color:'var(--A)', en:'Partner A: Field Detective', es:'Pareja A: Detective de campo', den:'Journals, interviews, and field reports', des:'Diarios, entrevistas e informes de campo'},
+  B:{ico:'🔬', color:'var(--B)', en:'Partner B: Lab Detective', es:'Pareja B: Detective de laboratorio', den:'Data tables and soil science guides', des:'Tablas de datos y guías de ciencia del suelo'}
+};
+
+const LAYERS_SVG = `<svg viewBox="0 0 520 250" width="100%" style="max-width:520px;display:block;margin:6px 0 12px" role="img" aria-label="Soil layers: topsoil, subsoil, bedrock">
+<rect x="0" y="0" width="300" height="40" fill="#CFE3C2"/><g stroke="#3F7D3A" stroke-width="3">${[30,80,130,180,230,280].map(x=>`<path d="M${x} 40 l6 -16 l6 16" fill="none"/>`).join('')}</g>
+<rect x="0" y="40" width="300" height="70" fill="#3E2C1E"/><rect x="0" y="110" width="300" height="70" fill="#B98A5E"/><rect x="0" y="180" width="300" height="70" fill="#8C8C8C"/>
+<g fill="#6B4E36">${[[40,140],[110,160],[200,130],[260,165]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="7"/>`).join('')}</g>
+<g stroke="#5A5A5A" stroke-width="3"><line x1="0" y1="215" x2="300" y2="200"/><line x1="60" y1="250" x2="140" y2="190"/></g>
+<g font-family="Lexend,sans-serif" font-size="18" font-weight="700" fill="#2B2118"><text x="315" y="80">TOPSOIL</text><text x="315" y="150">SUBSOIL</text><text x="315" y="220">BEDROCK</text></g></svg>`;
+
+const CASES = {
+  A:{
+    code:'ROOT',
+    title:{en:'Case A: Two Fields at Rancho Verde', es:'Caso A: Dos campos en Rancho Verde'},
+    round:{en:'Round 2', es:'Ronda 2'},
+    story:{
+      en:'Farmer Lupe grows vegetables on a hillside farm. After the fall harvest, she left Field 1 bare all winter. In Field 2, she planted clover, a "cover crop" that covers the ground. Both fields are on the same slope and got the same rain.',
+      es:'La agricultora Lupe cultiva verduras en una granja en una colina. Después de la cosecha de otoño, dejó el Campo 1 sin plantas todo el invierno. En el Campo 2 sembró trébol, un "cultivo de cobertura" que cubre el suelo. Los dos campos tienen la misma pendiente y recibieron la misma lluvia.'},
+    question:{en:'Which field will grow better crops next spring? Why?', es:'¿Qué campo dará mejores cosechas la próxima primavera? ¿Por qué?'},
+    files:{
+      A1:{who:'A', pos:1, letter:'R', ico:'📓',
+        title:{en:"Lupe's Storm Journal", es:'El diario de tormentas de Lupe'},
+        body:{en:'<p><i>December 12.</i> Heavy rain all night. At 7 a.m. I walked down to the ditches at the bottom of both fields.</p><p>The ditch below <b>Field 1</b> was full of brown, muddy water. Where the water slowed down, I saw dirt and small rocks piled up. My boots sank deep in the mud.</p><p>The ditch below <b>Field 2</b> had water too, but it was so clear I could see the bottom. My dog, Chispa, refused to walk in either ditch.</p>',
+              es:'<p><i>12 de diciembre.</i> Llovió fuerte toda la noche. A las 7 de la mañana bajé a las zanjas al final de los dos campos.</p><p>La zanja debajo del <b>Campo 1</b> estaba llena de agua café y lodosa. Donde el agua se hacía más lenta, vi tierra y piedritas amontonadas. Mis botas se hundieron en el lodo.</p><p>La zanja debajo del <b>Campo 2</b> también tenía agua, pero estaba tan limpia que podía ver el fondo. Mi perra, Chispa, no quiso caminar en ninguna de las zanjas.</p>'},
+        q:{en:'What does the journal tell you about where the soil went?', es:'¿Qué te dice el diario sobre a dónde se fue el suelo?'},
+        opts:[{en:'Soil from Field 2 washed into its ditch.',es:'El suelo del Campo 2 se fue a su zanja.'},
+              {en:'Soil from Field 1 washed into its ditch.',es:'El suelo del Campo 1 se fue a su zanja.',ok:1},
+              {en:'The rain made new soil in Field 1.',es:'La lluvia formó suelo nuevo en el Campo 1.'},
+              {en:'Chispa dug up the soil in the ditches.',es:'Chispa escarbó el suelo de las zanjas.'}],
+        hint1:{en:'Not yet. Reread the journal. Which details are about soil, and which are just extra details?', es:'Todavía no. Vuelve a leer el diario. ¿Qué detalles hablan del suelo y cuáles son solo detalles extra?'},
+        hint2:{en:'Look at the second paragraph. What was in the water below Field 1, and what piled up?', es:'Mira el segundo párrafo. ¿Qué había en el agua debajo del Campo 1 y qué se amontonó?'},
+        ev:{en:'After the storm, the ditch below bare Field 1 was muddy, with dirt piled up. The ditch below clover Field 2 was clear.', es:'Después de la tormenta, la zanja debajo del Campo 1 (sin plantas) estaba lodosa y con tierra amontonada. La zanja debajo del Campo 2 (trébol) estaba limpia.'}},
+      B1:{who:'B', pos:2, letter:'O', ico:'🪣',
+        title:{en:'Bucket Data', es:'Datos de las cubetas'},
+        body:{en:'<p>Lupe put a bucket at the bottom of each field to catch soil that washed off. She weighed the soil at the end of each month.</p><table><tr><th>Month</th><th>Field 1 (bare)</th><th>Field 2 (clover)</th></tr><tr><td>December</td><td>3 kg</td><td>0.5 kg</td></tr><tr><td>January</td><td>4 kg</td><td>0.3 kg</td></tr><tr><td>February</td><td>2 kg</td><td>0.2 kg</td></tr></table>',
+              es:'<p>Lupe puso una cubeta al final de cada campo para atrapar el suelo que se llevaba el agua. Pesó el suelo al final de cada mes.</p><table><tr><th>Mes</th><th>Campo 1 (sin plantas)</th><th>Campo 2 (trébol)</th></tr><tr><td>Diciembre</td><td>3 kg</td><td>0.5 kg</td></tr><tr><td>Enero</td><td>4 kg</td><td>0.3 kg</td></tr><tr><td>Febrero</td><td>2 kg</td><td>0.2 kg</td></tr></table>'},
+        q:{en:'Over the WHOLE winter, how much MORE soil did Field 1 lose than Field 2?', es:'En TODO el invierno, ¿cuánto suelo MÁS perdió el Campo 1 que el Campo 2?'},
+        opts:[{en:'1 kg',es:'1 kg'},{en:'4 kg',es:'4 kg'},{en:'8 kg',es:'8 kg',ok:1},{en:'9 kg',es:'9 kg'}],
+        hint1:{en:'Not yet. The question is about the WHOLE winter, not one month. And it asks how much MORE.', es:'Todavía no. La pregunta es sobre TODO el invierno, no un solo mes. Y pregunta cuánto MÁS.'},
+        hint2:{en:'Add up the three months for each field first. Then subtract to find the difference.', es:'Primero suma los tres meses de cada campo. Luego resta para encontrar la diferencia.'},
+        ev:{en:'Over the winter, bare Field 1 lost 9 kg of soil. Clover Field 2 lost only 1 kg. That is 8 kg more.', es:'Durante el invierno, el Campo 1 (sin plantas) perdió 9 kg de suelo. El Campo 2 (trébol) perdió solo 1 kg. Son 8 kg más.'}},
+      A2:{who:'A', pos:3, letter:'O', ico:'🌱', partner:1,
+        title:{en:'Root Report', es:'Informe de raíces'},
+        body:{en:'<p>In March, a botanist dug a small hole in each field.</p><p>In <b>Field 2</b>, clover roots ran sideways and down through the top 20 cm of soil, like a net. When she pulled up a clump of clover, the soil stayed stuck to the roots.</p><p>In <b>Field 1</b>, there were no roots. The dry soil fell apart in her hands and blew away in the wind. She wrote: "The top layer in Field 1 is thinner and lighter in color than in Field 2."</p>',
+              es:'<p>En marzo, una botánica cavó un hoyo pequeño en cada campo.</p><p>En el <b>Campo 2</b>, las raíces del trébol iban de lado y hacia abajo por los primeros 20 cm del suelo, como una red. Cuando arrancó un poco de trébol, el suelo se quedó pegado a las raíces.</p><p>En el <b>Campo 1</b> no había raíces. El suelo seco se deshizo en sus manos y el viento se lo llevó. Ella escribió: "La capa de arriba del Campo 1 es más delgada y de color más claro que en el Campo 2."</p>'},
+        q:{en:'Your partner has a Soil Layers Guide. Use BOTH files: Why is it a problem that Field 1\'s top layer is thinner?', es:'Tu pareja tiene una Guía de capas del suelo. Usa LOS DOS archivos: ¿Por qué es un problema que la capa de arriba del Campo 1 sea más delgada?'},
+        opts:[{en:'The top layer is the heaviest, so the field is lighter now.',es:'La capa de arriba es la más pesada, así que el campo pesa menos.'},
+              {en:'Clover can only grow in deep soil.',es:'El trébol solo puede crecer en suelo profundo.'},
+              {en:'The top layer (topsoil) holds most of the nutrients plants need.',es:'La capa de arriba (capa superficial) tiene la mayoría de los nutrientes que necesitan las plantas.',ok:1},
+              {en:'Thin soil makes the field colder.',es:'El suelo delgado hace que el campo esté más frío.'}],
+        hint1:{en:'Not yet. This answer is NOT in your file. Ask your partner what their Soil Layers Guide says about the top layer.', es:'Todavía no. Esta respuesta NO está en tu archivo. Pregúntale a tu pareja qué dice su Guía de capas sobre la capa de arriba.'},
+        hint2:{en:'Ask your partner: What does topsoil hold that plants need?', es:'Pregúntale a tu pareja: ¿Qué tiene la capa superficial que las plantas necesitan?'},
+        ev:{en:'In March, clover roots held Field 2\'s soil together like a net. Field 1 had no roots, and its top layer was thinner.', es:'En marzo, las raíces del trébol sostenían el suelo del Campo 2 como una red. El Campo 1 no tenía raíces y su capa de arriba era más delgada.'}},
+      B2:{who:'B', pos:4, letter:'T', ico:'📘', partner:1,
+        title:{en:'Soil Layers Guide', es:'Guía de capas del suelo'},
+        body:{en:LAYERS_SVG+'<p>Soil is made of layers.</p><p><b>Topsoil</b> is the top layer. It is dark because it has lots of humus, which is decayed leaves, roots, and animals. Topsoil holds most of the nutrients plants need.</p><p><b>Subsoil</b> is below it. It is lighter in color, with more clay and small rocks, and fewer nutrients.</p><p><b>Bedrock</b> is solid rock at the bottom. New topsoil forms very slowly.</p>',
+              es:LAYERS_SVG+'<p>El suelo está hecho de capas.</p><p>La <b>capa superficial</b> (topsoil) es la de arriba. Es oscura porque tiene mucho humus, que son hojas, raíces y animales descompuestos. Tiene la mayoría de los nutrientes que necesitan las plantas.</p><p>El <b>subsuelo</b> (subsoil) está debajo. Es de color más claro, con más arcilla y piedritas, y menos nutrientes.</p><p>La <b>roca madre</b> (bedrock) es roca sólida al fondo. La capa superficial nueva se forma muy despacio.</p>'},
+        q:{en:'Your partner has a Root Report about Field 1. Ask what the botanist found. Which layer is Field 1 losing?', es:'Tu pareja tiene un Informe de raíces sobre el Campo 1. Pregúntale qué encontró la botánica. ¿Qué capa está perdiendo el Campo 1?'},
+        opts:[{en:'Bedrock',es:'Roca madre'},{en:'Subsoil',es:'Subsuelo'},{en:'Topsoil',es:'Capa superficial',ok:1},{en:'No layer. The field is fine.',es:'Ninguna. El campo está bien.'}],
+        hint1:{en:'Not yet. Ask your partner to read what the botanist wrote about Field 1\'s top layer.', es:'Todavía no. Pídele a tu pareja que lea lo que escribió la botánica sobre la capa de arriba del Campo 1.'},
+        hint2:{en:'Your partner\'s report says Field 1\'s TOP layer is thinner. Which layer in your guide is on top?', es:'El informe de tu pareja dice que la capa de ARRIBA del Campo 1 es más delgada. ¿Qué capa de tu guía está arriba?'},
+        ev:{en:'Topsoil is the top, dark layer. It holds most of the nutrients plants need, and new topsoil forms very slowly.', es:'La capa superficial es la capa de arriba, la oscura. Tiene la mayoría de los nutrientes que necesitan las plantas, y se forma muy despacio.'}}
+    },
+    distractors:[{en:"Lupe's dog Chispa refused to walk in the ditches.", es:'La perra de Lupe, Chispa, no quiso caminar en las zanjas.'},
+                 {en:'Lupe walked down to the ditches at 7 a.m.', es:'Lupe bajó a las zanjas a las 7 de la mañana.'}],
+    sortOrder:['A1','d0','B1','A2','d1','B2']
+  },
+  B:{
+    code:'SOIL',
+    title:{en:'Case B: The Hillside Above Creekside', es:'Caso B: La colina sobre Creekside'},
+    round:{en:'Round 3', es:'Ronda 3'},
+    story:{
+      en:'A company wants to cut down all the trees on the hill above Creekside School to build houses. Before they decide, the town asked you to study a nearby hill where the trees were cut down 5 years ago.',
+      es:'Una compañía quiere cortar todos los árboles de la colina sobre la Escuela Creekside para construir casas. Antes de decidir, el pueblo les pidió estudiar una colina cercana donde cortaron los árboles hace 5 años.'},
+    question:{en:'What will happen to the soil on the hill if the trees are cut down? Why?', es:'¿Qué le pasará al suelo de la colina si cortan los árboles? ¿Por qué?'},
+    files:{
+      A1:{who:'A', pos:1, letter:'S', ico:'🎤',
+        title:{en:'Town Hall Interview', es:'Entrevista en el ayuntamiento'},
+        body:{en:'<p>Mr. Ortiz lives at the bottom of the hill where the trees were cut 5 years ago. He told the town:</p><p>"Before they cut the trees, the creek behind my house was clear. My kids caught crawdads in it. Now, every time it rains hard, the creek turns the color of chocolate milk. Last winter, mud slid down the hill and buried my tomato plants.</p><p>My wife misses the shade from the old trees. And the hill looks different now. It has deep cracks running down it, like someone dragged a giant rake."</p>',
+              es:'<p>El Sr. Ortiz vive al pie de la colina donde cortaron los árboles hace 5 años. Le dijo al pueblo:</p><p>"Antes de que cortaran los árboles, el arroyo detrás de mi casa estaba limpio. Mis hijos atrapaban cangrejos de río ahí. Ahora, cada vez que llueve fuerte, el arroyo se pone del color de la leche con chocolate. El invierno pasado, el lodo bajó por la colina y enterró mis plantas de tomate.</p><p>Mi esposa extraña la sombra de los árboles viejos. Y la colina se ve diferente ahora. Tiene grietas profundas que bajan por ella, como si alguien hubiera arrastrado un rastrillo gigante."</p>'},
+        q:{en:'Which details are the best evidence that soil is leaving the cut hill?', es:'¿Qué detalles son la mejor evidencia de que el suelo se está yendo de la colina cortada?'},
+        opts:[{en:'His kids used to catch crawdads in the creek.',es:'Sus hijos atrapaban cangrejos de río en el arroyo.'},
+              {en:'His wife misses the shade from the old trees.',es:'Su esposa extraña la sombra de los árboles viejos.'},
+              {en:'The creek turns brown after hard rain, and mud slid into his yard.',es:'El arroyo se pone café cuando llueve fuerte, y el lodo bajó a su jardín.',ok:1},
+              {en:'The trees on the hill were very old.',es:'Los árboles de la colina eran muy viejos.'}],
+        hint1:{en:'Not yet. Some details are about feelings or memories. Look for details that show soil MOVING.', es:'Todavía no. Algunos detalles son sobre sentimientos o recuerdos. Busca detalles que muestren el suelo MOVIÉNDOSE.'},
+        hint2:{en:'Where did the soil end up? Look at what happened to the creek and the backyard.', es:'¿A dónde fue a parar el suelo? Mira qué le pasó al arroyo y al jardín.'},
+        ev:{en:'Since the trees were cut, the creek turns brown after hard rain, mud slid into a backyard, and deep cracks (gullies) run down the hill.', es:'Desde que cortaron los árboles, el arroyo se pone café cuando llueve fuerte, el lodo bajó a un jardín y hay grietas profundas (cárcavas) en la colina.'}},
+      B1:{who:'B', pos:2, letter:'O', ico:'📏',
+        title:{en:'Topsoil Depth Data', es:'Datos de profundidad del suelo'},
+        body:{en:'<p>The town measured how deep the topsoil was on the cut hill and on a nearby forest hill.</p><table><tr><th>Year</th><th>Forest hill</th><th>Cut hill</th></tr><tr><td>0 (trees cut)</td><td>30 cm</td><td>30 cm</td></tr><tr><td>1</td><td>30 cm</td><td>29 cm</td></tr><tr><td>3</td><td>30 cm</td><td>25 cm</td></tr><tr><td>5</td><td>30 cm</td><td>18 cm</td></tr></table>',
+              es:'<p>El pueblo midió qué tan profunda era la capa superficial en la colina cortada y en una colina con bosque cercana.</p><table><tr><th>Año</th><th>Colina con bosque</th><th>Colina cortada</th></tr><tr><td>0 (cortaron los árboles)</td><td>30 cm</td><td>30 cm</td></tr><tr><td>1</td><td>30 cm</td><td>29 cm</td></tr><tr><td>3</td><td>30 cm</td><td>25 cm</td></tr><tr><td>5</td><td>30 cm</td><td>18 cm</td></tr></table>'},
+        q:{en:'On average, how many cm of topsoil did the cut hill lose EACH year?', es:'En promedio, ¿cuántos cm de capa superficial perdió la colina cortada CADA año?'},
+        opts:[{en:'1.2 cm',es:'1.2 cm'},{en:'2.4 cm',es:'2.4 cm',ok:1},{en:'12 cm',es:'12 cm'},{en:'18 cm',es:'18 cm'}],
+        hint1:{en:'Not yet. First find how much topsoil was LOST in all 5 years. (Not how much is left!)', es:'Todavía no. Primero encuentra cuánta capa superficial se PERDIÓ en los 5 años. (¡No cuánta queda!)'},
+        hint2:{en:'30 cm minus 18 cm is the total lost. Now share that total evenly across 5 years.', es:'30 cm menos 18 cm es el total perdido. Ahora repártelo igual entre 5 años.'},
+        ev:{en:'In 5 years, the cut hill lost 12 cm of topsoil, about 2.4 cm per year. The forest hill lost none.', es:'En 5 años, la colina cortada perdió 12 cm de capa superficial, unos 2.4 cm por año. La colina con bosque no perdió nada.'}},
+      A2:{who:'A', pos:3, letter:'I', ico:'🪵', partner:1,
+        title:{en:'What Happens to Cut Roots', es:'Qué les pasa a las raíces cortadas'},
+        body:{en:'<p>When a tree is cut down, its roots stay underground. With no leaves, the tree can\'t make food, so the roots slowly die. Fungi and bacteria break them down.</p><p>Living roots work like the steel bars inside a concrete wall. They hold soil in place, even on steep hills. Scientists who study cut forests have found that dead roots lose most of their strength within a few years.</p>',
+              es:'<p>Cuando cortan un árbol, sus raíces se quedan bajo la tierra. Sin hojas, el árbol no puede hacer alimento, así que las raíces mueren poco a poco. Los hongos y las bacterias las descomponen.</p><p>Las raíces vivas funcionan como las barras de acero dentro de una pared de concreto. Sostienen el suelo en su lugar, incluso en colinas empinadas. Los científicos que estudian bosques cortados han encontrado que las raíces muertas pierden casi toda su fuerza en pocos años.</p>'},
+        q:{en:'Ask your partner: Did the cut hill lose soil at the same speed every year? Then use your reading to explain the pattern.', es:'Pregúntale a tu pareja: ¿La colina cortada perdió suelo a la misma velocidad cada año? Luego usa tu lectura para explicar el patrón.'},
+        opts:[{en:'Same speed every year, because the rain was the same.',es:'A la misma velocidad cada año, porque la lluvia fue igual.'},
+              {en:'Fast at first, then slower, because new trees grew.',es:'Rápido al principio y luego más lento, porque crecieron árboles nuevos.'},
+              {en:'Slow at first, then faster, because the fungi made the soil heavier.',es:'Lento al principio y luego más rápido, porque los hongos hicieron el suelo más pesado.'},
+              {en:'Slow at first, then faster, because the roots rotted and stopped holding the soil.',es:'Lento al principio y luego más rápido, porque las raíces se pudrieron y dejaron de sostener el suelo.',ok:1}],
+        hint1:{en:'Not yet. Ask your partner to read the cut hill numbers year by year: year 0, 1, 3, and 5.', es:'Todavía no. Pídele a tu pareja que lea los números de la colina cortada año por año: 0, 1, 3 y 5.'},
+        hint2:{en:'From year 0 to 1, the hill lost 1 cm. From year 3 to 5, it lost 7 cm. What was happening to the roots during that time?', es:'Del año 0 al 1, la colina perdió 1 cm. Del año 3 al 5, perdió 7 cm. ¿Qué les pasaba a las raíces en ese tiempo?'},
+        ev:{en:'After trees are cut, their roots rot within a few years and stop holding soil. That is why the cut hill lost soil faster and faster.', es:'Después de cortar los árboles, sus raíces se pudren en pocos años y dejan de sostener el suelo. Por eso la colina cortada perdió suelo cada vez más rápido.'}},
+      B2:{who:'B', pos:4, letter:'L', ico:'⏳',
+        title:{en:'How Soil Forms', es:'Cómo se forma el suelo'},
+        body:{en:'<p>Soil forms when rock breaks into tiny pieces. This is called <b>weathering</b>. Water, ice, and plant roots all break rock apart.</p><p>Then the rock pieces mix with humus from dead plants and animals.</p><p>This is very slow. In many places it takes <b>hundreds of years</b> to form just <b>2 to 3 cm</b> of topsoil.</p>',
+              es:'<p>El suelo se forma cuando la roca se rompe en pedacitos. Esto se llama <b>meteorización</b>. El agua, el hielo y las raíces de las plantas rompen la roca.</p><p>Luego los pedacitos de roca se mezclan con humus de plantas y animales muertos.</p><p>Esto es muy lento. En muchos lugares tarda <b>cientos de años</b> en formarse solo <b>2 a 3 cm</b> de capa superficial.</p>'},
+        q:{en:'Look back at your Topsoil Depth Data. The cut hill lost 12 cm. About how long could it take nature to make that much new topsoil?', es:'Vuelve a mirar tus Datos de profundidad. La colina cortada perdió 12 cm. ¿Cuánto tiempo podría tardar la naturaleza en formar esa cantidad de capa superficial nueva?'},
+        opts:[{en:'About 5 years',es:'Unos 5 años'},{en:'About 50 years',es:'Unos 50 años'},{en:'Hundreds to thousands of years',es:'De cientos a miles de años',ok:1},{en:'It can never form again',es:'Nunca se puede volver a formar'}],
+        hint1:{en:'Not yet. Find the sentence in your reading that tells how FAST topsoil forms.', es:'Todavía no. Busca la oración de tu lectura que dice qué tan RÁPIDO se forma la capa superficial.'},
+        hint2:{en:'If 2 to 3 cm takes hundreds of years, how many times longer would 12 cm take?', es:'Si 2 a 3 cm tardan cientos de años, ¿cuántas veces más tardarían 12 cm?'},
+        ev:{en:'New topsoil forms very slowly. Replacing 12 cm could take hundreds to thousands of years.', es:'La capa superficial nueva se forma muy despacio. Reponer 12 cm podría tardar de cientos a miles de años.'}}
+    },
+    distractors:[{en:"Mr. Ortiz's kids used to catch crawdads in the creek.", es:'Los hijos del Sr. Ortiz atrapaban cangrejos de río en el arroyo.'},
+                 {en:"Mr. Ortiz's wife misses the shade from the old trees.", es:'La esposa del Sr. Ortiz extraña la sombra de los árboles viejos.'}],
+    sortOrder:['B1','d0','A1','B2','A2','d1']
+  }
+};
+
+const T = {
+  pickCase:{en:'Pick your case', es:'Elige tu caso'},
+  pickCaseSub:{en:'Your teacher will tell you when to start each case.', es:'Tu maestro te dirá cuándo empezar cada caso.'},
+  lockedB:{en:'Locked. Enter the Case A code to open it.', es:'Bloqueado. Escribe el código del Caso A para abrirlo.'},
+  pickRole:{en:'Who are you?', es:'¿Quién eres?'},
+  pickRoleSub:{en:'You and your partner each pick a DIFFERENT detective.', es:'Tú y tu pareja eligen un detective DIFERENTE cada uno.'},
+  theCase:{en:'The case', es:'El caso'},
+  teamQ:{en:'Your question', es:'Su pregunta'},
+  yourFiles:{en:'Your case files', es:'Tus archivos del caso'},
+  filesSub:{en:'Open each file, read it closely, and crack the question. Each file gives you one code letter.', es:'Abre cada archivo, léelo con cuidado y resuelve la pregunta. Cada archivo te da una letra del código.'},
+  needsPartner:{en:'🤝 Needs your partner', es:'🤝 Necesitas a tu pareja'},
+  solvedTag:{en:'✅ Solved', es:'✅ Resuelto'},
+  secret:{en:'This file is only on YOUR screen. Tell your partner what you find, but do NOT show your screen.', es:'Este archivo solo está en TU pantalla. Dile a tu pareja lo que encuentres, pero NO muestres tu pantalla.'},
+  caseFile:{en:'CASE FILE', es:'ARCHIVO DEL CASO'},
+  crack:{en:'Crack the question', es:'Resuelve la pregunta'},
+  partnerNote:{en:'You can\'t solve this one alone. Talk to your partner first!', es:'No puedes resolver esta sola/solo. ¡Habla primero con tu pareja!'},
+  unlocked:{en:'Solved! Your code letter:', es:'¡Resuelto! Tu letra del código:'},
+  letterOf:{en:'This is letter {n} of 4. Tell your partner!', es:'Esta es la letra {n} de 4. ¡Dile a tu pareja!'},
+  evidenceFound:{en:'EVIDENCE FOUND', es:'EVIDENCIA ENCONTRADA'},
+  backFiles:{en:'Back to my files', es:'Volver a mis archivos'},
+  codeSlots:{en:'Your code so far (your partner has the other letters):', es:'Tu código hasta ahora (tu pareja tiene las otras letras):'},
+  openBoard:{en:'Open the Case Board', es:'Abrir el tablero del caso'},
+  enterCode:{en:'Put your 4 letters together in order (1, 2, 3, 4) to make the code.', es:'Junten sus 4 letras en orden (1, 2, 3, 4) para formar el código.'},
+  go:{en:'Unlock', es:'Abrir'},
+  badCode:{en:'That code doesn\'t work. Check the order of your letters.', es:'Ese código no funciona. Revisen el orden de las letras.'},
+  changeRole:{en:'Switch detective', es:'Cambiar detective'},
+  home:{en:'All cases', es:'Todos los casos'},
+  board:{en:'Case Board', es:'Tablero del caso'},
+  s1:{en:'1 Code', es:'1 Código'}, s2:{en:'2 Sort the evidence', es:'2 Clasifica la evidencia'}, s3:{en:'3 Write your CER', es:'3 Escribe tu AER'},
+  sortQ:{en:'Real detectives ignore extra details. Which clues help answer your question? Pick ALL that help.', es:'Los detectives de verdad ignoran los detalles extra. ¿Qué pistas ayudan a responder su pregunta? Elijan TODAS las que ayudan.'},
+  check:{en:'Check our picks', es:'Revisar'},
+  sortExtra:{en:'Not yet. At least one of your picks is just an extra detail. Does it really help answer the question?', es:'Todavía no. Al menos una de sus opciones es solo un detalle extra. ¿De verdad ayuda a responder la pregunta?'},
+  sortMissing:{en:'Not yet. You are missing at least one clue that helps. Think about what each of you found.', es:'Todavía no. Les falta al menos una pista que ayuda. Piensen en lo que encontró cada uno.'},
+  yourEvidence:{en:'Your evidence', es:'Su evidencia'},
+  writeBoard:{en:'Write your answer on your whiteboard.', es:'Escriban su respuesta en su pizarra.'},
+  holdUp:{en:'Done? Hold up your whiteboard!', es:'¿Terminaron? ¡Levanten su pizarra!'},
+  claim:{en:'CLAIM', es:'AFIRMACIÓN'},
+  evidence:{en:'EVIDENCE', es:'EVIDENCIA'},
+  reasoning:{en:'REASONING', es:'RAZONAMIENTO'},
+  hClaim:{en:'Answer the question.', es:'Responde la pregunta.'},
+  hEvid:{en:'Use numbers or observations from at least 2 files.', es:'Usa números u observaciones de al menos 2 archivos.'},
+  hReas:{en:'Explain the science. What do roots, plant cover, and water do to soil?', es:'Explica la ciencia. ¿Qué les hacen las raíces, las plantas y el agua al suelo?'},
+  noFrame:{en:'No frame this time. Write a full claim, evidence, and reasoning together. Use clues from at least 3 files.', es:'Esta vez no hay marco. Escriban juntos una afirmación, evidencia y razonamiento completos. Usen pistas de al menos 3 archivos.'},
+  bonus:{en:'BONUS (+2): Suggest one way to protect the hill. Back it up with a clue.', es:'BONO (+2): Sugieran una manera de proteger la colina. Apóyenla con una pista.'},
+  points:{en:'Claim 1 pt · Evidence 2 pts · Reasoning 2 pts', es:'Afirmación 1 pt · Evidencia 2 pts · Razonamiento 2 pts'}
+};
+
+const S = { lang:'en', view:'cases', cid:null, who:null, file:null, solved:{}, tries:{}, wrong:{}, openB:false, boardOpen:{}, sorted:{}, sel:[], sortMsg:'' , shake:null};
+try { const sv = JSON.parse(localStorage.getItem('soilDet2')||'{}'); ['lang','solved','tries','wrong','openB','boardOpen','sorted'].forEach(k=>{ if(sv[k]!==undefined) S[k]=sv[k]; }); } catch(e){}
+function save(){ try{ localStorage.setItem('soilDet2', JSON.stringify({lang:S.lang, solved:S.solved, tries:S.tries, wrong:S.wrong, openB:S.openB, boardOpen:S.boardOpen, sorted:S.sorted})); }catch(e){} }
+
+const t = k => T[k][S.lang];
+const L = o => o[S.lang];
+function setLang(l){ S.lang=l; document.documentElement.lang=l; save(); render(); }
+function go(v){ S.view=v; S.sortMsg=''; render(); }
+
+function render(){
+  document.getElementById('len').classList.toggle('on', S.lang==='en');
+  document.getElementById('les').classList.toggle('on', S.lang==='es');
+  const V = {cases:viewCases, who:viewWho, files:viewFiles, file:viewFile, board:viewBoard}[S.view];
+  document.getElementById('app').innerHTML = V();
+  S.shake = null;
+}
+
+function viewCases(){
+  let h = `<h2>${t('pickCase')}</h2><p class="sub">${t('pickCaseSub')}</p><div class="grid">`;
+  h += `<button class="tile" onclick="S.cid='A';go('who')"><div class="ico">🌾</div><h3>${L(CASES.A.title)}</h3><div class="note">${L(CASES.A.round)}</div></button>`;
+  if(S.openB) h += `<button class="tile" onclick="S.cid='B';go('who')"><div class="ico">⛰️</div><h3>${L(CASES.B.title)}</h3><div class="note">${L(CASES.B.round)}</div></button>`;
+  else h += `<div class="tile locked"><div class="ico">🔒</div><h3>${L(CASES.B.title)}</h3><p class="note">${t('lockedB')}</p><div class="row"><input class="code" id="bcode" maxlength="4" aria-label="Case A code"><button class="btn" onclick="unlockB()">${t('go')}</button></div><p id="bmsg"></p></div>`;
+  return h + `</div>`;
+}
+function unlockB(){
+  const v = document.getElementById('bcode').value.trim().toUpperCase();
+  if(v===CASES.A.code){ S.openB=true; save(); render(); }
+  else document.getElementById('bmsg').innerHTML = `<span class="feedback" style="display:block">${t('badCode')}</span>`;
+}
+
+function viewWho(){
+  const C = CASES[S.cid];
+  let h = `<h2>${L(C.title)}</h2><h3>${t('pickRole')}</h3><p class="sub">${t('pickRoleSub')}</p><div class="grid">`;
+  ['A','B'].forEach(w=>{ const P=PARTNERS[w];
+    h += `<button class="tile" style="border-top:12px solid ${P.color}" onclick="S.who='${w}';go('files')"><div class="ico">${P.ico}</div><h3>${L(P)}</h3><div class="note">${S.lang==='en'?P.den:P.des}</div></button>`; });
+  return h + `</div><div class="nav"><button class="btn ghost" onclick="go('cases')">${t('home')}</button></div>`;
+}
+
+const fk = id => S.cid+'-'+id;
+function myFiles(){ const C=CASES[S.cid]; return Object.keys(C.files).filter(id=>C.files[id].who===S.who); }
+
+function slotsHTML(){
+  const C = CASES[S.cid];
+  const bypos = {}; Object.keys(C.files).forEach(id=>bypos[C.files[id].pos]=id);
+  let s = `<p class="note" style="margin:0">${t('codeSlots')}</p><div class="slots">`;
+  for(let i=1;i<=4;i++){ const id=bypos[i], f=C.files[id];
+    const mine = f.who===S.who, done = S.solved[fk(id)];
+    s += `<div class="slot ${mine&&done?'filled':''}">${mine&&done?f.letter:'?'}<small>${i}</small></div>`; }
+  return s + `</div>`;
+}
+
+function viewFiles(){
+  const C = CASES[S.cid], P = PARTNERS[S.who];
+  let h = `<p class="sub" style="margin:0">${L(C.title)} · ${L(C.round)}</p><h2>${P.ico} ${L(P)}</h2>`;
+  h += `<div class="card story"><h3>${t('theCase')}</h3><p style="margin:0">${L(C.story)}</p></div>`;
+  h += `<div class="question">${t('teamQ')}: ${L(C.question)}</div>`;
+  h += `<h3>📂 ${t('yourFiles')}</h3><p class="sub">${t('filesSub')}</p><div class="grid">`;
+  myFiles().forEach(id=>{ const f=C.files[id], done=S.solved[fk(id)];
+    h += `<button class="tile ${done?'done':''}" onclick="S.file='${id}';go('file')"><div class="ico">${f.ico}</div><h3>${L(f.title)}</h3><div class="note">${done?t('solvedTag'):(f.partner?t('needsPartner'):'')}</div></button>`; });
+  h += `</div><div class="card" style="margin-top:16px">${slotsHTML()}</div>`;
+  h += `<div class="nav"><button class="btn" onclick="go('board')">📋 ${t('openBoard')}</button><button class="btn ghost" onclick="go('who')">${t('changeRole')}</button><button class="btn ghost" onclick="go('cases')">${t('home')}</button></div>`;
+  return h;
+}
+
+function viewFile(){
+  const C = CASES[S.cid], f = C.files[S.file], P = PARTNERS[S.who], k = fk(S.file);
+  const done = S.solved[k], tries = S.tries[k]||0, wrong = S.wrong[k]||[];
+  let h = `<p class="sub" style="margin:0">${L(C.title)} · ${L(P)}</p><h2>${f.ico} ${L(f.title)}</h2>`;
+  h += `<div class="card reading" style="border-color:${P.color}"><span class="tag" style="background:${P.color}">${t('caseFile')}</span>${L(f.body)}<p class="secret">🤫 ${t('secret')}</p></div>`;
+  h += `<div class="card"><h3>🔐 ${t('crack')}</h3>`;
+  if(f.partner && !done) h += `<div class="partner">🤝 ${t('partnerNote')}</div>`;
+  h += `<p style="margin-top:8px"><b>${L(f.q)}</b></p>`;
+  if(done){
+    h += `<div class="letter"><div class="big">${f.letter}</div><div><b>${t('unlocked')}</b><br>${t('letterOf').replace('{n}',f.pos)}</div></div>`;
+    h += `<div class="card evidence" style="margin:0"><span class="tag" style="background:var(--good)">${t('evidenceFound')}</span><p style="margin:0">${L(f.ev)}</p></div>`;
+  } else {
+    h += `<div class="opts">` + f.opts.map((o,i)=>{ const w = wrong.includes(i);
+      return `<button class="opt ${w?'wrong':''} ${S.shake===i?'shake':''}" ${w?'disabled':''} onclick="answer(${i})">${L(o)}</button>`; }).join('') + `</div>`;
+    if(tries===1) h += `<p class="feedback">${L(f.hint1)}</p>`;
+    if(tries>=2) h += `<p class="feedback">💡 ${L(f.hint2)}</p>`;
+  }
+  h += `</div><div class="nav"><button class="btn ghost" onclick="go('files')">${t('backFiles')}</button></div>`;
+  return h;
+}
+function answer(i){
+  const f = CASES[S.cid].files[S.file], k = fk(S.file);
+  if(f.opts[i].ok){ S.solved[k]=true; }
+  else { S.tries[k]=(S.tries[k]||0)+1; (S.wrong[k]=S.wrong[k]||[]).push(i); S.shake=i; }
+  save(); render();
+}
+
+function viewBoard(){
+  const C = CASES[S.cid], open = S.boardOpen[S.cid], sorted = S.sorted[S.cid];
+  const step = !open?1:(!sorted?2:3);
+  let h = `<p class="sub" style="margin:0">${L(C.title)} · ${L(C.round)}</p><h2>📋 ${t('board')}</h2>`;
+  h += `<div class="steps"><span class="${step===1?'on':''}">${t('s1')}</span><span class="${step===2?'on':''}">${t('s2')}</span><span class="${step===3?'on':''}">${t('s3')}</span></div>`;
+  if(step===1){
+    h += `<div class="card"><p>${t('enterCode')}</p><div class="row"><input class="code" id="code" maxlength="4" aria-label="Code"><button class="btn" onclick="tryCode()">${t('go')}</button></div><p id="cmsg"></p></div>`;
+  } else if(step===2){
+    h += `<div class="question">${t('teamQ')}: ${L(C.question)}</div>`;
+    h += `<div class="card"><p><b>${t('sortQ')}</b></p><div class="opts">`;
+    C.sortOrder.forEach(id=>{ const txt = id[0]==='d' ? C.distractors[+id[1]] : C.files[id].ev;
+      h += `<button class="opt ${S.sel.includes(id)?'sel':''}" onclick="toggleSel('${id}')">${S.sel.includes(id)?'☑':'☐'} ${L(txt)}</button>`; });
+    h += `</div><div class="nav"><button class="btn" onclick="checkSort()">${t('check')}</button></div>`;
+    if(S.sortMsg) h += `<p class="feedback">${t(S.sortMsg)}</p>`;
+    h += `</div>`;
+  } else {
+    h += `<div class="question">${t('teamQ')}: ${L(C.question)}</div>`;
+    h += `<div class="card ev-list"><h3>🗂️ ${t('yourEvidence')}</h3>` + Object.keys(C.files).map(id=>`<p>${L(C.files[id].ev)}</p>`).join('') + `</div>`;
+    h += `<div class="card"><p><b>${t('writeBoard')}</b></p>`;
+    if(S.cid==='A') h += `<div class="frame"><div><b>${t('claim')}</b>${t('hClaim')}</div><div><b>${t('evidence')}</b>${t('hEvid')}</div><div><b>${t('reasoning')}</b>${t('hReas')}</div></div>`;
+    else h += `<p style="font-size:20px">${t('noFrame')}</p><p><b>⭐ ${t('bonus')}</b></p>`;
+    h += `<p class="note">${t('points')}</p><p style="font-size:22px;margin:0"><b>🙌 ${t('holdUp')}</b></p></div>`;
+  }
+  h += `<div class="nav">${S.who?`<button class="btn ghost" onclick="go('files')">${t('backFiles')}</button>`:''}<button class="btn ghost" onclick="go('cases')">${t('home')}</button></div>`;
+  return h;
+}
+function tryCode(){
+  const v = document.getElementById('code').value.trim().toUpperCase();
+  if(v===CASES[S.cid].code){ S.boardOpen[S.cid]=true; if(S.cid==='A') S.openB=true; S.sel=[]; save(); render(); }
+  else document.getElementById('cmsg').innerHTML = `<span class="feedback" style="display:block">${t('badCode')}</span>`;
+}
+function toggleSel(id){ const i=S.sel.indexOf(id); if(i<0) S.sel.push(id); else S.sel.splice(i,1); S.sortMsg=''; render(); }
+function checkSort(){
+  const C = CASES[S.cid], good = Object.keys(C.files);
+  if(S.sel.some(id=>id[0]==='d')) S.sortMsg='sortExtra';
+  else if(good.some(id=>!S.sel.includes(id))) S.sortMsg='sortMissing';
+  else { S.sorted[S.cid]=true; S.sortMsg=''; save(); }
+  render();
+}
+document.addEventListener('keydown', e=>{ if(e.key==='Enter'){ if(document.getElementById('code')) tryCode(); else if(document.getElementById('bcode')) unlockB(); }});
+render();
+</script>
+</body>
+</html>
