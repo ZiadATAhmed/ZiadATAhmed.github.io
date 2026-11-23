@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lab Brain Challenge</title>
+<style>
+  :root { --bg:#f3efe6; --card:#ffffff; --ink:#1e2a30; --muted:#66727a; --accent:#2f6f5e; --line:#ddd5c5; --warn:#b5462f; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:"Segoe UI", Roboto, Arial, sans-serif; background:var(--bg); color:var(--ink); }
+  .wrap { max-width:760px; margin:0 auto; padding:24px 16px 48px; }
+  header { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
+  header h1 { font-size:1.5rem; margin:0; }
+  header .sub { color:var(--muted); font-size:.95rem; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:28px; }
+  .hidden { display:none !important; }
+  h2 { margin-top:0; }
+  label { display:block; font-weight:600; margin:16px 0 6px; }
+  input[type=text], select { width:100%; font-size:1.15rem; padding:12px 14px; border:2px solid var(--line); border-radius:10px; background:#fff; }
+  input:focus, select:focus { outline:none; border-color:var(--accent); }
+  button { font-size:1.1rem; padding:12px 24px; border:0; border-radius:10px; background:var(--accent); color:#fff; font-weight:600; cursor:pointer; margin-top:20px; }
+  button:disabled { background:#a7b3ae; cursor:not-allowed; }
+  .muted { color:var(--muted); }
+  .err { color:var(--warn); font-weight:600; min-height:1.2em; margin-top:10px; }
+  .rules { padding-left:0; list-style:none; }
+  .rules li { font-size:1.2rem; line-height:1.45; margin:16px 0; padding:14px 16px; background:#f7f4ee; border-radius:10px; }
+  .rules .ex { display:block; font-size:1rem; color:var(--muted); margin-top:4px; }
+  .big { font-size:1.3rem; font-weight:700; }
+  .progress { height:8px; background:var(--line); border-radius:4px; overflow:hidden; margin-bottom:20px; }
+  .progress > div { height:100%; background:var(--accent); width:0; transition:width .3s; }
+  .qhead { display:flex; align-items:center; gap:16px; margin-bottom:18px; }
+  .badge { width:68px; height:68px; border-radius:50%; background:var(--ink); color:#fff; font-size:1.9rem; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .qlabel { font-size:1.1rem; color:var(--muted); font-weight:600; }
+  .prompt { font-size:1.25rem; line-height:1.55; }
+  .prompt ul { margin:8px 0; padding-left:22px; }
+  .answer-row { display:flex; gap:10px; margin-top:22px; }
+  .answer-row input { flex:1; }
+  .answer-row button { margin-top:0; }
+  .study { text-align:center; }
+  .study .items { font-size:1.6rem; line-height:1.8; margin:20px 0; }
+  .study .count { font-size:1rem; color:var(--muted); }
+  .board { margin-bottom:18px; }
+  .board .prize { background:#fff6dc; border:2px solid #e8c45c; border-radius:12px; padding:12px 14px; font-weight:600; margin:10px 0 14px; }
+  .board table { width:100%; border-collapse:collapse; font-size:1.05rem; }
+  .board th { text-align:left; color:var(--muted); font-weight:600; font-size:.9rem; padding:6px 8px; border-bottom:2px solid var(--line); }
+  .board td { padding:8px; border-bottom:1px solid var(--line); }
+  .board tr.first td { font-weight:700; background:#fffaf0; }
+  .board .live { display:inline-block; width:10px; height:10px; border-radius:50%; background:#d64545; margin-right:6px; animation:blink 1.4s infinite; }
+  @keyframes blink { 50% { opacity:.25; } }
+  .stats { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px; margin:16px 0; }
+  .stat { background:#f7f4ee; border-radius:10px; padding:12px; }
+  .stat .v { font-size:1.5rem; font-weight:700; }
+  .stat .k { color:var(--muted); font-size:.9rem; }
+  .flags { list-style:none; padding:0; }
+  .flags li { padding:10px 12px; margin:8px 0; border-left:4px solid var(--accent); background:#f7f4ee; border-radius:6px; line-height:1.4; }
+  .gift { margin-top:22px; padding:16px; border:2px dashed var(--line); border-radius:12px; text-align:center; }
+  .gift button { background:#7a4fb5; }
+  .gift .note { color:var(--muted); font-size:.95rem; margin-top:8px; }
+
+  /* ---------- Teacher dashboard (scoped) ---------- */
+  #teacher .twrap { max-width:1200px; margin:0 auto; padding:20px 16px 60px; }
+  #teacher header { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-end; gap:12px; margin-bottom:16px; }
+  #teacher h1 { margin:0; font-size:1.5rem; }
+  #teacher h2 { font-size:1.15rem; margin:0 0 12px; }
+  #teacher .live { display:inline-block; width:9px; height:9px; border-radius:50%; background:#d64545; margin-right:6px; animation:blink 1.4s infinite; }
+  #teacher .filters { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+  #teacher select { width:auto; font-size:1rem; padding:8px 10px; }
+  #teacher .tbtn { margin:0; padding:8px 14px; font-size:.95rem; background:var(--muted); }
+  #teacher .card { padding:18px; margin-bottom:16px; }
+  #teacher .grid { display:grid; gap:16px; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); }
+  #teacher .stats { margin:0; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); }
+  #teacher .bar { display:flex; align-items:center; gap:10px; margin:8px 0; }
+  #teacher .bar .lbl { width:110px; font-weight:600; }
+  #teacher .bar .track { flex:1; height:16px; background:var(--line); border-radius:8px; overflow:hidden; }
+  #teacher .bar .fill { height:100%; background:var(--accent); }
+  #teacher .bar .val { width:60px; text-align:right; font-variant-numeric:tabular-nums; }
+  #teacher table { width:100%; border-collapse:collapse; font-size:.92rem; }
+  #teacher th { text-align:left; color:var(--muted); font-weight:600; padding:7px 8px; border-bottom:2px solid var(--line); white-space:nowrap; cursor:pointer; user-select:none; }
+  #teacher td { padding:7px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  #teacher tr.click { cursor:pointer; }
+  #teacher tr.click:hover td { background:#f7f4ee; }
+  #teacher tr.sel td { background:#eaf3ef; }
+  #teacher .scroll { overflow-x:auto; }
+  #teacher .low { color:var(--warn); font-weight:600; }
+  #teacher .pill { display:inline-block; padding:1px 8px; border-radius:10px; background:#f0ebe0; font-size:.82rem; margin:1px 2px 1px 0; }
+  #teacher .yes { color:var(--accent); font-weight:700; }
+  #teacher .empty { padding:24px; text-align:center; color:var(--muted); }
+  #teacher #err { color:var(--warn); font-weight:600; }
+  .tlink { display:block; margin-top:22px; background:none; color:var(--muted); font-size:.9rem; font-weight:400; padding:0; text-decoration:underline; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>🔬 Lab Brain Challenge</h1>
+      <div class="sub">Think like a scientist. No science knowledge needed.</div>
+    </div>
+  </header>
+
+  <!-- Live scoreboard (start screen only) -->
+  <div id="board" class="card board">
+    <h2 style="margin-bottom:4px"><span class="live"></span>Live Scoreboard: <span id="board-month"></span></h2>
+    <div class="muted" id="board-count">Loading...</div>
+    <div class="prize">🏆 The #1 scientist on this board at the end of the month will be nominated by Mr. Z for Student of the Month!</div>
+    <table>
+      <thead><tr><th>#</th><th>Scientist</th><th>Grade</th><th>Points</th><th>Time</th></tr></thead>
+      <tbody id="board-body"></tbody>
+    </table>
+    <div class="muted" style="margin-top:8px;font-size:.9rem">Points = correct answers + lab rules followed (30 max). Ties go to the faster time. Only your first try counts.</div>
+  </div>
+
+  <!-- Start screen -->
+  <div id="screen-start" class="card">
+    <h2>Welcome, scientist</h2>
+    <p>You will solve 20 lab puzzles. Some test your logic, some test your memory, and some take a few steps to solve. Everything you need is in the question.</p>
+    <label for="inp-name">First and last name</label>
+    <input id="inp-name" type="text" autocomplete="off">
+    <label for="inp-grade">Grade</label>
+    <select id="inp-grade">
+      <option value="">Choose...</option>
+      <option value="6">6th grade</option>
+      <option value="7">7th grade</option>
+    </select>
+    <label for="inp-period">Class period</label>
+    <input id="inp-period" type="text" autocomplete="off">
+    <div id="start-err" class="err"></div>
+    <button id="btn-start">Next</button>
+    <button id="btn-tlink" class="tlink">Teacher login</button>
+  </div>
+
+  <!-- Teacher login -->
+  <div id="screen-login" class="card hidden">
+    <h2>Teacher login</h2>
+    <label for="inp-pw">Password</label>
+    <input id="inp-pw" type="password" autocomplete="off">
+    <div id="pw-err" class="err"></div>
+    <button id="btn-pw">Open dashboard</button>
+    <button id="btn-pw-back" class="tlink">Back</button>
+  </div>
+
+  <!-- Rules screen (shown once) -->
+  <div id="screen-rules" class="card hidden">
+    <h2>Lab rules: memorize these</h2>
+    <p class="big">You will <u>not</u> see these rules again.</p>
+    <ul class="rules">
+      <li><b>1.</b> If the question number is a <b>★</b>, end your answer with the word <b>red</b>.
+        <span class="ex">Example: Question ★ has the answer 12. You type: <b>12 red</b></span></li>
+      <li><b>2.</b> If the question number is a <b>▲</b>, start your answer with the word <b>up</b>.
+        <span class="ex">Example: Question ▲ has the answer 12. You type: <b>up 12</b></span></li>
+      <li><b>3.</b> On question <b>20</b>, the last one, end your answer with the word <b>done</b>.</li>
+    </ul>
+    <p class="muted">Other tips: type your answer and press Enter. You can't go back to a question, so take your time.</p>
+    <button id="btn-rules" disabled>I memorized the rules (<span id="rules-count">20</span>)</button>
+  </div>
+
+  <!-- Question screen -->
+  <div id="screen-q" class="card hidden">
+    <div class="progress"><div id="prog"></div></div>
+
+    <div id="study-box" class="study hidden">
+      <div class="qlabel">Look carefully. This will disappear.</div>
+      <div id="study-items" class="items"></div>
+      <div class="count">Disappears in <span id="study-count"></span> s</div>
+    </div>
+
+    <div id="q-box" class="hidden">
+      <div class="qhead">
+        <div id="badge" class="badge"></div>
+        <div class="qlabel">Question</div>
+      </div>
+      <div id="prompt" class="prompt"></div>
+      <div class="answer-row">
+        <input id="answer" type="text" autocomplete="off" spellcheck="false" placeholder="Type your answer">
+        <button id="btn-submit">Submit</button>
+      </div>
+      <div id="q-err" class="err"></div>
+    </div>
+  </div>
+
+  <!-- End screen -->
+  <div id="screen-end" class="card hidden">
+    <h2 id="end-title">Saving your results...</h2>
+    <p id="end-msg" class="muted">Please wait and do not close this tab.</p>
+    <button id="btn-retry" class="hidden">Try saving again</button>
+
+    <div id="end-summary" class="hidden">
+      <div class="stats" id="stats"></div>
+      <h3>How you solved problems</h3>
+      <ul class="flags" id="flags"></ul>
+      <div id="gift" class="gift hidden">
+        <button id="btn-gift">🎁 Give 5 points to a random classmate</button>
+        <div class="note">You get nothing for this. Your classmate gets 5 points on the scoreboard.</div>
+        <div id="gift-msg" class="big" style="margin-top:12px"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="teacher" class="hidden"><div class="twrap">
+  <header>
+    <div>
+      <h1>🔬 Lab Brain Challenge: Teacher Dashboard</h1>
+      <div class="muted"><span class="live"></span>Live. Last updated <span id="updated">...</span> <span id="err"></span></div>
+    </div>
+    <div class="filters">
+      <button id="t-logout" class="tbtn">Log out</button>
+      <select id="f-month"></select>
+      <select id="f-grade"><option value="">All grades</option><option value="6">6th grade</option><option value="7">7th grade</option></select>
+      <select id="f-period"><option value="">All periods</option></select>
+      <select id="f-attempt"><option value="first">First attempts only</option><option value="all">All attempts</option></select>
+    </div>
+  </header>
+
+  <div class="card">
+    <h2>Class overview</h2>
+    <div class="stats" id="overview"></div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Skill averages</h2>
+      <div id="skills"></div>
+    </div>
+    <div class="card">
+      <h2>Cooperation (gift button)</h2>
+      <div id="coop"></div>
+    </div>
+    <div class="card">
+      <h2>Answering-method flags</h2>
+      <div id="flagcounts"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Students <span class="muted" style="font-weight:400;font-size:.9rem">(click a column to sort, click a student for details)</span></h2>
+    <div class="scroll"><table id="students"></table></div>
+  </div>
+
+  <div class="card" id="detail-card" style="display:none">
+    <h2 id="detail-title"></h2>
+    <div id="detail-flags" style="margin-bottom:10px"></div>
+    <div class="scroll"><table id="detail"></table></div>
+  </div>
+
+  <div class="card">
+    <h2>Question analysis</h2>
+    <div class="scroll"><table id="questions"></table></div>
+  </div>
+</div></div>
+
+<script>
+/* ---------------- Questions ----------------
+   slot: '' = normal number, 'star' = ★ (end with red), 'tri' = ▲ (start with up)
+   Question 20 also requires ending with "done".
+   type 'num': a number found anywhere in the answer counts. type 'text': exact match after cleanup. */
+const QUESTIONS = [
+  { id:1, cat:'Multistep', slot:'', type:'num', accept:['19'], show:'19',
+    prompt:'A bean plant grows 3 cm every day. On Monday morning it is 10 cm tall. How tall is it on Thursday morning? (Answer in cm.)' },
+  { id:2, cat:'Memory', slot:'', type:'text', accept:['pondwater','pond'], show:'pond water',
+    study:{ seconds:8, html:'<b>Microscope slides, in order:</b><br>1. Leaf<br>2. Onion<br>3. Blood<br>4. Pond water<br>5. Cheek' },
+    prompt:'What was the <b>4th</b> microscope slide?' },
+  { id:3, cat:'Deduction', slot:'star', type:'text', accept:['c','liquidc'], show:'C',
+    prompt:'Four mystery liquids: A, B, C, and D.<ul><li>A is heavier than B.</li><li>C is lighter than B.</li><li>D is heavier than A.</li></ul>Which liquid is the lightest? (Type the letter.)' },
+  { id:4, cat:'Memory', slot:'', type:'text', accept:['k7m'], show:'K7-M',
+    prompt:'Log this specimen jar into the lab computer. Its label is <b>K7-M</b>. Type the label exactly. (You will need it again later.)' },
+  { id:5, cat:'Multistep', slot:'tri', type:'num', accept:['20'], show:'20',
+    prompt:'A frog eats 4 flies every hour. It hunts for 3 hours in the morning and 2 hours at night. How many flies does it eat in total?' },
+  { id:6, cat:'Deduction', slot:'', type:'text', accept:['cruz'], show:'Cruz',
+    prompt:'Three scientists, Ana, Ben, and Cruz, each studied one animal: an owl, a shark, or a beetle.<ul><li>Ana did not study an animal that can fly.</li><li>Ben studied the animal with six legs.</li></ul>Who studied the owl?' },
+  { id:7, cat:'Multistep', slot:'star', type:'num', accept:['40'], show:'40',
+    prompt:'A colony of bacteria doubles every 20 minutes. At 12:00 there are 5 cells. How many cells are there at 1:00?' },
+  { id:8, cat:'Memory', slot:'', type:'num', accept:['3','three'], show:'3',
+    study:{ seconds:10, html:'<b>Specimen tray:</b><br>crab, snail, starfish,<br>crab, snail, crab' },
+    prompt:'How many <b>crabs</b> were on the specimen tray?' },
+  { id:9, cat:'Deduction', slot:'', type:'num', accept:['162'], show:'162',
+    prompt:'A scientist counts the cells in a sample every hour: <b>2, 6, 18, 54, ...</b><br>What is the next number?' },
+  { id:10, cat:'Multistep', slot:'tri', type:'num', accept:['20'], show:'20',
+    prompt:'A beaker of water starts at 20°C. A heater warms it by 15°C every 5 minutes. How many minutes until the water reaches 80°C?' },
+  { id:11, cat:'Deduction', slot:'star', type:'text', accept:['no'], show:'no',
+    prompt:'Every animal in the Zorbi family has blue spots. Animal X has no blue spots. Is Animal X in the Zorbi family? (yes or no)' },
+  { id:12, cat:'Memory', slot:'', type:'text', accept:['onion'], show:'onion',
+    prompt:'Think back to the microscope slides from earlier. What was the <b>2nd</b> slide?' },
+  { id:13, cat:'Multistep', slot:'', type:'num', accept:['5','five'], show:'5',
+    prompt:'A lab recipe uses 2 spoons of salt for every 1 cup of water. You make enough for 5 cups of water. Then you spill half of the salt before adding it. How many spoons of salt make it into the water?' },
+  { id:14, cat:'Deduction', slot:'tri', type:'text', accept:['more','moremice'], show:'more',
+    prompt:'In a field, hawks eat snakes, snakes eat mice, and mice eat seeds. If all the snakes disappeared, would there be more mice or fewer mice? (more or fewer)' },
+  { id:15, cat:'Memory', slot:'', type:'text', accept:['1538'], show:'1538',
+    study:{ seconds:6, html:'<b>Sensor code:</b><br><span style="font-size:2.4rem;letter-spacing:.4em">8 3 5 1</span>' },
+    prompt:'Type the sensor code digits in <b>reverse</b> order.' },
+  { id:16, cat:'Memory', slot:'star', type:'text', accept:['k7m'], show:'K7-M',
+    prompt:'What was the label on the specimen jar you logged earlier?' },
+  { id:17, cat:'Multistep', slot:'', type:'num', accept:['4','four'], show:'4',
+    prompt:'A snail climbs a wall that is 5 meters tall. Each day it climbs 2 meters. Each night it slides back down 1 meter. On which day does it first reach the top?' },
+  { id:18, cat:'Deduction', slot:'tri', type:'text', accept:['r','typer'], show:'R',
+    prompt:'Rock sorting key:<ul><li>Fizzes in vinegar AND scratches glass: Type Q</li><li>Fizzes in vinegar but does NOT scratch glass: Type R</li><li>Does not fizz in vinegar: Type S</li></ul>Rock #9 does not scratch glass, and it fizzes in vinegar. What type is it?' },
+  { id:19, cat:'Multistep', slot:'star', type:'num', accept:['380'], show:'380',
+    prompt:'A lamp uses 60 units of energy each hour. A fan uses 40 units each hour. Both are on for 3 hours. Then the lamp is turned off, and the fan stays on for 2 more hours. How many units of energy were used in total?' },
+  { id:20, cat:'Memory', slot:'', type:'text', accept:['starfish'], show:'starfish',
+    prompt:'Think back to the specimen tray. Which animal was on the tray only <b>once</b>?' }
+];
+const WORD_NUM = { zero:'0', one:'1', two:'2', three:'3', four:'4', five:'5', six:'6', seven:'7', eight:'8', nine:'9', ten:'10' };
+const MARKERS = ['red', 'up', 'done'];
+
+function ruleFor(q) {
+  if (q.id === 20) return 'done';
+  if (q.slot === 'star') return 'red';
+  if (q.slot === 'tri') return 'up';
+  return '';
+}
+
+/* ---------------- Grading ---------------- */
+function tokenize(raw) {
+  return String(raw).toLowerCase().replace(/[^a-z0-9.]+/g, ' ').trim().split(/\s+/).filter(Boolean);
+}
+function grade(q, raw) {
+  const tokens = tokenize(raw);
+  const rule = ruleFor(q);
+  const first = tokens[0] || '', last = tokens[tokens.length - 1] || '';
+  let ruleFollowed = '';
+  if (rule === 'red') ruleFollowed = last === 'red';
+  if (rule === 'up') ruleFollowed = first === 'up';
+  if (rule === 'done') ruleFollowed = last === 'done';
+  // False alarm: a rule word shows up that this question did not ask for
+  const extras = tokens.filter(t => MARKERS.includes(t) && t !== rule);
+  const falseAlarm = extras.length > 0;
+  // Content check ignores all rule words
+  const core = tokens.filter(t => !MARKERS.includes(t)).map(t => WORD_NUM[t] || t);
+  const joined = core.join('').replace(/\./g, '');
+  let contentCorrect = q.accept.includes(joined);
+  if (!contentCorrect && q.type === 'num') {
+    const m = core.join(' ').match(/\d+(\.\d+)?/);
+    if (m) contentCorrect = q.accept.includes(String(parseFloat(m[0])));
+  }
+  return { contentCorrect, ruleRequired: rule || 'none', ruleFollowed: rule ? ruleFollowed : 'n/a', falseAlarm };
+}
+
+/* ---------------- State ---------------- */
+const $ = id => document.getElementById(id);
+const now = () => performance.now();
+const sec = ms => Math.round(ms / 100) / 10;
+const state = { student:null, rulesSec:0, startedAt:0, qi:0, results:[], payload:null, tabSwitches:0 };
+let cur = null; // per-question timing
+
+/* ---------------- Server connection ----------------
+   Paste your Apps Script web app URL (ends in /exec) here. */
+const API_URL = 'https://script.google.com/macros/s/AKfycby7zleNekm_C_e6yrxt03amO-3VkY8zXu-XtAe3TQKrkolamRFomRpMhh06lIyjxpxN/exec';
+const HAS_GAS = !!API_URL;
+function call(action, data) {
+  // text/plain body avoids a CORS preflight, which Apps Script can't answer
+  return fetch(API_URL, { method:'POST', body: JSON.stringify(Object.assign({ action: action }, data || {})) })
+    .then(r => r.json())
+    .then(j => { if (!j.ok) throw new Error(j.error || 'Server error'); return j.data; });
+}
+
+function show(id) {
+  ['screen-start','screen-rules','screen-q','screen-end'].forEach(s => $(s).classList.toggle('hidden', s !== id));
+  $('board').classList.toggle('hidden', id !== 'screen-start');
+  if (id !== 'screen-start') clearInterval(boardTimer);
+}
+
+/* ---------------- Live scoreboard ---------------- */
+let boardTimer = null;
+let classmateNames = [];
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function renderBoard(b) {
+  $('board-month').textContent = b.month;
+  classmateNames = b.names || [];
+  $('board-count').textContent = b.count ? b.count + ' scientist' + (b.count === 1 ? '' : 's') + ' have played this month' : 'No scores yet this month. Be the first!';
+  $('board-body').innerHTML = b.top.map((s, i) =>
+    '<tr class="' + (i === 0 ? 'first' : '') + '"><td>' + (i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1) +
+    '</td><td>' + esc(s.name) + '</td><td>' + esc(s.grade) + 'th</td><td>' + s.points + '</td><td>' + s.minutes + ' min</td></tr>').join('');
+}
+function loadBoard() {
+  if (!HAS_GAS) {
+    $('board-count').textContent = 'The scoreboard loads when the game is opened from the class link.';
+    return;
+  }
+  call('getScoreboard').then(renderBoard).catch(() => { $('board-count').textContent = 'Scoreboard is reconnecting...'; });
+}
+loadBoard();
+boardTimer = setInterval(loadBoard, 10000);
+
+/* Tab switching: counted overall and per question */
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && state.startedAt) {
+    state.tabSwitches++;
+    if (cur) cur.tabs++;
+  }
+});
+
+/* ---------------- Start ---------------- */
+$('btn-start').onclick = () => {
+  const name = $('inp-name').value.trim(), grade = $('inp-grade').value, period = $('inp-period').value.trim();
+  if (!name || !grade || !period) { $('start-err').textContent = 'Please fill in your name, grade, and period.'; return; }
+  state.student = { name, grade, period };
+  show('screen-rules');
+  const t0 = now();
+  let left = 20;
+  $('rules-count').textContent = left;
+  const iv = setInterval(() => {
+    left--;
+    $('rules-count').textContent = left;
+    if (left <= 0) {
+      clearInterval(iv);
+      $('btn-rules').disabled = false;
+      $('btn-rules').textContent = 'I memorized the rules';
+    }
+  }, 1000);
+  $('btn-rules').onclick = () => {
+    state.rulesSec = sec(now() - t0);
+    state.startedAt = now();
+    show('screen-q');
+    loadQuestion();
+  };
+};
+
+/* ---------------- Questions ---------------- */
+function loadQuestion() {
+  const q = QUESTIONS[state.qi];
+  $('prog').style.width = (state.qi / QUESTIONS.length * 100) + '%';
+  cur = { studySec:0, t0:0, firstInput:null, corrections:0, tabs:0 };
+  if (q.study) runStudy(q); else showQuestion(q);
+}
+
+function runStudy(q) {
+  $('q-box').classList.add('hidden');
+  $('study-box').classList.remove('hidden');
+  $('study-items').innerHTML = q.study.html;
+  let left = q.study.seconds;
+  $('study-count').textContent = left;
+  const s0 = now();
+  const iv = setInterval(() => {
+    left--;
+    $('study-count').textContent = left;
+    if (left <= 0) {
+      clearInterval(iv);
+      cur.studySec = sec(now() - s0);
+      $('study-items').innerHTML = '';
+      showQuestion(q);
+    }
+  }, 1000);
+}
+
+function showQuestion(q) {
+  $('study-box').classList.add('hidden');
+  $('q-box').classList.remove('hidden');
+  $('badge').textContent = q.slot === 'star' ? '★' : q.slot === 'tri' ? '▲' : String(q.id);
+  $('prompt').innerHTML = q.prompt;
+  $('answer').value = '';
+  $('q-err').textContent = '';
+  $('answer').focus();
+  cur.t0 = now();
+}
+
+$('answer').addEventListener('input', () => { if (cur && cur.firstInput === null) cur.firstInput = now(); });
+$('answer').addEventListener('keydown', e => {
+  if (e.key === 'Backspace' || e.key === 'Delete') { if (cur) cur.corrections++; }
+  if (e.key === 'Enter') submitAnswer();
+});
+$('answer').addEventListener('paste', e => e.preventDefault());
+$('btn-submit').onclick = submitAnswer;
+
+function submitAnswer() {
+  const q = QUESTIONS[state.qi];
+  const raw = $('answer').value.trim();
+  if (!raw) { $('q-err').textContent = 'Type an answer first.'; return; }
+  const t2 = now();
+  const t1 = cur.firstInput === null ? t2 : cur.firstInput;
+  const g = grade(q, raw);
+  state.results.push({
+    id: q.id, cat: q.cat,
+    slot: q.slot === 'star' ? '★' : q.slot === 'tri' ? '▲' : String(q.id),
+    answer: raw, correctAnswer: q.show,
+    contentCorrect: g.contentCorrect, ruleRequired: g.ruleRequired, ruleFollowed: g.ruleFollowed, falseAlarm: g.falseAlarm,
+    studySec: cur.studySec,
+    thinkSec: sec(t1 - cur.t0), answerSec: sec(t2 - t1), totalSec: sec(t2 - cur.t0),
+    corrections: cur.corrections, tabSwitches: cur.tabs
+  });
+  state.qi++;
+  if (state.qi < QUESTIONS.length) loadQuestion(); else finish();
+}
+
+/* ---------------- Finish ---------------- */
+function avg(arr) { return arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length * 10) / 10 : 0; }
+
+function buildSummary() {
+  const R = state.results;
+  const byCat = c => R.filter(r => r.cat === c);
+  const correct = arr => arr.filter(r => r.contentCorrect).length;
+  const total = correct(R);
+  const rulesFollowed = R.filter(r => r.ruleFollowed === true).length;
+  const sum = {
+    points: total + rulesFollowed,
+    total: total,
+    deduction: correct(byCat('Deduction')),
+    memory: correct(byCat('Memory')),
+    multistep: correct(byCat('Multistep')),
+    rulesFollowed: rulesFollowed,
+    falseAlarms: R.filter(r => r.falseAlarm).length,
+    rulesScreenSec: state.rulesSec,
+    avgThink: avg(R.map(r => r.thinkSec)),
+    avgAnswer: avg(R.map(r => r.answerSec)),
+    thinkDeduction: avg(byCat('Deduction').map(r => r.thinkSec)),
+    thinkMemory: avg(byCat('Memory').map(r => r.thinkSec)),
+    thinkMultistep: avg(byCat('Multistep').map(r => r.thinkSec)),
+    totalMin: Math.round((now() - state.startedAt) / 6000) / 10,
+    tabSwitches: state.tabSwitches
+  };
+  sum.flags = buildFlags(R, sum);
+  return sum;
+}
+
+/* ---------------- Answering-method flags ----------------
+   Thresholds are first guesses. Adjust them after you see real class data. */
+function buildFlags(R, s) {
+  const f = [];
+  const rushedMisses = R.filter(r => !r.contentCorrect && r.thinkSec < 4).length;
+  if (rushedMisses >= 3) f.push('⚡ Rushing: you missed ' + rushedMisses + ' questions that you started answering in under 4 seconds. Read the whole question before typing.');
+
+  if (s.total >= 16 && s.avgThink < 8) f.push('🚀 Quick and accurate: you started fast and still got most answers right.');
+  else if (s.total >= 16 && s.avgThink >= 15) f.push('🧠 Careful thinker: you took your time before answering, and it paid off.');
+  else if (s.total < 12 && s.avgThink >= 20) f.push('🤔 Long thinker: you spent a lot of time thinking but missed several. Try writing down each step instead of holding it all in your head.');
+
+  const heavyEdits = R.filter(r => r.corrections >= 5).length;
+  if (heavyEdits >= 5) f.push('✏️ Second-guesser: you rewrote your answer a lot on ' + heavyEdits + ' questions. Make a plan, solve, then check once.');
+
+  // Rules: early half vs late half
+  const ruleQs = R.filter(r => r.ruleRequired !== 'none');
+  const early = ruleQs.filter(r => r.id <= 10), late = ruleQs.filter(r => r.id > 10);
+  const rate = a => a.length ? a.filter(r => r.ruleFollowed === true).length / a.length : 0;
+  if (s.rulesFollowed >= 9) f.push('📋 Rule keeper: you remembered the lab rules the whole way through.');
+  else if (rate(early) - rate(late) >= 0.5) f.push('⏳ Fading rules: you followed the lab rules early on, then forgot them later.');
+  else if (s.rulesFollowed <= 3) f.push('📋 Rules slipped: you missed most of the lab rules (★ means end with red, ▲ means start with up, question 20 means end with done).');
+  if (s.falseAlarms >= 2) f.push('🔁 Over-applying: you added rule words on ' + s.falseAlarms + ' questions that did not need them.');
+
+  const delayed = R.filter(r => [12, 16, 20].includes(r.id));
+  const delayedRight = delayed.filter(r => r.contentCorrect).length;
+  if (delayedRight === 3) f.push('🗂️ Strong long-term memory: you got every "think back" question right.');
+  else if (delayedRight === 0) f.push('🗂️ Long-term memory: the "think back" questions were tough. Try saying important info to yourself when you first see it.');
+
+  const firstHalf = avg(R.filter(r => r.id <= 10).map(r => r.totalSec));
+  const secondHalf = avg(R.filter(r => r.id > 10).map(r => r.totalSec));
+  if (firstHalf && secondHalf > firstHalf * 1.5) f.push('🐢 Slowed down near the end. Your focus may have been getting tired.');
+  else if (firstHalf && secondHalf < firstHalf * 0.6) f.push('🏃 Sped up near the end. Make sure you are not rushing to finish.');
+
+  if (s.tabSwitches >= 2) f.push('👀 You left the game page ' + s.tabSwitches + ' times.');
+
+  const cats = [['Deduction', s.deduction / 6], ['Memory', s.memory / 7], ['Multistep', s.multistep / 7]].sort((a, b) => b[1] - a[1]);
+  if (cats[0][1] > cats[2][1]) f.push('💪 Strongest skill: ' + cats[0][0] + '. 🌱 Skill to grow: ' + cats[2][0] + '.');
+  return f;
+}
+
+function finish() {
+  $('prog').style.width = '100%';
+  state.payload = { student: state.student, summary: buildSummary(), results: state.results };
+  show('screen-end');
+  save();
+}
+
+function save() {
+  $('btn-retry').classList.add('hidden');
+  $('end-title').textContent = 'Saving your results...';
+  $('end-msg').textContent = 'Please wait and do not close this tab.';
+  if (!HAS_GAS) {
+    // Opened outside Apps Script (testing): show results in the console
+    console.log(JSON.stringify(state.payload, null, 2));
+    saved({ ok:true, row:0, rank:0, of:0, names:[] });
+    return;
+  }
+  call('submitResults', { payload: state.payload })
+    .then(saved)
+    .catch(() => {
+      $('end-title').textContent = 'Could not save yet';
+      $('end-msg').textContent = 'Check your internet, then press the button. Raise your hand if it keeps failing.';
+      $('btn-retry').classList.remove('hidden');
+    });
+}
+$('btn-retry').onclick = save;
+
+function saved(res) {
+  const s = state.payload.summary;
+  state.saveRes = res;
+  $('end-title').textContent = 'Great work, scientist! ✅';
+  $('end-msg').textContent = 'Your results were saved.' + (res && res.rank ? ' You are #' + res.rank + ' of ' + res.of + ' on this month\'s scoreboard.' : '');
+  const stat = (v, k) => '<div class="stat"><div class="v">' + v + '</div><div class="k">' + k + '</div></div>';
+  $('stats').innerHTML =
+    stat(s.points + ' / 30', 'Points') +
+    stat(s.total + ' / 20', 'Correct answers') +
+    stat(s.rulesFollowed + ' / 10', 'Lab rules followed') +
+    stat(s.deduction + ' / 6', 'Deduction') +
+    stat(s.memory + ' / 7', 'Memory') +
+    stat(s.multistep + ' / 7', 'Multistep') +
+    stat(s.avgThink + ' s', 'Avg thinking time') +
+    stat(s.totalMin + ' min', 'Total time');
+  $('flags').innerHTML = (s.flags.length ? s.flags : ['✅ Steady work all the way through.']).map(x => '<li>' + esc(x) + '</li>').join('');
+  $('end-summary').classList.remove('hidden');
+  $('gift').classList.remove('hidden');
+  state.giftShownAt = now();
+}
+
+/* ---------------- Gift button (not real) ----------------
+   No points are actually given. It only records whether the student chose to give. */
+$('btn-gift').onclick = () => {
+  $('btn-gift').disabled = true;
+  const myName = state.student.name.trim().split(/\s+/);
+  const myShort = myName.length > 1 ? myName[0].charAt(0).toUpperCase() + myName[0].slice(1).toLowerCase() + ' ' + myName[myName.length - 1].charAt(0).toUpperCase() + '.' : '';
+  const pool = ((state.saveRes && state.saveRes.names) || classmateNames).filter(n => n !== myShort);
+  const to = pool.length ? pool[Math.floor(Math.random() * pool.length)] : 'a classmate';
+  const secs = sec(now() - state.giftShownAt);
+  $('gift-msg').textContent = '🎉 You gave 5 points to ' + to + '!';
+  $('btn-gift').textContent = 'Points sent';
+  if (HAS_GAS && state.saveRes && state.saveRes.row) {
+    call('recordGift', { row: state.saveRes.row, name: state.student.name, seconds: secs, shownTo: to }).catch(() => {});
+  } else {
+    console.log('gift', { secs, to });
+  }
+};
+/* ---------------- Teacher login ----------------
+   The password is checked on the server, so it is not visible in this page. */
+$('btn-tlink').onclick = () => { $('screen-start').classList.add('hidden'); $('screen-login').classList.remove('hidden'); $('inp-pw').focus(); };
+$('btn-pw-back').onclick = () => { $('screen-login').classList.add('hidden'); $('screen-start').classList.remove('hidden'); };
+function tryLogin() {
+  const pw = $('inp-pw').value;
+  if (!pw) return;
+  if (!HAS_GAS) { $('pw-err').textContent = 'Add your web app URL to API_URL first.'; return; }
+  $('btn-pw').disabled = true;
+  $('pw-err').textContent = '';
+  openTeacher(pw, () => {
+    clearInterval(boardTimer);
+    document.querySelector('.wrap').classList.add('hidden');
+    $('teacher').classList.remove('hidden');
+  }, () => {
+    $('btn-pw').disabled = false;
+    $('pw-err').textContent = 'Wrong password.';
+  });
+}
+$('btn-pw').onclick = tryLogin;
+$('inp-pw').addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
+</script>
+
+<script>
+(function () {
+let PW = '';
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num = v => Number(v) || 0;
+const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0;
+const r1 = v => Math.round(v * 10) / 10;
+const pct = v => Math.round(v * 100) + '%';
+const monthKey = iso => iso ? iso.slice(0, 7) : '';
+const monthName = k => { const [y, m] = k.split('-'); return new Date(+y, +m - 1, 1).toLocaleString('en-US', { month:'long', year:'numeric' }); };
+
+let DATA = null;
+let sortCol = 'Points (/30)', sortDir = -1;
+let selectedKey = null;
+
+/* ---------- Load (every 15 seconds) ---------- */
+function load() {
+  call('getTeacherData', { password: PW })
+    .then(d => { DATA = d; $('err').textContent = ''; $('updated').textContent = new Date(d.updated).toLocaleTimeString(); fillFilters(); render(); })
+    .catch(e => { $('err').textContent = 'Could not load: ' + e.message; });
+}
+
+function fillFilters() {
+  const months = [...new Set(DATA.summary.map(s => monthKey(s.Timestamp)))].filter(Boolean).sort().reverse();
+  const cur = new Date().toISOString().slice(0, 7);
+  if (!months.includes(cur)) months.unshift(cur);
+  const mSel = $('f-month'), keepM = mSel.value || cur;
+  mSel.innerHTML = '<option value="all">All months</option>' + months.map(m => '<option value="' + m + '">' + monthName(m) + '</option>').join('');
+  mSel.value = keepM;
+  const periods = [...new Set(DATA.summary.map(s => String(s.Period).trim()))].filter(Boolean).sort();
+  const pSel = $('f-period'), keepP = pSel.value;
+  pSel.innerHTML = '<option value="">All periods</option>' + periods.map(p => '<option value="' + esc(p) + '">Period ' + esc(p) + '</option>').join('');
+  pSel.value = periods.includes(keepP) ? keepP : '';
+}
+['f-month', 'f-grade', 'f-period', 'f-attempt'].forEach(id => $(id).onchange = render);
+
+/* ---------- Filtering ---------- */
+const studentKey = s => String(s.Name).trim().toLowerCase() + '|' + s.Grade;
+const rowKey = s => s.Timestamp + '|' + s.Name;
+
+function filtered() {
+  const m = $('f-month').value, g = $('f-grade').value, p = $('f-period').value, firstOnly = $('f-attempt').value === 'first';
+  const sorted = DATA.summary.slice().sort((a, b) => a.Timestamp < b.Timestamp ? -1 : 1);
+  const seen = {};
+  const out = [];
+  sorted.forEach(s => {
+    if (m !== 'all' && monthKey(s.Timestamp) !== m) return;
+    const k = studentKey(s);
+    s._attempt = (seen[k] = (seen[k] || 0) + 1);
+    if (firstOnly && s._attempt > 1) return;
+    if (g && String(s.Grade) !== g) return;
+    if (p && String(s.Period).trim() !== p) return;
+    out.push(s);
+  });
+  return out;
+}
+
+/* ---------- Render ---------- */
+function render() {
+  if (!DATA) return;
+  const S = filtered();
+  const keys = new Set(S.map(rowKey));
+  const R = DATA.responses.filter(r => keys.has(rowKey(r)));
+  renderOverview(S);
+  renderSkills(S);
+  renderCoop(S);
+  renderFlags(S);
+  renderStudents(S);
+  renderQuestions(R);
+  if (selectedKey && keys.has(selectedKey)) renderDetail(S.find(s => rowKey(s) === selectedKey));
+  else $('detail-card').style.display = 'none';
+}
+
+function stat(v, k) { return '<div class="stat"><div class="v">' + v + '</div><div class="k">' + k + '</div></div>'; }
+
+function renderOverview(S) {
+  if (!S.length) { $('overview').innerHTML = '<div class="empty">No results yet for these filters.</div>'; return; }
+  $('overview').innerHTML =
+    stat(S.length, 'Students') +
+    stat(r1(avg(S.map(s => num(s['Points (/30)'])))) + ' / 30', 'Avg points') +
+    stat(r1(avg(S.map(s => num(s['Total correct (/20)'])))) + ' / 20', 'Avg correct') +
+    stat(r1(avg(S.map(s => num(s['Rules followed (/10)'])))) + ' / 10', 'Avg rules followed') +
+    stat(r1(avg(S.map(s => num(s['Avg think (s)'])))) + ' s', 'Avg thinking time') +
+    stat(r1(avg(S.map(s => num(s['Avg answer (s)'])))) + ' s', 'Avg answering time') +
+    stat(r1(avg(S.map(s => num(s['Total time (min)'])))) + ' min', 'Avg total time') +
+    stat(r1(avg(S.map(s => num(s['Rules screen (s)'])))) + ' s', 'Avg time on rules');
+}
+
+function bar(label, frac, text) {
+  return '<div class="bar"><div class="lbl">' + label + '</div><div class="track"><div class="fill" style="width:' + Math.round(frac * 100) + '%"></div></div><div class="val">' + text + '</div></div>';
+}
+
+function renderSkills(S) {
+  if (!S.length) { $('skills').innerHTML = '<div class="empty">No data</div>'; return; }
+  const items = [['Deduction', 'Deduction (/6)', 6, 'Avg think Deduction (s)'], ['Memory', 'Memory (/7)', 7, 'Avg think Memory (s)'], ['Multistep', 'Multistep (/7)', 7, 'Avg think Multistep (s)'], ['Rules', 'Rules followed (/10)', 10, null]];
+  let html = items.map(([n, col, max]) => { const f = avg(S.map(s => num(s[col]) / max)); return bar(n, f, pct(f)); }).join('');
+  html += '<div class="muted" style="margin-top:10px">Avg thinking time: ' +
+    items.filter(i => i[3]).map(i => i[0] + ' ' + r1(avg(S.map(s => num(s[i[3]])))) + ' s').join(' · ') + '</div>';
+  ['6', '7'].forEach(g => {
+    const G = S.filter(s => String(s.Grade) === g);
+    if (G.length) html += '<div class="muted">' + g + 'th grade: ' + G.length + ' students, avg ' + r1(avg(G.map(s => num(s['Points (/30)'])))) + ' points</div>';
+  });
+  $('skills').innerHTML = html;
+}
+
+function renderCoop(S) {
+  if (!S.length) { $('coop').innerHTML = '<div class="empty">No data</div>'; return; }
+  const gave = S.filter(s => s['Gave 5 points'] === 'Yes');
+  const not = S.filter(s => s['Gave 5 points'] !== 'Yes');
+  let html = bar('Gave points', gave.length / S.length, gave.length + ' / ' + S.length);
+  ['6', '7'].forEach(g => {
+    const G = S.filter(s => String(s.Grade) === g);
+    if (G.length) { const n = G.filter(s => s['Gave 5 points'] === 'Yes').length; html += bar(g + 'th grade', n / G.length, n + ' / ' + G.length); }
+  });
+  html += '<div class="muted" style="margin-top:10px">' +
+    'Avg points of givers: <b>' + (gave.length ? r1(avg(gave.map(s => num(s['Points (/30)'])))) : 'n/a') + '</b> · non-givers: <b>' + (not.length ? r1(avg(not.map(s => num(s['Points (/30)'])))) : 'n/a') + '</b><br>' +
+    'Avg seconds before giving: <b>' + (gave.length ? r1(avg(gave.map(s => num(s['Gift decision (s)'])))) : 'n/a') + '</b></div>';
+  $('coop').innerHTML = html;
+}
+
+function flagLabel(f) { return f.split(':')[0].split('.')[0].trim(); }
+
+function renderFlags(S) {
+  const counts = {};
+  S.forEach(s => String(s.Flags || '').split(' | ').filter(Boolean).forEach(f => { const l = flagLabel(f); counts[l] = (counts[l] || 0) + 1; }));
+  const list = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  $('flagcounts').innerHTML = list.length ? list.map(([l, n]) => bar(esc(l), n / S.length, n + ' / ' + S.length)).join('') : '<div class="empty">No flags yet</div>';
+}
+
+const COLS = [
+  ['Name', 'Name'], ['Grade', 'Gr'], ['Period', 'Per'], ['Points (/30)', 'Points'], ['Total correct (/20)', 'Correct'],
+  ['Deduction (/6)', 'Ded'], ['Memory (/7)', 'Mem'], ['Multistep (/7)', 'Multi'], ['Rules followed (/10)', 'Rules'],
+  ['Rule false alarms', 'False alarms'], ['Avg think (s)', 'Think s'], ['Avg answer (s)', 'Answer s'], ['Total time (min)', 'Min'],
+  ['Tab switches', 'Tabs'], ['Gave 5 points', 'Gave'], ['Flags', 'Flags']
+];
+
+function renderStudents(S) {
+  const rows = S.slice().sort((a, b) => {
+    const x = a[sortCol], y = b[sortCol];
+    if (typeof x === 'number' && typeof y === 'number') return (x - y) * sortDir;
+    return String(x).localeCompare(String(y)) * sortDir;
+  });
+  let html = '<thead><tr>' + COLS.map(([k, l]) => '<th data-k="' + esc(k) + '">' + l + (k === sortCol ? (sortDir < 0 ? ' ▼' : ' ▲') : '') + '</th>').join('') + '</tr></thead><tbody>';
+  if (!rows.length) html += '<tr><td colspan="' + COLS.length + '" class="empty">No students yet</td></tr>';
+  rows.forEach(s => {
+    const k = rowKey(s);
+    html += '<tr class="click' + (k === selectedKey ? ' sel' : '') + '" data-key="' + esc(k) + '">' + COLS.map(([c]) => {
+      let v = s[c];
+      if (c === 'Name') v = esc(v) + (s._attempt > 1 ? ' <span class="pill">try ' + s._attempt + '</span>' : '');
+      else if (c === 'Flags') v = String(v || '').split(' | ').filter(Boolean).map(f => '<span class="pill">' + esc(flagLabel(f)) + '</span>').join('');
+      else if (c === 'Gave 5 points') v = v === 'Yes' ? '<span class="yes">Yes</span>' : 'No';
+      else v = esc(v);
+      return '<td>' + v + '</td>';
+    }).join('') + '</tr>';
+  });
+  $('students').innerHTML = html + '</tbody>';
+  $('students').querySelectorAll('th').forEach(th => th.onclick = () => {
+    const k = th.dataset.k;
+    if (sortCol === k) sortDir *= -1; else { sortCol = k; sortDir = k === 'Name' ? 1 : -1; }
+    render();
+  });
+  $('students').querySelectorAll('tr.click').forEach(tr => tr.onclick = () => {
+    selectedKey = tr.dataset.key === selectedKey ? null : tr.dataset.key;
+    render();
+    if (selectedKey) $('detail-card').scrollIntoView({ behavior:'smooth' });
+  });
+}
+
+function renderDetail(s) {
+  const R = DATA.responses.filter(r => rowKey(r) === rowKey(s)).sort((a, b) => num(a['Q#']) - num(b['Q#']));
+  $('detail-card').style.display = '';
+  $('detail-title').textContent = s.Name + ' (grade ' + s.Grade + ', period ' + s.Period + ') · ' + s['Points (/30)'] + ' points · ' + new Date(s.Timestamp).toLocaleString();
+  $('detail-flags').innerHTML = String(s.Flags || 'No flags').split(' | ').map(f => '<div>' + esc(f) + '</div>').join('') +
+    '<div class="muted" style="margin-top:6px">Time on rules screen: ' + s['Rules screen (s)'] + ' s · Gift: ' + (s['Gave 5 points'] === 'Yes' ? 'gave after ' + s['Gift decision (s)'] + ' s' : 'did not give') + '</div>';
+  const cols = ['Q#', 'Category', 'Number slot', 'Student answer', 'Correct answer', 'Content correct', 'Rule required', 'Rule followed', 'False alarm', 'Study (s)', 'Think (s)', 'Answer (s)', 'Total (s)', 'Corrections', 'Tab switches'];
+  $('detail').innerHTML = '<thead><tr>' + cols.map(c => '<th>' + c + '</th>').join('') + '</tr></thead><tbody>' +
+    R.map(r => '<tr>' + cols.map(c => {
+      const v = r[c];
+      const bad = (c === 'Content correct' && v === false) || (c === 'Rule followed' && v === false) || (c === 'False alarm' && v === true);
+      return '<td' + (bad ? ' class="low"' : '') + '>' + esc(v === true ? 'Yes' : v === false ? 'No' : v) + '</td>';
+    }).join('') + '</tr>').join('') + '</tbody>';
+}
+
+function renderQuestions(R) {
+  const byQ = {};
+  R.forEach(r => (byQ[r['Q#']] = byQ[r['Q#']] || []).push(r));
+  const qs = Object.keys(byQ).map(Number).sort((a, b) => a - b);
+  let html = '<thead><tr><th>Q#</th><th>Category</th><th>Slot</th><th>Correct answer</th><th>% correct</th><th>% rule followed</th><th>Avg think s</th><th>Avg answer s</th><th>Most common wrong answer</th></tr></thead><tbody>';
+  if (!qs.length) html += '<tr><td colspan="9" class="empty">No answers yet</td></tr>';
+  qs.forEach(q => {
+    const A = byQ[q];
+    const c = A.filter(r => r['Content correct'] === true).length / A.length;
+    const ruleA = A.filter(r => r['Rule required'] !== 'none');
+    const rule = ruleA.length ? pct(ruleA.filter(r => r['Rule followed'] === true).length / ruleA.length) : '';
+    const wrong = {};
+    A.filter(r => r['Content correct'] === false).forEach(r => { const w = String(r['Student answer']).trim().toLowerCase(); wrong[w] = (wrong[w] || 0) + 1; });
+    const top = Object.entries(wrong).sort((a, b) => b[1] - a[1])[0];
+    html += '<tr><td>' + q + '</td><td>' + esc(A[0].Category) + '</td><td>' + esc(A[0]['Number slot']) + '</td><td>' + esc(A[0]['Correct answer']) +
+      '</td><td' + (c < 0.5 ? ' class="low"' : '') + '>' + pct(c) + '</td><td>' + rule + '</td><td>' + r1(avg(A.map(r => num(r['Think (s)'])))) +
+      '</td><td>' + r1(avg(A.map(r => num(r['Answer (s)'])))) + '</td><td>' + (top ? esc(top[0]) + ' (' + top[1] + ')' : '') + '</td></tr>';
+  });
+  $('questions').innerHTML = html + '</tbody>';
+}
+
+let timer = null;
+window.openTeacher = function (pw, onOk, onFail) {
+  PW = pw;
+  call('getTeacherData', { password: pw })
+    .then(d => { onOk(); DATA = d; $('updated').textContent = new Date(d.updated).toLocaleTimeString(); fillFilters(); render(); timer = setInterval(load, 15000); })
+    .catch(e => onFail(e.message));
+};
+$('t-logout').onclick = () => { clearInterval(timer); PW = ''; DATA = null; location.reload(); };
+})();
+</script>
+</body>
+</html>
